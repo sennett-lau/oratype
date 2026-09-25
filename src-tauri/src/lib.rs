@@ -16,6 +16,7 @@ pub mod pipeline;
 pub mod platform;
 pub mod readiness;
 pub mod recording_deadline;
+pub mod router;
 pub mod selection;
 pub mod storage;
 pub mod stt;

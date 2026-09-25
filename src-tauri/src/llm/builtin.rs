@@ -165,9 +165,18 @@ struct Running {
     endpoint: Endpoint,
 }
 
-/// Owns the one `llama-server` process.
+/// Builds the arguments of one server start: `(binary, model_path, model_alias, port, api_key)`.
+/// Built-in AI uses [`launch_spec`]; the language router (plan `language-router`) passes its own
+/// embeddings settings.
+pub type LaunchSpecFn = fn(&Path, &Path, &str, u16, &str) -> LaunchSpec;
+
+/// Owns one `llama-server` process. Built-in AI has one ([`server`]); another part of Typelite
+/// can own a second one with its own arguments through [`ServerManager::with_spec`].
 pub struct ServerManager {
     launcher: Box<dyn Launcher>,
+    /// Names the server in the log ("Built-in AI server").
+    label: &'static str,
+    build_spec: LaunchSpecFn,
     /// One start at a time; a second caller waits and then reuses the started server.
     gate: tokio::sync::Mutex<()>,
     running: Mutex<Option<Running>>,
@@ -181,9 +190,23 @@ pub struct ServerManager {
 }
 
 impl ServerManager {
+    /// The Built-in AI chat server (the arguments of [`launch_spec`]).
     pub fn new(launcher: Box<dyn Launcher>) -> Self {
+        Self::with_spec(launcher, "Built-in AI server", launch_spec)
+    }
+
+    /// A server with other arguments, named `label` in the log. Its models folder and pid file
+    /// are set with [`ServerManager::set_paths`] like the Built-in AI one; the pid file must be
+    /// its own.
+    pub fn with_spec(
+        launcher: Box<dyn Launcher>,
+        label: &'static str,
+        build_spec: LaunchSpecFn,
+    ) -> Self {
         Self {
             launcher,
+            label,
+            build_spec,
             gate: tokio::sync::Mutex::new(()),
             running: Mutex::new(None),
             generation: AtomicU64::new(0),
@@ -247,9 +270,7 @@ impl ServerManager {
                     }
                     None => {}
                     Some(status) => {
-                        tracing::warn!(
-                            "Built-in AI server had stopped ({status}); starting it again"
-                        )
+                        tracing::warn!("{} had stopped ({status}); starting it again", self.label)
                     }
                 }
             }
@@ -263,7 +284,7 @@ impl ServerManager {
             .ok_or(ServerError::BinaryMissing)?;
         let port = free_port().map_err(|error| ServerError::Spawn(error.to_string()))?;
         let api_key = uuid::Uuid::new_v4().simple().to_string();
-        let spec = launch_spec(&binary, &model_path, alias, port, &api_key);
+        let spec = (self.build_spec)(&binary, &model_path, alias, port, &api_key);
         let started = Instant::now();
         let mut child = self
             .launcher
@@ -271,7 +292,8 @@ impl ServerManager {
             .map_err(|error| ServerError::Spawn(error.to_string()))?;
         self.write_pid(Some(child.pid()));
         tracing::info!(
-            "Built-in AI server starting: {} on port {port}",
+            "{} starting: {} on port {port}",
+            self.label,
             model_path
                 .file_name()
                 .map(|name| name.to_string_lossy().to_string())
@@ -285,13 +307,13 @@ impl ServerManager {
             }
             if let Some(status) = child.exit_status() {
                 self.write_pid(None);
-                tracing::warn!("Built-in AI server exited while starting: {status}");
+                tracing::warn!("{} exited while starting: {status}", self.label);
                 return Err(ServerError::Exited(status));
             }
             if started.elapsed() >= self.startup_timeout {
                 child.kill();
                 self.write_pid(None);
-                tracing::warn!("Built-in AI server did not become ready; stopped it");
+                tracing::warn!("{} did not become ready; stopped it", self.label);
                 return Err(ServerError::Timeout);
             }
             tokio::time::sleep(self.poll).await;
@@ -302,7 +324,8 @@ impl ServerManager {
             return Err(ServerError::Stopped);
         }
         tracing::info!(
-            "Built-in AI server ready in {:.1} s",
+            "{} ready in {:.1} s",
+            self.label,
             started.elapsed().as_secs_f64()
         );
         let endpoint = Endpoint {
@@ -325,7 +348,7 @@ impl ServerManager {
         if let Some(mut current) = previous {
             current.child.kill();
             self.write_pid(None);
-            tracing::info!("Built-in AI server stopped");
+            tracing::info!("{} stopped", self.label);
         }
     }
 
@@ -797,6 +820,45 @@ mod tests {
         assert!(lock(&s.children)[1].killed.load(Ordering::SeqCst));
         assert!(s.manager.running_model_file().is_none());
         assert!(!s.dir.join("llama-server.pid").exists());
+    }
+
+    #[tokio::test]
+    async fn a_second_manager_starts_the_server_with_its_own_arguments() {
+        fn embeddings_spec(
+            binary: &Path,
+            model: &Path,
+            alias: &str,
+            port: u16,
+            key: &str,
+        ) -> LaunchSpec {
+            let mut spec = launch_spec(binary, model, alias, port, key);
+            spec.args = vec!["--embeddings".into(), "--port".into(), port.to_string()];
+            spec
+        }
+        let s = setup("second", true, 1, None);
+        let fake = Fake {
+            binary: Some(PathBuf::from("/fake/llama-server")),
+            ready_after: 1,
+            exit_after: None,
+            health_checks: Arc::new(AtomicUsize::new(0)),
+            spawned: s.spawned.clone(),
+            children: s.children.clone(),
+        };
+        let second = ServerManager::with_spec(Box::new(fake), "Second server", embeddings_spec)
+            .with_timing(Duration::from_millis(200), Duration::from_millis(1));
+        second.set_paths(s.dir.clone(), s.dir.join("second.pid"));
+        let chat = s.manager.ensure("a.gguf", "m").await.unwrap();
+        let other = second.ensure("b.gguf", "m").await.unwrap();
+        assert_ne!(chat.base_url, other.base_url);
+        let spawned = lock(&s.spawned).clone();
+        assert!(spawned[0].args.iter().any(|arg| arg == "--reasoning"));
+        assert_eq!(spawned[1].args[0], "--embeddings");
+        // Each keeps its own process and pid file.
+        assert!(s.dir.join("llama-server.pid").exists());
+        assert!(s.dir.join("second.pid").exists());
+        second.stop();
+        assert_eq!(s.manager.running_model_file().as_deref(), Some("a.gguf"));
+        assert!(!s.dir.join("second.pid").exists());
     }
 
     #[tokio::test]
