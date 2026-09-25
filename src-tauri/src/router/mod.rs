@@ -19,6 +19,7 @@
 pub mod chars;
 pub mod embeddings;
 pub mod head;
+pub mod laya;
 pub mod models;
 pub mod tokenizer;
 

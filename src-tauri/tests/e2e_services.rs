@@ -18,6 +18,10 @@
 //! - `TYPELITE_E2E_LLAMA_MODEL`: a Qwen3 GGUF file for the built-in AI test (plan
 //! `ai-polish-setup`); it also   needs `src-tauri/binaries/llama-server-<triple>` from
 //! `scripts/build-llama-server.sh`.
+//! - `TYPELITE_E2E_LAYA_MODEL`: Laya-multilingual's backbone GGUF for the language router test
+//!   (plan `language-router`), with `laya-multilingual-head.safetensors` and
+//!   `laya-multilingual-tokenizer.json` in the same folder; it also needs llama-server as
+//!   above. Run it with `--release` for real head timings.
 //! - `TYPELITE_E2E_DOWNLOAD=1`: also run the Quick setup download test (190 MB from Hugging Face).
 //!
 //! Speech tests synthesise their audio with macOS `say`, so they need macOS.
@@ -694,4 +698,169 @@ async fn builtin_ai_server_starts_and_polishes_a_sentence() {
     let words = normalised(&text);
     assert!(words.contains("tuesday"), "self-correction lost: {text:?}");
     assert!(!text.contains("<think>"), "thinking was not off: {text:?}");
+}
+
+/// Plan `language-router`: Laya's backbone in a second llama-server, the head and tokenizer in
+/// Rust. Checks the whole path against the `laya` package's probabilities (fixture
+/// `laya/real_sequences.json`), then prints Laya's and the character router's answers and the
+/// time per sentence. Laya's language accuracy is not asserted: zero-shot it is poor (see the
+/// plan's `laya-head.md`).
+#[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs the Laya files and llama-server; set TYPELITE_E2E_LAYA_MODEL"]
+async fn laya_routes_english_mandarin_and_cantonese() {
+    use std::sync::Arc;
+    use typelite_lib::router::chars::CharRouter;
+    use typelite_lib::router::embeddings::laya_server;
+    use typelite_lib::router::head::Question;
+    use typelite_lib::router::laya::{self, LayaClassifier, LayaModel, LayaRouter};
+    use typelite_lib::router::{Language, LanguageRouter};
+
+    let model_path = PathBuf::from(
+        std::env::var("TYPELITE_E2E_LAYA_MODEL").expect("set TYPELITE_E2E_LAYA_MODEL"),
+    );
+    let dir = model_path.parent().unwrap().to_path_buf();
+    let file = model_path
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
+    let pid_file =
+        std::env::temp_dir().join(format!("typelite-e2e-laya-{}.pid", std::process::id()));
+    laya_server().set_paths(dir.clone(), pid_file);
+
+    let started = Instant::now();
+    let endpoint = laya_server()
+        .ensure(&file, laya::LAYA_ALIAS)
+        .await
+        .expect("the language router server should start");
+    let startup = started.elapsed();
+    let started = Instant::now();
+    let model = Arc::new(LayaModel::load(&dir).expect("head and tokenizer"));
+    let load = started.elapsed();
+    let classifier = LayaClassifier::new(model, endpoint);
+    println!("laya: server start {startup:?}, head + tokenizer load {load:?}");
+
+    // 1. The same probabilities as the `laya` package (PyTorch, F32 backbone).
+    let fixtures: Vec<serde_json::Value> =
+        serde_json::from_str(include_str!("fixtures/laya/real_sequences.json")).unwrap();
+    let mut worst: f32 = 0.0;
+    for fixture in &fixtures {
+        let options: Vec<(String, String)> =
+            serde_json::from_value(fixture["options"].clone()).unwrap();
+        let refs: Vec<(&str, &str)> = options
+            .iter()
+            .map(|(k, d)| (k.as_str(), d.as_str()))
+            .collect();
+        let instructions = fixture["instructions"].as_str().unwrap();
+        let question = match fixture["type"].as_str().unwrap() {
+            "choice" => Question::choice(instructions, &refs),
+            "score" => {
+                let levels: Vec<&str> = refs.iter().map(|(_, level)| *level).collect();
+                Question::score(instructions, &levels)
+            }
+            _ => Question::yes_no(instructions),
+        };
+        let answer = classifier
+            .classify(fixture["state"].as_str().unwrap(), &question)
+            .await
+            .expect("classify");
+        let want: Vec<f32> = serde_json::from_value(fixture["probs"].clone()).unwrap();
+        for ((_, got), want) in answer.iter().zip(&want) {
+            worst = worst.max((got - want).abs());
+        }
+    }
+    println!("laya vs the laya package: largest probability difference {worst:.4}");
+    assert!(
+        worst < 0.05,
+        "llama.cpp + Rust head drifted from the reference: {worst}"
+    );
+
+    // 2. Routing.
+    let sentences = [
+        (
+            Language::English,
+            "Can you send me the report by Friday? I need to review it before the meeting.",
+        ),
+        (Language::English, "Remind me to call mom tonight."),
+        (
+            Language::English,
+            "The build failed again because the test server ran out of disk space.",
+        ),
+        (
+            Language::English,
+            "Let's grab lunch tomorrow around noon if you're free.",
+        ),
+        (Language::Mandarin, "我明天要去北京开会，请帮我订一张机票。"),
+        (
+            Language::Mandarin,
+            "这个问题我们下周再讨论吧，今天时间不够了。",
+        ),
+        (Language::Mandarin, "你今天晚上有空吗？我们一起去吃饭。"),
+        (
+            Language::Mandarin,
+            "他已经把文件发给你了，你看一下有没有问题。",
+        ),
+        (Language::Mandarin, "我明天要去北京開會，請幫我訂一張機票。"),
+        (
+            Language::Mandarin,
+            "這個問題我們下週再討論吧，今天時間不夠了。",
+        ),
+        (
+            Language::Cantonese,
+            "我聽日要去北京開會，唔該幫我訂張機票啦。",
+        ),
+        (Language::Cantonese, "佢哋啱啱食咗飯，你嚟唔嚟呀？"),
+        (
+            Language::Cantonese,
+            "呢個問題我哋下個禮拜再傾啦，今日唔夠時間喇。",
+        ),
+        (Language::Cantonese, "你今晚得唔得閒呀？一齊去食飯囉。"),
+        (
+            Language::Cantonese,
+            "佢已經將份文件send咗俾你，你睇下有冇問題。",
+        ),
+        (
+            Language::Cantonese,
+            "我哋今個 project 嘅 deadline 係下個禮拜五。",
+        ),
+        (
+            Language::Mandarin,
+            "这个 project 的 deadline 是下周五，大家抓紧时间。",
+        ),
+        (
+            Language::Other,
+            "Je voudrais réserver une table près de la fenêtre.",
+        ),
+    ];
+    let router = LayaRouter::new(classifier);
+    let (mut laya_right, mut chars_right) = (0, 0);
+    let mut times = Vec::new();
+    for (want, text) in sentences {
+        let started = Instant::now();
+        let laya = router.route(text).await.expect("route");
+        let elapsed = started.elapsed();
+        times.push(elapsed);
+        let chars = CharRouter.guess(text);
+        laya_right += usize::from(laya.language == want);
+        chars_right += usize::from(chars.language == want);
+        println!(
+            "{:>9} | laya {:>9} {:.2} {:>4} ms | chars {:>9} {:.2} | {text}",
+            want.id(),
+            laya.language.id(),
+            laya.confidence,
+            elapsed.as_millis(),
+            chars.language.id(),
+            chars.confidence,
+        );
+        assert_eq!(chars.language, want, "character router: {text}");
+    }
+    times.sort();
+    println!(
+        "laya {laya_right}/{n}, chars {chars_right}/{n}; laya median {:?}, max {:?}",
+        times[times.len() / 2],
+        times[times.len() - 1],
+        n = sentences.len(),
+    );
+    laya_server().stop();
 }
