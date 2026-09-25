@@ -17,7 +17,9 @@
 //! character router is the one to use first.
 
 pub mod embeddings;
+pub mod head;
 pub mod models;
+pub mod tokenizer;
 
 use async_trait::async_trait;
 
