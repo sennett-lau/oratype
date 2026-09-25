@@ -47,3 +47,20 @@ The Qwen3 model files downloaded by Built-in AI (Qwen3-4B-Instruct-2507 and Qwen
 Q4_K_M GGUF files from Unsloth's Hugging Face repositories) are released by the Qwen team under
 the Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0). They are downloaded, not
 shipped with Typelite.
+
+## Language router models (Laya)
+
+The language router (plan `language-router`) can download Laya-multilingual by Convai
+Innovations, released under the Apache License 2.0
+(https://www.apache.org/licenses/LICENSE-2.0): its backbone as a Q8_0 GGUF file and its
+decision head as a safetensors file (both from the community conversion
+`fr0stbit3/laya-multilingual-gguf`, also Apache-2.0), and its `tokenizer.json` from
+`convaiinnovations/laya-multilingual`. The files are downloaded, not shipped with Typelite.
+
+Laya-multilingual's backbone is mmBERT-base by the Johns Hopkins University CLSP group
+(`jhu-clsp/mmBERT-base`), released under the MIT License; its tokenizer is the one mmBERT
+ships.
+
+Typelite's Rust code in `src-tauri/src/router/` reimplements Laya's token-sequence format and
+decision head from the `laya` Python package (by Convai Innovations, Apache License
+2.0). No code from the package is included, and Typelite does not run Python.
