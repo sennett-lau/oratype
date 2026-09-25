@@ -16,6 +16,7 @@
 //! measured accuracy: zero-shot Laya is not good at telling these languages apart, so the
 //! character router is the one to use first.
 
+pub mod chars;
 pub mod embeddings;
 pub mod head;
 pub mod models;
