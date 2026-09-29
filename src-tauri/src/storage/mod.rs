@@ -1154,6 +1154,9 @@ pub struct AppConfig {
     /// Plan `typing-speed-and-nudge`: count keystrokes and typing time for typing speed (and
     /// the typing nudge). Which keys are pressed is never stored.
     pub measure_typing_speed: bool,
+    /// Plan `ask-web-search`: the search provider Ask uses for live questions. Off (no provider)
+    /// until the user adds their own; its optional key is in the Keychain.
+    pub web_search: crate::web_search::WebSearchConfig,
 }
 
 impl Default for AppConfig {
@@ -1202,6 +1205,7 @@ impl Default for AppConfig {
             shortcut_tour_completed: false,
             shortcut_tour_prompt_dismissed: false,
             measure_typing_speed: true,
+            web_search: crate::web_search::WebSearchConfig::default(),
         }
     }
 }
@@ -1732,6 +1736,7 @@ impl AppConfig {
         self.normalize_hotkey_settings();
         self.recompute_recording_limit_mirror();
         self.input_device = self.input_device.trim().to_string();
+        self.web_search.normalize();
     }
 
     /// Plan `translation-language-presets` (2026-09-27): the "Always translate output" switch is
