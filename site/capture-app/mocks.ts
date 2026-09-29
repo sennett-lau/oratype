@@ -14,6 +14,7 @@ export type Screen =
   | 'settings-websearch-empty'
   | 'settings-websearch-set'
   | 'onboarding-websearch'
+  | 'ask-long-sources'
   | 'ask-answer-sources'
   | 'ask-searching'
   | 'ask-not-configured'
@@ -28,6 +29,7 @@ export const SCREENS: Record<Screen, { hash: string }> = {
   'settings-websearch-set': { hash: '#/settings?pane=search' },
   'onboarding-websearch': { hash: '#/' },
   'ask-answer-sources': { hash: '#/' },
+  'ask-long-sources': { hash: '#/' },
   'ask-searching': { hash: '#/' },
   'ask-not-configured': { hash: '#/' },
 }

@@ -12,6 +12,17 @@ import { CapsuleAskThinking } from '../../src/components/Capsule/CapsuleAskThink
 import { CapsuleAurora } from '../../src/components/Capsule/CapsuleAurora'
 import type { AskDictationResult } from '../../src/lib/tauri'
 
+const LONG = `The Warriors start their preseason with three games in the first week of October [1]:
+
+• Sun 4 Oct, 7:00 PM: vs LA Clippers at Chase Center, San Francisco [1][3]
+• Tue 6 Oct, 7:30 PM: at Portland Trail Blazers, Moda Center [1]
+• Fri 9 Oct, 7:00 PM: vs Los Angeles Lakers at Chase Center [1]
+
+The Clippers game is the first look at the new rotation. The preview expects Stephen Curry to play limited minutes, around 18 to 20, while the coaching staff tests younger guards in the second unit [2].
+
+Reuters reports the team will also use the opener to try a new starting frontcourt after the summer trade, and that the regular season begins on 21 October at home [3].
+
+Tickets for the opener are still on sale. Preseason games are shown on NBC Sports Bay Area and streamed on the NBA app [2].`
 const QUESTION = 'What’s the next match for the Golden State Warriors?'
 
 function askContent(screen: Screen): AskPanelContent | null {
@@ -21,17 +32,17 @@ function askContent(screen: Screen): AskPanelContent | null {
     fallbackReason: null,
     mayBeOutOfDate: false,
   } as unknown as AskDictationResult
-  if (screen === 'ask-answer-sources')
+  if (screen === 'ask-answer-sources' || screen === 'ask-long-sources')
     return {
       kind: 'result',
       result: {
         ...base,
         output: 'popupAnswer',
-        answer: 'The Warriors play the LA Clippers on Sunday, 4 October 2026, at 7:00 PM [1].',
+        answer: screen === 'ask-long-sources' ? LONG : 'The Warriors play the LA Clippers on Sunday, 4 October 2026, at 7:00 PM [1].',
         sources: [
-          { number: 1, title: 'Golden State Warriors Schedule 2026-27 - ESPN', url: 'https://www.espn.com/nba/team/schedule/_/name/gs/golden-state-warriors' },
-          { number: 2, title: 'Warriors vs. Clippers: Preseason game preview | NBA.com', url: 'https://www.nba.com/game/lac-vs-gsw-0012600012' },
-          { number: 3, title: 'Warriors open preseason against Clippers in San Francisco | Reuters', url: 'https://www.reuters.com/sports/basketball/warriors-open-preseason-against-clippers-2026-10-01/' },
+          { number: 1, title: 'Golden State Warriors Schedule 2026-27 - ESPN', url: 'https://www.espn.com/nba/team/schedule/_/name/gs/golden-state-warriors', snippet: 'Full 2026-27 schedule with preseason dates, times, TV and results for the Golden State Warriors.' },
+          { number: 2, title: 'Warriors vs. Clippers: Preseason game preview | NBA.com', url: 'https://www.nba.com/game/lac-vs-gsw-0012600012', snippet: 'Curry expected to play around 18 to 20 minutes as the Warriors test a new second unit.' },
+          { number: 3, title: 'Warriors open preseason against Clippers in San Francisco | Reuters', url: 'https://www.reuters.com/sports/basketball/warriors-open-preseason-against-clippers-2026-10-01/', snippet: 'Golden State will try a new starting frontcourt when it hosts the Clippers on Sunday.' },
         ],
       } as AskDictationResult,
     }
@@ -47,7 +58,7 @@ function mountAsk(screen: Screen) {
   createRoot(document.getElementById('app') as HTMLElement).render(
     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 24, gap: 16 }}>
       {content && (
-        <AskAnswerPanel content={content} onClose={() => {}} onAnswerAnyway={() => {}} />
+        <AskAnswerPanel content={content} onClose={() => {}} onAnswerAnyway={() => {}} limits={{ maxWidth: 1008, maxHeight: 443 }} />
       )}
       {!content && <div className="pill relative rounded-full" style={{ width: content ? 64 : 140, height: 32, borderRadius: 16 }}>
         {!content && (

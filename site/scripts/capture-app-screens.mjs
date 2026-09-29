@@ -42,6 +42,8 @@ APP_SCREENS.push(
   S('settings-websearch-set', ['light', 'dark']),
   S('onboarding-websearch'),
   A('ask-answer-sources', ['light', 'dark']),
+  { name: 'ask-long-sources', screen: 'ask-long-sources', width: 1100, height: 620, scale: 2, themes: ['light', 'dark'] },
+  { name: 'ask-short-open', screen: 'ask-answer-sources', width: 800, height: 520, scale: 2, themes: ['light', 'dark'], open: true },
   A('ask-searching'),
   A('ask-not-configured'),
 )
@@ -128,7 +130,8 @@ export async function captureAppScreens({ browser, outDir, themes = ['light', 'd
   const { server, url } = await startServer()
   const written = []
   try {
-    for (const { name, screen, width, height, scale, themes: own } of APP_SCREENS) {
+    for (const entry of APP_SCREENS) {
+      const { name, screen, width, height, scale, themes: own } = entry
       for (const theme of own ?? themes) {
         const dark = theme === 'dark'
         const page = await browser.newPage({ width, height, scale, dark })
@@ -165,6 +168,11 @@ export async function captureAppScreens({ browser, outDir, themes = ['light', 'd
           if (screen.endsWith('set')) {
             await page.evaluate(`[...document.querySelectorAll('[data-testid=web-search-form] button')].find(b => b.textContent.trim() === 'Test')?.click()`)
           }
+        }
+        if (entry.open || screen === 'ask-long-sources') {
+          await page.evaluate(`document.querySelector('[data-testid=ask-panel-sources-summary]')?.click()`)
+          await wait(200)
+          await page.evaluate(`document.querySelector('[data-testid=ask-source-2]')?.classList.add('is-highlighted')`)
         }
         if (screen === 'onboarding-websearch') {
           // web search is its own step now
