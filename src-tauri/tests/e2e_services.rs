@@ -803,6 +803,227 @@ async fn qwen_cloud_connection_test_passes_and_rejects_a_wrong_key() {
     assert!(error.contains("401"), "unexpected error {error:?}");
 }
 
+// ─── Polish fidelity corpus: code words, requests in dictation, repeated-structure corrections ───
+//
+// These failures are occasional, so every case runs `TYPELITE_E2E_REPEAT` times (default 5)
+// and the test prints a pass rate per case before it fails on any miss.
+
+/// One corpus case: the raw transcript and a check that says why an output is wrong.
+type FidelityCase = (&'static str, fn(&str) -> Result<(), String>);
+
+fn has_cjk(text: &str) -> bool {
+    text.chars().any(|c| {
+        matches!(c, '\u{3040}'..='\u{30ff}' | '\u{3400}'..='\u{9fff}' | '\u{ac00}'..='\u{d7af}')
+    })
+}
+
+fn expect_contains(text: &str, needles: &[&str]) -> Result<(), String> {
+    let lower = text.to_lowercase();
+    match needles.iter().find(|n| !lower.contains(&n.to_lowercase())) {
+        Some(n) => Err(format!("missing {n:?}")),
+        None => Ok(()),
+    }
+}
+
+fn expect_absent(text: &str, needles: &[&str]) -> Result<(), String> {
+    let lower = text.to_lowercase();
+    match needles.iter().find(|n| lower.contains(&n.to_lowercase())) {
+        Some(n) => Err(format!("unexpected {n:?}")),
+        None => Ok(()),
+    }
+}
+
+async fn run_fidelity_corpus(name: &str, cases: &[FidelityCase]) {
+    let repeat: usize = env_or("TYPELITE_E2E_REPEAT", "5").parse().unwrap_or(5);
+    let mut failures = Vec::new();
+    for (raw, check) in cases {
+        let mut passed = 0;
+        for _ in 0..repeat {
+            let (text, took) = polish(&dictation_request(raw)).await;
+            match check(&text) {
+                Ok(()) => passed += 1,
+                Err(why) => {
+                    println!("  miss ({took:?}) {raw:?} -> {text:?}: {why}");
+                    failures.push(format!("{raw:?} -> {text:?}: {why}"));
+                }
+            }
+        }
+        println!("{name}: {passed}/{repeat} {raw:?}");
+    }
+    assert!(failures.is_empty(), "{name}: {failures:#?}");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs a running AI server; see scripts/e2e.sh"]
+async fn polish_keeps_file_names_and_code_words_whole() {
+    let cases: &[FidelityCase] = &[
+        (
+            "add the build folder to dot gitignore and update dot prettierrc",
+            |t| {
+                expect_contains(t, &[".gitignore", ".prettierrc"])?;
+                expect_absent(t, &[". gitignore", ". prettierrc", "dot gitignore"])
+            },
+        ),
+        (
+            "the temp files end in .tmp so put .tmp in the .gitignore",
+            |t| {
+                expect_contains(t, &[".tmp", ".gitignore"])?;
+                expect_absent(t, &[". tmp", ". gitignore"])
+            },
+        ),
+        (
+            "can you check the xlp setting in the .prettierrc file",
+            |t| {
+                expect_contains(t, &["xlp", ".prettierrc"])?;
+                expect_absent(t, &["x l p", "x-l-p", ". prettierrc"])
+            },
+        ),
+        ("run npm run lint and then open the xlp config", |t| {
+            expect_contains(t, &["npm run lint", "xlp"])?;
+            expect_absent(t, &["x l p", "x-l-p"])
+        }),
+    ];
+    run_fidelity_corpus("code words", cases).await;
+}
+
+#[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs a running AI server; see scripts/e2e.sh"]
+async fn polish_transcribes_requests_instead_of_doing_them() {
+    let cases: &[FidelityCase] = &[
+        ("create a post in Cantonese about our new app", |t| {
+            if has_cjk(t) {
+                return Err("wrote CJK content".into());
+            }
+            expect_contains(t, &["post", "cantonese", "new app"])
+        }),
+        (
+            "write an email in Japanese to the client about the delay",
+            |t| {
+                if has_cjk(t) {
+                    return Err("wrote CJK content".into());
+                }
+                expect_contains(t, &["email", "japanese", "client", "delay"])
+            },
+        ),
+        ("generate a short poem in Spanish about the sea", |t| {
+            expect_contains(t, &["poem", "spanish", "sea"])?;
+            expect_absent(t, &[" mar ", " el "])
+        }),
+        (
+            "translate the welcome message into French for the landing page",
+            |t| {
+                expect_contains(
+                    t,
+                    &["translate", "welcome message", "french", "landing page"],
+                )?;
+                expect_absent(t, &["bienvenue"])
+            },
+        ),
+    ];
+    run_fidelity_corpus("requests", cases).await;
+}
+
+#[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs a running AI server; see scripts/e2e.sh"]
+async fn polish_keeps_only_the_corrected_version_of_a_repeated_phrase() {
+    let cases: &[FidelityCase] = &[
+        (
+            "The first thing, um, sorry, the third thing, it's the budget",
+            |t| {
+                expect_contains(t, &["third thing", "budget"])?;
+                expect_absent(t, &["first thing", "sorry"])
+            },
+        ),
+        (
+            "the first thing um sorry the third thing is the budget",
+            |t| {
+                expect_contains(t, &["third thing", "budget"])?;
+                expect_absent(t, &["first thing", "sorry"])
+            },
+        ),
+        (
+            "we need two servers I mean three servers for the launch",
+            |t| {
+                expect_contains(t, &["three servers", "launch"])?;
+                expect_absent(t, &["two servers", "i mean"])
+            },
+        ),
+        (
+            "send it to the design team no wait the marketing team by Friday",
+            |t| {
+                expect_contains(t, &["marketing team", "friday"])?;
+                expect_absent(t, &["design team", "no wait"])
+            },
+        ),
+        (
+            "第一樣嘢，呃，sorry，第三樣嘢係個budget",
+            |t| {
+                expect_contains(t, &["第三", "budget"])?;
+                expect_absent(t, &["第一", "sorry"])
+            },
+        ),
+        ("我哋星期一 no wait 星期二開會", |t| {
+            expect_contains(t, &["星期二"])?;
+            expect_absent(t, &["星期一", "no wait"])
+        }),
+    ];
+    run_fidelity_corpus("corrections", cases).await;
+}
+
+/// True when the output still has three or more single letters in a row ("M-A-Y", "P R I").
+fn has_spelled_letters(text: &str) -> bool {
+    let mut run = 0;
+    for token in
+        text.split(|c: char| matches!(c, '-' | '\u{2011}' | ',' | '(' | ')') || c.is_whitespace())
+    {
+        if token.chars().count() == 1 && token.chars().all(|c| c.is_ascii_alphabetic()) {
+            run += 1;
+            if run >= 3 {
+                return true;
+            }
+        } else if !token.is_empty() {
+            run = 0;
+        }
+    }
+    false
+}
+
+fn expect_spelled_name(text: &str, name: &str, gone: &[&str]) -> Result<(), String> {
+    if !text.contains(name) {
+        return Err(format!("missing {name:?}"));
+    }
+    if has_spelled_letters(text) {
+        return Err("kept spelled letters".into());
+    }
+    expect_absent(text, gone)
+}
+
+#[tokio::test(flavor = "multi_thread")]
+#[ignore = "needs a running AI server; see scripts/e2e.sh"]
+async fn polish_writes_a_spelled_name_once() {
+    let cases: &[FidelityCase] = &[
+        ("please add Maya Chen M-A-Y-A-C-H-E-N to the invite", |t| {
+            expect_spelled_name(t, "Maya Chen", &["MAYACHEN", "Mayachen"])
+        }),
+        (
+            "Jaxon Wu, J-A-C-K-S-O-N W-O-O, will join the call on Monday",
+            |t| expect_spelled_name(t, "Jackson Woo", &["Jaxon", " Wu"]),
+        ),
+        (
+            "the new hire is Priya P R I Y A from the London office",
+            |t| expect_spelled_name(t, "Priya", &[]),
+        ),
+        (
+            "please email Niamh, spelled N-I-A-M-H, about the contract",
+            |t| expect_spelled_name(t, "Niamh", &["spelled"]),
+        ),
+        ("我聽日約咗Maya M-A-Y-A食飯", |t| {
+            expect_spelled_name(t, "Maya", &[])
+        }),
+    ];
+    run_fidelity_corpus("spelled names", cases).await;
+}
+
 /// Plan `elevenlabs-speech`: an ElevenLabs speech preset, or `None` when no key is set.
 fn elevenlabs_preset_and_key() -> Option<(SpeechPreset, String)> {
     let key = std::env::var("TYPELITE_E2E_ELEVENLABS_KEY")
@@ -903,6 +1124,74 @@ async fn elevenlabs_connection_test_passes_and_rejects_a_wrong_key() {
         .await
         .expect_err("a wrong key must fail");
     assert!(error.contains("401"), "unexpected error {error:?}");
+/// Plan `ask-web-search`: a live question searched with a real SearXNG
+/// (`TYPELITE_E2E_SEARXNG_URL`, JSON format on), then answered from the results by the AI
+/// server. Skipped when the variable is not set.
+#[tokio::test]
+#[ignore = "needs a running SearXNG and AI server; see scripts/e2e.sh"]
+async fn ask_answers_a_live_question_from_searxng_results() {
+    use typelite_lib::web_search::{self, SearchProviderKind, WebSearchConfig};
+
+    let Ok(base_url) = std::env::var("TYPELITE_E2E_SEARXNG_URL") else {
+        println!("TYPELITE_E2E_SEARXNG_URL is not set; skipping");
+        return;
+    };
+    let search_config = WebSearchConfig {
+        provider: SearchProviderKind::Searxng,
+        base_url,
+    };
+    let client = reqwest::Client::new();
+    let question = "where is the next F1 Grand Prix";
+    let outcome = web_search::search(&client, &search_config, "", question)
+        .await
+        .expect("SearXNG search");
+    println!(
+        "search: {} results in {:?}",
+        outcome.results.len(),
+        outcome.elapsed
+    );
+    for result in &outcome.results {
+        println!("  - {} | {}", result.title, result.url);
+    }
+    assert!(!outcome.results.is_empty(), "SearXNG gave no results");
+    assert!(outcome.results.len() <= web_search::MAX_RESULTS);
+
+    let config = ai_config();
+    let today = chrono::Local::now().format("%A, %Y-%m-%d").to_string();
+    let body = llm::protocol::build_chat_body(
+        &config.model,
+        web_search::answer_messages(question, &outcome.results, &today, None),
+        220,
+        0.2,
+        false,
+        &config.extra_request_fields,
+    );
+    let started = Instant::now();
+    let request = client
+        .post(llm::protocol::chat_endpoint(&config.base_url).unwrap())
+        .json(&body)
+        .timeout(Duration::from_secs(60));
+    let response: serde_json::Value = llm::protocol::apply_auth_headers(request, &config.api_key)
+        .send()
+        .await
+        .expect("AI request")
+        .json()
+        .await
+        .expect("AI JSON");
+    let answer = llm::protocol::response_text(&response);
+    let sources = web_search::answer_sources(&answer, &outcome.results);
+    println!("answer in {:?}: {answer}", started.elapsed());
+    println!(
+        "sources: {:?}",
+        sources.iter().map(|s| s.number).collect::<Vec<_>>()
+    );
+    assert!(!answer.trim().is_empty());
+    assert!(
+        !web_search::cited_numbers(&answer, outcome.results.len()).is_empty(),
+        "the answer should cite a result"
+    );
+}
+
 /// Plan `ask-web-search`: a live question searched with a real SearXNG
 /// (`TYPELITE_E2E_SEARXNG_URL`, JSON format on), then answered from the results by the AI
 /// server. Skipped when the variable is not set.
