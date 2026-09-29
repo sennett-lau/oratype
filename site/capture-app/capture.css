@@ -100,3 +100,7 @@ body {
 [data-screen='copy-pill'] .capture-lights {
   display: none;
 }
+
+/* Local preview only: a screen with the Ask panel above the pill. */
+.capture-stage:has(.ask-screen) { width: 640px; height: 460px; padding: 0; }
+.ask-screen { position: absolute; inset: 0; }

@@ -208,33 +208,7 @@ export function AskAnswerPanel({
         )}
       </>
     )
-    const insertTitle = result?.usedSelectedText
-      ? t('askPanel.replaceHighlight')
-      : t('askPanel.insertAtCursor')
-    actions = (
-      <>
-        <button type="button" className="ask-glass-button" onClick={copy}>
-          {copied ? (
-            <>
-              {t('askPanel.copied')}
-              <Check size={12} aria-hidden="true" />
-            </>
-          ) : (
-            t('askPanel.copy')
-          )}
-        </button>
-        <button
-          type="button"
-          className="ask-glass-button ask-glass-button-primary"
-          onClick={insert}
-          disabled={inserting}
-          title={insertTitle}
-          aria-label={insertTitle}
-        >
-          {t('askPanel.insert')}
-        </button>
-      </>
-    )
+    // Preview: no Copy / Insert on answers.
   }
 
   return (

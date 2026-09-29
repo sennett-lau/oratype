@@ -7,6 +7,62 @@ import App from '../../src/App'
 import { SHORTCUT_TOUR_FIRST_STEP, useAppStore } from '../../src/stores/appStore'
 import { SHORTCUT_PAGES } from '../../src/components/Onboarding/shortcutConfig'
 import { setBaseConfig, type Screen } from './mocks'
+import { AskAnswerPanel, type AskPanelContent } from '../../src/components/AskPanel/AskAnswerPanel'
+import { CapsuleAskThinking } from '../../src/components/Capsule/CapsuleAskThinking'
+import { CapsuleAurora } from '../../src/components/Capsule/CapsuleAurora'
+import type { AskDictationResult } from '../../src/lib/tauri'
+
+const QUESTION = 'What’s the next match for the Golden State Warriors?'
+
+function askContent(screen: Screen): AskPanelContent | null {
+  const base = {
+    question: QUESTION,
+    usedSelectedText: false,
+    fallbackReason: null,
+    mayBeOutOfDate: false,
+  } as unknown as AskDictationResult
+  if (screen === 'ask-answer-sources')
+    return {
+      kind: 'result',
+      result: {
+        ...base,
+        output: 'popupAnswer',
+        answer: 'The Warriors play the LA Clippers on Sunday, 4 October 2026, at 7:00 PM [1].',
+        sources: [
+          { number: 1, title: 'Golden State Warriors Schedule 2026-27 - ESPN', url: 'https://www.espn.com/nba/team/schedule/_/name/gs/golden-state-warriors' },
+          { number: 2, title: 'Warriors vs. Clippers: Preseason game preview | NBA.com', url: 'https://www.nba.com/game/lac-vs-gsw-0012600012' },
+          { number: 3, title: 'Warriors open preseason against Clippers in San Francisco | Reuters', url: 'https://www.reuters.com/sports/basketball/warriors-open-preseason-against-clippers-2026-10-01/' },
+        ],
+      } as AskDictationResult,
+    }
+  if (screen === 'ask-not-configured')
+    return { kind: 'result', result: { ...base, output: 'needsLiveInfo', answer: '', liveSearch: 'notConfigured' } as AskDictationResult }
+  return null
+}
+
+function mountAsk(screen: Screen) {
+  const stage = document.getElementById('stage') as HTMLElement
+  stage.innerHTML = '<div id="app" class="ask-screen"></div>'
+  const content = askContent(screen)
+  createRoot(document.getElementById('app') as HTMLElement).render(
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 24, gap: 16 }}>
+      {content && (
+        <AskAnswerPanel content={content} onClose={() => {}} onAnswerAnyway={() => {}} />
+      )}
+      <div className="pill relative rounded-full" style={{ width: content ? 64 : 140, height: 32, borderRadius: 16 }}>
+        {!content && (
+          <>
+            <div className="absolute inset-0" style={{ borderRadius: 'inherit' }}><CapsuleAurora mode="working" /></div>
+            <div className="relative h-full"><CapsuleAskThinking /></div>
+          </>
+        )}
+      </div>
+    </div>,
+  )
+  setTimeout(() => {
+    window.__captureReady = true
+  }, 1800)
+}
 
 declare global {
   interface Window {
@@ -27,6 +83,13 @@ export function mount(screen: Screen) {
     aiHealth: { presetId: defaults.ai_presets[0].id, ok: true },
   })
 
+  if (screen.startsWith('ask-')) {
+    mountAsk(screen)
+    return
+  }
+  if (screen === 'onboarding-websearch') {
+    useAppStore.setState({ onboardingStep: 3 })
+  }
   if (screen === 'onboarding') {
     // The Translate setup page: key caps, the language list and the pill preview.
     const index = SHORTCUT_PAGES.findIndex((p) => p.role === 'translate' && p.kind === 'setup')

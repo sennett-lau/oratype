@@ -32,8 +32,27 @@ export const APP_SCREENS = [
     scale: 1.6,
   },
   { name: 'onboarding', screen: 'onboarding', width: 1000, height: 820, scale: 1.6 },
-  { name: 'copy-pill', screen: 'copy-pill', width: 500, height: 150, scale: 3.2 },
 ]
+const S = (name, themes = ['light']) => ({ name, screen: name, width: 1000, height: 820, scale: 2, themes })
+const A = (name, themes = ['light']) => ({ name, screen: name, width: 640, height: 460, scale: 3, themes })
+APP_SCREENS.length = 0
+APP_SCREENS.push(
+  S('settings-speech-elevenlabs', ['light', 'dark']),
+  S('settings-websearch-empty'),
+  S('settings-websearch-set', ['light', 'dark']),
+  S('onboarding-websearch'),
+  A('ask-answer-sources', ['light', 'dark']),
+  A('ask-searching'),
+  A('ask-not-configured'),
+)
+const scrollTo = (sel) => `(() => {
+  const el = document.querySelector('${sel}')
+  let sc = el?.parentElement
+  while (sc && sc.scrollHeight <= sc.clientHeight) sc = sc.parentElement
+  if (!el || !sc) return 'missing'
+  sc.scrollTop += el.getBoundingClientRect().top - sc.getBoundingClientRect().top - 90
+  return 'ok'
+})()`
 
 /** Imports a package's ESM entry from the repository root's node_modules. */
 async function importFromRoot(name) {
@@ -109,8 +128,8 @@ export async function captureAppScreens({ browser, outDir, themes = ['light', 'd
   const { server, url } = await startServer()
   const written = []
   try {
-    for (const { name, screen, width, height, scale } of APP_SCREENS) {
-      for (const theme of themes) {
+    for (const { name, screen, width, height, scale, themes: own } of APP_SCREENS) {
+      for (const theme of own ?? themes) {
         const dark = theme === 'dark'
         const page = await browser.newPage({ width, height, scale, dark })
         await page.goto(`${url}?screen=${screen}&theme=${theme}`)
@@ -132,6 +151,27 @@ export async function captureAppScreens({ browser, outDir, themes = ['light', 'd
           })()`)
           await new Promise((r) => setTimeout(r, 400))
         }
+        const wait = (ms) => new Promise((r) => setTimeout(r, ms))
+        if (screen === 'settings-speech-elevenlabs') {
+          await page.evaluate(`(() => {
+            const input = document.querySelector('[data-testid=server-settings] input[type=password]')
+            const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set
+            if (!input) return; set.call(input, 'sk_3f9a2c71b8e44d0c9a1e'); input.dispatchEvent(new Event('input', { bubbles: true }))
+          })()`)
+          console.log(name, await page.evaluate(scrollTo('[data-testid=server-settings]')))
+        }
+        if (screen.startsWith('settings-websearch')) {
+          console.log(name, await page.evaluate(scrollTo('[data-testid=web-search-form]')))
+          if (screen.endsWith('set')) {
+            await page.evaluate(`[...document.querySelectorAll('[data-testid=web-search-form] button')].find(b => b.textContent.trim() === 'Test')?.click()`)
+          }
+        }
+        if (screen === 'onboarding-websearch') {
+          await page.evaluate(`document.querySelector('[data-testid=onboarding-web-search] button')?.click()`)
+          await wait(300)
+          console.log(name, await page.evaluate(scrollTo('[data-testid=onboarding-web-search]')))
+        }
+        await wait(500)
         const file = join(outDir, `${name}${dark ? '-dark' : ''}.png`)
         await page.screenshot(file, { selector: '#stage' })
         optimise(file)

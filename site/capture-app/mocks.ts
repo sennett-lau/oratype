@@ -5,14 +5,35 @@ import type { AppConfig, AiPreset, SpeechPreset } from '../../src/stores/appStor
 import type { RunTiming } from '../../src/lib/speed'
 import libraryIndex from '../../presets/languages/index.json'
 
-export type Screen = 'home' | 'settings-languages' | 'onboarding' | 'copy-pill'
+export type Screen =
+  | 'home'
+  | 'settings-languages'
+  | 'onboarding'
+  | 'copy-pill'
+  | 'settings-speech-elevenlabs'
+  | 'settings-websearch-empty'
+  | 'settings-websearch-set'
+  | 'onboarding-websearch'
+  | 'ask-answer-sources'
+  | 'ask-searching'
+  | 'ask-not-configured'
 
 export const SCREENS: Record<Screen, { hash: string }> = {
   home: { hash: '#/' },
   'settings-languages': { hash: '#/settings?pane=llm' },
   onboarding: { hash: '#/' },
   'copy-pill': { hash: '#capsule' },
+  'settings-speech-elevenlabs': { hash: '#/settings?pane=stt' },
+  'settings-websearch-empty': { hash: '#/settings?pane=llm' },
+  'settings-websearch-set': { hash: '#/settings?pane=llm' },
+  'onboarding-websearch': { hash: '#/' },
+  'ask-answer-sources': { hash: '#/' },
+  'ask-searching': { hash: '#/' },
+  'ask-not-configured': { hash: '#/' },
 }
+
+const WEB_SET = { provider: 'searxng', base_url: 'http://127.0.0.1:8888' } as const
+const ELEVEN_ID = 'capture-elevenlabs'
 
 const NOW = Date.UTC(2026, 8, 26, 9, 30)
 const OLLAMA_ID = 'capture-ollama'
@@ -58,6 +79,17 @@ function capturedConfig(screen: Screen, dark: boolean): AppConfig {
       builtin: false,
       verified_at: NOW,
     } as SpeechPreset,
+    {
+      id: ELEVEN_ID,
+      name: 'ElevenLabs',
+      kind: 'elevenlabs',
+      base_url: 'https://api.elevenlabs.io/v1',
+      model: 'scribe_v2',
+      model_file: '',
+      language: 'auto',
+      builtin: false,
+      verified_at: NOW,
+    } as SpeechPreset,
   ]
   const ai: AiPreset[] = [
     {
@@ -79,14 +111,15 @@ function capturedConfig(screen: Screen, dark: boolean): AppConfig {
     } as AiPreset,
   ]
   // The onboarding pill preview shows the first language; a short name keeps it still.
-  const targets = screen === 'onboarding' ? ['en', 'zh-Hant-HK', 'ja'] : ['zh-Hant-HK', 'en', 'ja']
+  const targets = screen.startsWith('onboarding') ? ['en', 'zh-Hant-HK', 'ja'] : ['zh-Hant-HK', 'en', 'ja']
   const firstTarget = targets[0]
   config = {
     ...base,
     theme: dark ? 'dark' : 'light',
     ui_language: 'en',
     speech_presets: speech,
-    active_speech_preset_id: speech[0].id,
+    active_speech_preset_id: screen === 'settings-speech-elevenlabs' ? ELEVEN_ID : speech[0].id,
+    web_search: screen === 'settings-websearch-set' ? { ...WEB_SET } : { provider: 'none', base_url: '' },
     ai_presets: ai,
     active_ai_preset_id: ai[0].id,
     target_lang: firstTarget,
@@ -214,7 +247,7 @@ export function handleCommand(
     case 'plugin:store|get_store':
       return 1
     case 'plugin:store|get': {
-      if (args.key === 'onboarding_completed') return [screen !== 'onboarding', true]
+      if (args.key === 'onboarding_completed') return [!screen.startsWith('onboarding'), true]
       return [null, false]
     }
     case 'plugin:store|set':
@@ -226,6 +259,12 @@ export function handleCommand(
       return 'Typelite'
 
     // Config and data
+    case 'get_web_search_status':
+      return { config: cfg.web_search, hasKey: false }
+    case 'test_web_search':
+      return { results: 18, ms: 640 }
+    case 'save_web_search':
+      return { config: { provider: args.provider, base_url: args.baseUrl }, hasKey: false }
     case 'get_config':
       return cfg
     case 'update_config':
@@ -317,7 +356,10 @@ export function handleCommand(
     case 'list_input_devices':
       return [{ name: 'MacBook Pro Microphone', is_default: true }]
     case 'get_stt_recording_capability':
-      return { mode: 'auto', seconds: 600, maxSeconds: 600, source: 'builtin' }
+      return {
+        capability: { registryVersion: 1, providerId: 'elevenlabs', transport: 'fileUpload', recommendedMaxSeconds: 600, hardMaxSeconds: 600, maxUploadBytes: null, source: 'provider', explanationKey: 'speech.recordingLimit.provider' },
+        mode: 'auto', requestedSeconds: 600, effectiveMaxSeconds: 600,
+      }
     case 'get_latest_mapping_candidate':
     case 'take_pending_ask_message':
       return null
