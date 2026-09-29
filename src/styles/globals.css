@@ -693,6 +693,10 @@ body,
     background: var(--color-bg-elevated);
     box-shadow: 0 0 0 0.5px var(--color-border);
   }
+  /* A setup card whose form is taller than the fixed card (the web search step). */
+  .setup-card-fit {
+    height: auto;
+  }
   .setup-card-icon {
     display: grid;
     width: 34px;

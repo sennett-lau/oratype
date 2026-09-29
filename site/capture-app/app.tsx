@@ -49,14 +49,14 @@ function mountAsk(screen: Screen) {
       {content && (
         <AskAnswerPanel content={content} onClose={() => {}} onAnswerAnyway={() => {}} />
       )}
-      <div className="pill relative rounded-full" style={{ width: content ? 64 : 140, height: 32, borderRadius: 16 }}>
+      {!content && <div className="pill relative rounded-full" style={{ width: content ? 64 : 140, height: 32, borderRadius: 16 }}>
         {!content && (
           <>
             <div className="absolute inset-0" style={{ borderRadius: 'inherit' }}><CapsuleAurora mode="working" /></div>
             <div className="relative h-full"><CapsuleAskThinking /></div>
           </>
         )}
-      </div>
+      </div>}
     </div>,
   )
   setTimeout(() => {
@@ -88,7 +88,7 @@ export function mount(screen: Screen) {
     return
   }
   if (screen === 'onboarding-websearch') {
-    useAppStore.setState({ onboardingStep: 3 })
+    useAppStore.setState({ onboardingStep: 4 })
   }
   if (screen === 'onboarding') {
     // The Translate setup page: key caps, the language list and the pill preview.

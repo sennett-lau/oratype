@@ -167,7 +167,7 @@ export async function captureAppScreens({ browser, outDir, themes = ['light', 'd
           }
         }
         if (screen === 'onboarding-websearch') {
-          await page.evaluate(`document.querySelector('[data-testid=onboarding-web-search] button')?.click()`)
+          // web search is its own step now
           await wait(300)
           console.log(name, await page.evaluate(scrollTo('[data-testid=onboarding-web-search]')))
         }
