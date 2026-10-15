@@ -37,10 +37,14 @@ const S = (name, themes = ['light']) => ({ name, screen: name, width: 1000, heig
 const A = (name, themes = ['light']) => ({ name, screen: name, width: 640, height: 460, scale: 3, themes })
 APP_SCREENS.length = 0
 APP_SCREENS.push(
+  S('search-builtin-none', ['light', 'dark']),
+  S('search-builtin-setting'),
+  S('search-builtin-ready', ['light', 'dark']),
+  S('search-own'),
   S('settings-speech-elevenlabs', ['light', 'dark']),
   S('settings-websearch-empty'),
   S('settings-websearch-set', ['light', 'dark']),
-  S('onboarding-websearch'),
+  S('onboarding-websearch', ['light', 'dark']),
   A('ask-answer-sources', ['light', 'dark']),
   { name: 'ask-long-sources', screen: 'ask-long-sources', width: 1100, height: 620, scale: 2, themes: ['light', 'dark'] },
   { name: 'ask-short-open', screen: 'ask-answer-sources', width: 800, height: 520, scale: 2, themes: ['light', 'dark'], open: true },

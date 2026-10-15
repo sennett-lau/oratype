@@ -1120,11 +1120,7 @@
   "webSearch": {
     "group": "问答的网络搜索",
     "title": "搜索服务",
-<<<<<<< HEAD
-    "help": "问答遇到新闻、比分、赛程或价格等问题时，会在网上搜索。添加你自己的搜索服务器后才会开启；SearXNG 免费，可在你的电脑上运行。",
-=======
     "help": "问答会在网上查询新闻、比分、赛程或价格等问题。设置之前不会启用。",
->>>>>>> feature/ask-web-search
     "onboardingTitle": "问答的网络搜索（可选）",
     "provider": "服务",
     "key": "密钥",
@@ -1138,9 +1134,6 @@
     "remove": "关闭网络搜索",
     "removed": "网络搜索已关闭。",
     "removeKey": "移除密钥",
-<<<<<<< HEAD
-    "optional": "可选"
-=======
     "optional": "可选",
     "uses": "搜索使用",
     "builtin": "内置",
@@ -1186,6 +1179,5 @@
     "cancel": "取消",
     "useBuiltin": "使用内置",
     "builtinSelected": "问答现在使用内置搜索。"
->>>>>>> feature/ask-web-search
   }
 }

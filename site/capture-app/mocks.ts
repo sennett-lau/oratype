@@ -15,6 +15,10 @@ export type Screen =
   | 'settings-websearch-set'
   | 'onboarding-websearch'
   | 'ask-long-sources'
+  | 'search-builtin-none'
+  | 'search-builtin-setting'
+  | 'search-builtin-ready'
+  | 'search-own'
   | 'ask-answer-sources'
   | 'ask-searching'
   | 'ask-not-configured'
@@ -30,6 +34,10 @@ export const SCREENS: Record<Screen, { hash: string }> = {
   'onboarding-websearch': { hash: '#/' },
   'ask-answer-sources': { hash: '#/' },
   'ask-long-sources': { hash: '#/' },
+  'search-builtin-none': { hash: '#/settings?pane=search' },
+  'search-builtin-setting': { hash: '#/settings?pane=search' },
+  'search-builtin-ready': { hash: '#/settings?pane=search' },
+  'search-own': { hash: '#/settings?pane=search' },
   'ask-searching': { hash: '#/' },
   'ask-not-configured': { hash: '#/' },
 }
@@ -121,7 +129,7 @@ function capturedConfig(screen: Screen, dark: boolean): AppConfig {
     ui_language: 'en',
     speech_presets: speech,
     active_speech_preset_id: screen === 'settings-speech-elevenlabs' ? ELEVEN_ID : speech[0].id,
-    web_search: screen === 'settings-websearch-set' ? { ...WEB_SET } : { provider: 'none', base_url: '' },
+    web_search: screen === 'settings-websearch-set' || screen === 'search-own' ? { ...WEB_SET } : screen === 'search-builtin-ready' ? { provider: 'builtin', base_url: '' } : { provider: 'none', base_url: '' },
     ai_presets: ai,
     active_ai_preset_id: ai[0].id,
     target_lang: firstTarget,
@@ -261,6 +269,10 @@ export function handleCommand(
       return 'Typelite'
 
     // Config and data
+    case 'builtin_search_status':
+      return screen === 'search-builtin-ready' || screen === 'onboarding-websearch-ready'
+        ? { installed: { commit: '4e2c1ea7f468c9d1b16206e9d4079999a2eb0627', commitDate: '2026-09-28T10:00:00Z', installedAt: 1 }, running: true, port: 8888, busy: false }
+        : { installed: null, running: false, port: null, busy: screen === 'search-builtin-setting' }
     case 'get_web_search_status':
       return { config: cfg.web_search, hasKey: false }
     case 'test_web_search':
