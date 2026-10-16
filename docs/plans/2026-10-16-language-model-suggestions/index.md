@@ -37,9 +37,9 @@ Status: building - 2026-10-16.
   already ships with Typelite and serves `/v1/audio/transcriptions`, so the existing
   OpenAI-compatible speech client (with its `language X<asr_text>` handling) can use it. It is
   still the one "Built-in" speech preset, with Qwen3-ASR as its model; the provider picks
-  whisper.cpp or the speech server by model. The server gets 8192 tokens of context (about ten
-  minutes of audio at 13 tokens per second) and is never asked for `verbose_json`, which it
-  refuses.
+  whisper.cpp or the speech server by model. The server gets 12288 tokens of context (a ten-minute
+  dictation is about 7,800 audio tokens at 13 per second, plus its transcript) and is never asked
+  for `verbose_json`, which it refuses.
 - **Spoken languages are their own setting** (`spoken_languages`), not the Translate list.
   Reason: Translate holds up to three languages the user writes into; spoken languages are what
   they say. Codes are spoken languages (`yue`, `zh`), not scripts. Until the user chooses, the

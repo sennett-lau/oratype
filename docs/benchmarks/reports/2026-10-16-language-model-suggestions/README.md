@@ -46,7 +46,9 @@ and writes routed Cantonese in Hong Kong characters (plan `qwen3-asr-support`).
 
 Speed on the M1 Pro: about 0.35–0.5 s per short clip (2–5 s of audio); 52.6 s of audio in one
 request used 696 tokens, about 13 tokens per second of audio. The server starts in 3–4 s once
-macOS has compiled the Metal shaders, and uses about 2.9 GB of memory.
+macOS has compiled the Metal shaders. Its own memory (physical footprint) is about 1.4 GB with
+8192 tokens of context and 1.8 GB with 12288, which the app uses so a ten-minute dictation and its
+transcript fit; resident size, which also counts the mapped model file, is about 3.4 and 3.9 GB.
 
 ## AI polish (dev split, 3 samples per case)
 

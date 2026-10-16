@@ -163,7 +163,8 @@ MIT. Keep the required copyright and permission notices in `LICENSE` and
 - Built-in Qwen3-ASR (plan `language-model-suggestions`) runs in a second `llama-server` with
   `--mmproj`. Its `/v1/audio/transcriptions` refuses `response_format=verbose_json` (HTTP 400) and
   ignores `language`; the language comes from Qwen3-ASR's `language X<asr_text>` tag. Audio costs
-  about 13 tokens per second, so `--ctx-size 8192` holds about ten minutes.
+  about 13 tokens per second, plus the transcript's tokens, so a ten-minute dictation needs
+  `--ctx-size 12288`.
 - Only Command Line Tools are installed on this Mac. `xcodebuild` needs full Xcode.
 - The global Rust default is pinned to 1.85.0 on purpose. Use `rustup override set stable` per
   project instead of changing the default.

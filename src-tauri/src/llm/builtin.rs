@@ -121,8 +121,10 @@ impl ServerRole {
 }
 
 /// Context size of the speech server: the audio's tokens and the transcript. Qwen3-ASR's encoder
-/// gives about 13 tokens per second of audio, so this holds a dictation of about ten minutes.
-pub const SPEECH_CONTEXT_TOKENS: u32 = 8192;
+/// gives about 13 tokens per second of audio, so a ten-minute dictation (the default recording
+/// limit) needs about 7,800 for the audio and up to about 3,000 for its transcript. 8192 would cut
+/// it short; each 4096 tokens cost about 0.45 GB.
+pub const SPEECH_CONTEXT_TOKENS: u32 = 12288;
 
 /// The arguments of one AI server start (see the module comment).
 pub fn launch_spec(
@@ -885,7 +887,7 @@ mod tests {
         for part in [
             "--model /models/asr.gguf",
             "--mmproj /models/mmproj-asr.gguf",
-            "--ctx-size 8192",
+            "--ctx-size 12288",
             "--alias qwen3-asr-1.7b",
             "--no-webui",
             "--offline",
