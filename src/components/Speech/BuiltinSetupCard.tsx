@@ -6,6 +6,7 @@ import { formatTestTime } from '../../lib/speechTypes'
 import { useAppStore } from '../../stores/appStore'
 import { isSetupRunning } from '../../stores/modelSetupStore'
 import { useSetupHardware, useSetupStatus } from '../../hooks/useSpeechSetup'
+import { useSuggestedModel } from '../../hooks/useLanguageSetup'
 import { ModelOptions, ProgressTrack } from './BuiltinParts'
 import {
   downloadFailed,
@@ -34,6 +35,7 @@ export function BuiltinSetupCard({ service = SPEECH_SERVICE }: { service?: Engin
   const status = useSetupStatus(service.store)
   const hardware = useSetupHardware(service.store)
   const builtin = useAppStore((s) => builtinPresetOf(service, s.config))
+  const suggested = useSuggestedModel(service)
   const [choice, setChoice] = useState<string | null>(null)
   const [changing, setChanging] = useState(false)
 
@@ -47,7 +49,8 @@ export function BuiltinSetupCard({ service = SPEECH_SERVICE }: { service?: Engin
         ? 'ready'
         : 'none'
 
-  const selected = defaultModelChoice(hardware, choice ?? (ready ? builtin?.model : null))
+  // Plan `language-model-suggestions`: before a model is ready, the suggested one is picked.
+  const selected = defaultModelChoice(hardware, choice ?? (ready ? builtin?.model : suggested))
   const offered = noModel ? [] : (hardware?.offer.models ?? [])
 
   const start = (modelId: string | null) => {
@@ -63,7 +66,11 @@ export function BuiltinSetupCard({ service = SPEECH_SERVICE }: { service?: Engin
   const Icon = service.id === 'ai' ? Sparkles : Cpu
 
   return (
-    <div className="setup-card" aria-live="polite" data-testid="builtin-setup-card">
+    <div
+      className={`setup-card ${offered.length > 2 ? 'setup-card-tall' : ''}`}
+      aria-live="polite"
+      data-testid="builtin-setup-card"
+    >
       <div className="flex items-start gap-3">
         <div className="setup-card-icon" aria-hidden="true">
           <Icon size={18} />
@@ -88,6 +95,7 @@ export function BuiltinSetupCard({ service = SPEECH_SERVICE }: { service?: Engin
                 selected={selected}
                 onSelect={setChoice}
                 service={service}
+                suggested={suggested}
               />
             )}
             <span className="hardware-note">

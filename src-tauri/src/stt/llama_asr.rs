@@ -245,7 +245,7 @@ pub fn wanted_model(config: &AppConfig) -> Option<LlamaAsrConfig> {
     if !preset.is_builtin_whisper() || preset.verified_at.is_none() {
         return None;
     }
-    config_for(&preset).ok()
+    config_for(preset).ok()
 }
 
 /// Starts or stops the speech server to match `config` (at app start and after the speech engine

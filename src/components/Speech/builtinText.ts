@@ -27,7 +27,12 @@ export function modelDetail(
 ): string {
   const bytes = sizeBytes ?? service.sizes[id]
   const size = bytes ? formatSize(bytes) : ''
-  if (service.ns === 'speechSetup') return t('speechSetup.modelDetail', { id, size })
+  if (service.ns === 'speechSetup') {
+    // Whisper models read "Whisper <id> · size"; others have their own line (Qwen3-ASR).
+    const key = service.modelKey(id)
+    if (key !== id) return t(`speechSetup.modelDetails.${key}`, { size })
+    return t('speechSetup.modelDetail', { id, size })
+  }
   return t(`${service.ns}.modelDetail.${service.modelKey(id)}`, { size })
 }
 

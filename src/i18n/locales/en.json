@@ -309,7 +309,9 @@
       "ask": "Ask Anything",
       "askSub": "Ask a question, or change selected text by voice.",
       "webSearch": "Web search",
-      "webSearchSub": "Optional: lets Ask anything look up news, scores and schedules."
+      "webSearchSub": "Optional: lets Ask anything look up news, scores and schedules.",
+      "languages": "Your languages",
+      "languagesSub": "Typelite checks for a setup that suits the languages you speak."
     },
     "layout": {
       "back": "Back",
@@ -1023,14 +1025,15 @@
     },
     "builtinTitle": "Built-in",
     "recommended": "Recommended",
-    "builtinBody": "Runs Whisper inside Typelite on this computer. No other software needed.",
+    "builtinBody": "Runs a speech model inside Typelite on this computer. No other software needed.",
     "changeModel": "Change model",
     "download": "Download",
     "use": "Use",
     "model": "Model",
     "models": {
       "large-v3-turbo": "Best accuracy",
-      "small": "Faster"
+      "small": "Faster",
+      "qwen3Asr": "Qwen3-ASR"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "Checking this computer…",
@@ -1058,6 +1061,9 @@
         "needs_memory": "The larger model needs 8 GB of memory.",
         "needs_disk_space": "Not enough free space for the larger model."
       }
+    },
+    "modelDetails": {
+      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
     }
   },
   "speech": {
@@ -1097,7 +1103,7 @@
     "engines": {
       "builtin": {
         "title": "Built-in",
-        "detail": "Runs Whisper inside Typelite on this computer"
+        "detail": "Runs a speech model inside Typelite on this computer"
       },
       "server": {
         "title": "Your server or API key",
@@ -1132,11 +1138,13 @@
     "testing": "Starting the model and running a test…",
     "models": {
       "best": "Best quality",
-      "faster": "Faster"
+      "faster": "Faster",
+      "qwen35": "Qwen 3.5"
     },
     "modelDetail": {
       "best": "Qwen3 4B Instruct · {{size}}",
-      "faster": "Qwen3 1.7B · {{size}}"
+      "faster": "Qwen3 1.7B · {{size}}",
+      "qwen35": "Qwen 3.5 4B · {{size}}"
     },
     "errors": {
       "load": "{{reason}}",
@@ -1234,5 +1242,34 @@
     "restart": "Restart to update",
     "failed": "The update did not work: {{message}}",
     "disabled": "The development build does not update itself."
+  },
+  "languageSetup": {
+    "yourLanguages": "Your languages",
+    "add": "+ Add language",
+    "addLabel": "Add a language you speak",
+    "remove": "Remove {{language}}",
+    "hints": {
+      "yue": "Cantonese",
+      "zh": "Mandarin"
+    },
+    "fromMac": "Filled in from your Mac’s preferred languages.",
+    "list": "{{items}} and {{last}}",
+    "listSeparator": ", ",
+    "suggestedTitle": "Suggested setup for {{languages}}",
+    "noneTitle": "No suggested setup for {{languages}}",
+    "noneBody": "The next steps start with the standard built-in models. You can still choose any model there.",
+    "empty": "Add the languages you speak. You can also skip this; the standard built-in models are used.",
+    "nextSteps": "The next two steps start with these models chosen. You download each one there, or pick another.",
+    "aiFallback": "The larger AI model needs 16 GB of memory, so AI polish starts with the faster one.",
+    "suggestedTag": "Suggested for your languages",
+    "bannerSpeech": "Speech recognition: {{model}}.",
+    "bannerAi": "AI polish: {{model}}.",
+    "notNow": "Not now",
+    "homeGroup": "Suggested for your languages",
+    "homeTitle": "Built-in models for {{languages}}",
+    "homeBodyBoth": "{{speech}} for speech recognition and {{ai}} for AI polish. They run on this Mac; {{size}} to download.",
+    "homeBodySpeech": "{{speech}} for speech recognition. It runs on this Mac; {{size}} to download.",
+    "homeBodyAi": "{{ai}} for AI polish. It runs on this Mac; {{size}} to download.",
+    "dontShowAgain": "Don’t show again"
   }
 }

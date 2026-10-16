@@ -6,27 +6,29 @@ import { SPEECH_SERVICE, type EngineService } from './services'
 
 /**
  * Plan `two-tab-speech`: the models this Mac runs well, as radio option cards. With one model there
- * is nothing to choose, but it still shows as selected.
+ * is nothing to choose, but it still shows as selected. Plan `language-model-suggestions`: with
+ * more than two they stack in one column, and the model of the user's suggested setup is tagged
+ * (then no model is marked Recommended).
  */
 export function ModelOptions({
   models,
   selected,
   onSelect,
   service = SPEECH_SERVICE,
+  suggested = null,
 }: {
   models: OfferedModel[]
   selected: string | null
   onSelect: (id: string) => void
   service?: EngineService
+  suggested?: string | null
 }) {
   const { t } = useTranslation()
   const one = models.length === 1
+  const tagged = suggested && models.some((model) => model.id === suggested) ? suggested : null
+  const layout = one ? 'option-cards-one' : models.length > 2 ? 'option-cards-list' : ''
   return (
-    <div
-      role="radiogroup"
-      aria-label={t('speechSetup.model')}
-      className={`option-cards ${one ? 'option-cards-one' : ''}`}
-    >
+    <div role="radiogroup" aria-label={t('speechSetup.model')} className={`option-cards ${layout}`}>
       {models.map((model) => (
         <button
           key={model.id}
@@ -40,7 +42,10 @@ export function ModelOptions({
         >
           <span className="option-card-title">
             {modelName(model.id, t, service)}
-            {model.recommended && <span className="tag">{t('speechSetup.recommended')}</span>}
+            {tagged === model.id && <span className="tag">{t('languageSetup.suggestedTag')}</span>}
+            {!tagged && model.recommended && (
+              <span className="tag">{t('speechSetup.recommended')}</span>
+            )}
           </span>
           <span className="option-card-detail">
             {modelDetail(model.id, t, model.sizeBytes, service)}

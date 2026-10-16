@@ -95,7 +95,7 @@ describe('appStore', () => {
       getState().startShortcutTour()
       expect(getState().onboardingCompleted).toBe(false)
       expect(getState().onboardingTour).toBe(true)
-      expect(getState().onboardingStep).toBe(5)
+      expect(getState().onboardingStep).toBe(6)
     })
 
     it('findActivePreset falls back to the first preset for an unknown id', () => {

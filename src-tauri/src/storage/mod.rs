@@ -1169,7 +1169,7 @@ pub struct AppConfig {
     pub mute_output_while_recording: bool,
     /// Version of the built-in preset templates this config holds (`BUILTIN_PRESETS_VERSION`).
     pub builtin_presets_version: u32,
-    /// The three-shortcut tour (onboarding steps 5 to 7) has been finished.
+    /// The three-shortcut tour (the onboarding shortcut pages) has been finished.
     pub shortcut_tour_completed: bool,
     /// The user answered "Later" (or "Start") to the "try the three shortcuts now?" dialog.
     pub shortcut_tour_prompt_dismissed: bool,

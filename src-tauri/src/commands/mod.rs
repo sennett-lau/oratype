@@ -6,6 +6,7 @@ pub mod config;
 pub mod credentials;
 pub mod dictionary;
 pub mod language_presets;
+pub mod language_setup;
 pub mod llm;
 pub mod misc;
 pub mod model_setup;

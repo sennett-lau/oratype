@@ -82,7 +82,13 @@ export interface EngineService {
 export const AI_POLISH_GUIDE_URL =
   'https://github.com/sennett-lau/typelite/blob/main/docs/guides/ai-polish/README.md'
 
-const AI_MODEL_KEYS: Record<string, string> = { 'qwen3-4b': 'best', 'qwen3-1.7b': 'faster' }
+const AI_MODEL_KEYS: Record<string, string> = {
+  'qwen3-4b': 'best',
+  'qwen3-1.7b': 'faster',
+  'qwen3.5-4b': 'qwen35',
+}
+/** Plan `language-model-suggestions`: speech ids with a dot need their own i18n key. */
+const SPEECH_MODEL_KEYS: Record<string, string> = { 'qwen3-asr-1.7b': 'qwen3Asr' }
 
 export const SPEECH_SERVICE: EngineService = {
   id: 'speech',
@@ -125,7 +131,7 @@ export const SPEECH_SERVICE: EngineService = {
   },
   cancel: () => cancelSpeechSetup(),
   deleteModel: (modelId) => deleteSpeechModel(modelId),
-  modelKey: (id) => id,
+  modelKey: (id) => SPEECH_MODEL_KEYS[id] ?? id,
   sizes: MODEL_SIZE_BYTES,
 }
 
@@ -170,7 +176,7 @@ export const AI_SERVICE: EngineService = {
   cancel: () => cancelAiSetup(),
   deleteModel: (modelId) => deleteAiModel(modelId),
   modelKey: (id) => AI_MODEL_KEYS[id] ?? id,
-  sizes: { 'qwen3-4b': 2_497_281_120, 'qwen3-1.7b': 1_107_409_472 },
+  sizes: { 'qwen3-4b': 2_497_281_120, 'qwen3-1.7b': 1_107_409_472, 'qwen3.5-4b': 2_740_937_888 },
 }
 
 /** The Built-in preset of a service (every config has one). */
