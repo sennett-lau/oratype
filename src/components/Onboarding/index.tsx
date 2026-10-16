@@ -12,6 +12,7 @@ import { isAiReady, isSpeechReady } from '../../lib/readiness'
 import { OnboardingLayout } from './OnboardingLayout'
 import { WelcomeStep } from './WelcomeStep'
 import { MicrophoneStep } from './MicrophoneStep'
+import { LanguagesStep } from './LanguagesStep'
 import { SttSetupStep } from './SttSetupStep'
 import { LlmSetupStep } from './LlmSetupStep'
 import { WebSearchStep } from './WebSearchStep'
@@ -31,15 +32,20 @@ import { usePermissions } from './usePermissions'
 import { slideRight } from '../../lib/animations'
 
 /**
- * Welcome + permissions, microphone, speech, AI, web search (optional, plan `ask-web-search`), then the shortcut pages (plan
- * `tutorial-one-page`): per shortcut a setup page and one page per exercise.
+ * Welcome + permissions, microphone, the languages the user speaks (plan
+ * `language-model-suggestions`), speech, AI, web search (optional, plan `ask-web-search`), then the
+ * shortcut pages (plan `tutorial-one-page`): per shortcut a setup page and one page per exercise.
  */
 export const TOTAL_STEPS = SHORTCUT_TOUR_FIRST_STEP + SHORTCUT_PAGES.length
 
+/** Plan `language-model-suggestions`: the languages step, which picks the suggested models. */
+const LANGUAGES_STEP = 2
+/** Step index of the speech step. */
+const SPEECH_STEP = 3
 /** Step index of the AI step. */
-const AI_STEP = 3
+const AI_STEP = 4
 /** Plan `ask-web-search`: the optional web search step, the last step before the shortcut pages. */
-const WEB_SEARCH_STEP = 4
+const WEB_SEARCH_STEP = 5
 
 /** The shortcut page shown at `step`, if it is one. */
 function shortcutPageAt(step: number): ShortcutPage | undefined {
@@ -107,7 +113,9 @@ export function Onboarding() {
         return permissions.allGranted
       case 1:
         return true // a device is always chosen; "System default" counts
-      case 2:
+      case LANGUAGES_STEP:
+        return true // the standard models work without a choice
+      case SPEECH_STEP:
         return speechReady
       case AI_STEP:
         return aiReady
@@ -121,6 +129,7 @@ export function Onboarding() {
   const titles = [
     { title: t('onboarding.steps.welcome'), subtitle: t('onboarding.steps.welcomeSub') },
     { title: t('onboarding.steps.microphone'), subtitle: t('onboarding.steps.microphoneSub') },
+    { title: t('onboarding.steps.languages'), subtitle: t('onboarding.steps.languagesSub') },
     {
       title: t('onboarding.steps.speechRecognition'),
       subtitle: t('onboarding.steps.speechRecognitionSub'),
@@ -246,7 +255,7 @@ export function Onboarding() {
       onBack={handleBack}
       onSkip={page?.kind === 'exercise' && !exerciseDone ? handleSkip : undefined}
       onClose={tour ? handleCloseTour : undefined}
-      wideContent={step === 2}
+      wideContent={step === SPEECH_STEP}
     >
       <AnimatePresence mode="wait">
         <motion.div
@@ -259,7 +268,8 @@ export function Onboarding() {
         >
           {step === 0 && <WelcomeStep permissions={permissions} onSkip={() => goTo(1)} />}
           {step === 1 && <MicrophoneStep />}
-          {step === 2 && <SttSetupStep onSkip={() => goTo(AI_STEP)} />}
+          {step === LANGUAGES_STEP && <LanguagesStep />}
+          {step === SPEECH_STEP && <SttSetupStep onSkip={() => goTo(AI_STEP)} />}
           {step === AI_STEP && <LlmSetupStep onSkip={() => goTo(WEB_SEARCH_STEP)} />}
           {step === WEB_SEARCH_STEP && <WebSearchStep onSkip={leaveSetupSteps} />}
           {page?.kind === 'setup' && <ShortcutSetupPage role={page.role} />}

@@ -57,6 +57,14 @@ pub async fn test_speech_preset(
     api_key: String,
     client: tauri::State<'_, reqwest::Client>,
 ) -> Result<u32, String> {
+    if stt::llama_asr::asr_model_of(&preset).is_some() {
+        // Plan `language-model-suggestions`: start the built-in speech server and transcribe
+        // a second of silence.
+        let config = stt::llama_asr::config_for(&preset)?;
+        let elapsed = stt::llama_asr::self_test(&config).await?;
+        crate::commands::config::record_speech_test_passed(&app, &state, &preset).await;
+        return Ok(elapsed);
+    }
     if preset.is_builtin_whisper() {
         // Plan `quick-speech-setup`: load the model and run it on a short synthetic clip.
         let config = stt::config::build_builtin_config(&preset)?;

@@ -61,6 +61,7 @@
     "couldNotReplace": "此應用不允許替換，結果已在剪貼簿上。",
     "tryReplacingAgain": "再次嘗試替換",
     "errorTitle": "出了點問題",
+    "unconfirmed": "無法從搜尋結果中確認答案。請查看來源。",
     "sources": "來源",
     "sourcesCount_one": "{{count}} 個來源",
     "sourcesCount_other": "{{count}} 個來源",
@@ -69,7 +70,9 @@
     "sourceOpened": "已開啟來源 {{n}}",
     "sourceLinkCopied": "已複製來源 {{n}} 的連結",
     "copySourceLink": "複製來源 {{n}} 的連結",
-    "openSource": "開啟來源 {{n}}"
+    "openSource": "開啟來源 {{n}}",
+    "translatedTo": "已翻譯成{{language}}",
+    "translation": "翻譯"
   },
   "errors": {
     "stt_timeout": "語音服務在 {{details}} 內沒有響應。請確認服務正在執行，或換用更快的服務。",
@@ -85,7 +88,8 @@
     "llm_quota_exceeded": "AI 服務拒絕了請求（額度或速率限制）。請稍後重試或檢查服務端點。",
     "output_wayland_clipboard_copy_only": "已複製到剪貼簿。Wayland 下需要手動貼上。",
     "mic_fallback_default": "所選麥克風「{{details}}」未連線，已改用系統預設麥克風。",
-    "stt_unreachable": "無法連線語音服務（{{details}}）。請檢查「設定 → 語音」中的地址，並確認服務正在執行。"
+    "stt_unreachable": "無法連線語音服務（{{details}}）。請檢查「設定 → 語音」中的地址，並確認服務正在執行。",
+    "output_held_no_accessibility": "缺少輔助使用權限，Typelite 無法輸入文字。結果在「拷貝」膠囊裡。請在「系統設定 → 隱私權與安全性 → 輔助使用」中允許 Typelite。"
   },
   "home": {
     "headline": "說出來就好。",
@@ -306,7 +310,9 @@
       "ask": "Ask Anything",
       "askSub": "提一個問題，或用語音修改選中的文字。",
       "webSearch": "網路搜尋",
-      "webSearchSub": "可選：讓問答查詢新聞、比分和賽程。"
+      "webSearchSub": "可選：讓問答查詢新聞、比分和賽程。",
+      "languages": "你的語言",
+      "languagesSub": "Typelite 會看看有沒有適合你所說語言的建議設定。"
     },
     "layout": {
       "back": "返回",
@@ -416,7 +422,6 @@
     "keyboardSimulation": "直接打字",
     "clipboardPaste": "複製後貼上",
     "restoreClipboardAfterPaste": "還原原剪貼簿",
-    "restoreClipboardTextOnlyHint": "目前只恢復文本剪貼簿，圖片、檔案和富文本暫不完整恢復。",
     "pasteShortcut": "貼上快捷鍵",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",
@@ -459,8 +464,8 @@
     "askAnything": "Ask Anything",
     "askAnythingDesc": "語音提問，一次回答。不帶聊天曆史。",
     "tryAsk": "試用 Ask",
-    "selectedTextContext": "Ask/潤色可讀取選中文本",
-    "selectedTextContextDesc": "用於對選中文本提問、總結、改寫或翻譯。會增加 AI 用量。",
+    "selectedTextContext": "聽寫時讀取選中文本",
+    "selectedTextContextDesc": "聽寫會讀取選中的文字並作為上下文傳給 AI，可以對它說「改短一點」。會增加 AI 用量。提問和翻譯總會讀取選中文字。",
     "targetLanguage": "翻譯為",
     "aboutDescription": "開源 AI 語音輸入工具。說話即寫作 — 即時將語音轉化為潤色文本。",
     "openSource": "開源",
@@ -936,6 +941,13 @@
     "failed": "無法開始錄製快捷鍵：{{error}}"
   },
   "whatsNew": {
+    "languageModels": "你的語言：告訴 Typelite 你會說哪些語言（在引導設定或「設定 → 語音」中）。說粵語的話，它會建議下載兩個內建模型：把粵語照你所說寫出來的 Qwen3-ASR，以及用於潤飾的 Qwen 3.5 4B。",
+    "clipboardSafe": "Typelite 不再動你的剪貼簿：無法輸入的結果會留在「複製」膠囊裡；貼上後會還原你原先複製的全部內容（包括圖片和檔案）；剪貼簿管理工具也不再記錄聽寫內容。",
+    "typeAfterSwitch": "點進一個 App 後立刻聽寫，現在會直接輸入文字，而不是複製到剪貼簿。",
+    "askReadsPages": "開啟網頁搜尋後，提問會讀取排名靠前的結果網頁，新聞、比分和賽程等問題都能得到回答；無法確認的日期會標示出來。",
+    "translateHighlight": "選取文字，按提問並說「把這個翻譯成英文」：譯文會在提問面板中顯示，並提供複製和取代。",
+    "askSelectText": "提問面板裡的文字可以選取，按 ⌘C 複製所選內容。",
+    "polishFillers": "潤飾會刪除各種語言的口頭禪和遲疑聲（um、嗯、呃），改口時只保留你更正後的內容，也不再用破折號連接句子。",
     "fasterSpeech": "內置語音辨識處理短句快了約一倍：不再為每段錄音處理 30 秒的靜音。",
     "fasterPaste": "結果貼上提早約半秒：確認目標 App 仍在前景時不再執行 AppleScript。",
     "fasterMic": "在設定中選了麥克風時，錄音提早約 0.3 秒開始，開頭的字不會被截掉。",
@@ -1020,14 +1032,15 @@
     },
     "builtinTitle": "內建",
     "recommended": "推薦",
-    "builtinBody": "在這臺電腦 上的 Typelite 裡直接執行 Whisper。無需安裝其他軟體。",
+    "builtinBody": "在這臺電腦上的 Typelite 裡執行語音模型。無需安裝其他軟體。",
     "changeModel": "更換模型",
     "download": "下載",
     "use": "使用",
     "model": "模型",
     "models": {
       "large-v3-turbo": "最準確",
-      "small": "更快"
+      "small": "更快",
+      "qwen3Asr": "Qwen3-ASR"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "正在檢查這臺電腦…",
@@ -1055,6 +1068,9 @@
         "needs_memory": "較大的模型需要 8 GB 記憶體。",
         "needs_disk_space": "可用空間不足，無法使用較大的模型。"
       }
+    },
+    "modelDetails": {
+      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
     }
   },
   "speech": {
@@ -1094,7 +1110,7 @@
     "engines": {
       "builtin": {
         "title": "內建",
-        "detail": "在這臺電腦 上的 Typelite 裡執行 Whisper"
+        "detail": "在這臺電腦上的 Typelite 裡執行語音模型"
       },
       "server": {
         "title": "你的伺服器或 API 金鑰",
@@ -1129,11 +1145,13 @@
     "testing": "正在啟動模型並測試…",
     "models": {
       "best": "質量最好",
-      "faster": "更快"
+      "faster": "更快",
+      "qwen35": "Qwen 3.5"
     },
     "modelDetail": {
       "best": "Qwen3 4B Instruct · {{size}}",
-      "faster": "Qwen3 1.7B · {{size}}"
+      "faster": "Qwen3 1.7B · {{size}}",
+      "qwen35": "Qwen 3.5 4B · {{size}}"
     },
     "errors": {
       "load": "{{reason}}",
@@ -1231,5 +1249,34 @@
     "restart": "重新啟動以更新",
     "failed": "更新沒有完成：{{message}}",
     "disabled": "開發版本不會自行更新。"
+  },
+  "languageSetup": {
+    "yourLanguages": "你的語言",
+    "add": "+ 加入語言",
+    "addLabel": "加入你會說的語言",
+    "remove": "移除{{language}}",
+    "hints": {
+      "yue": "粵語",
+      "zh": "普通話"
+    },
+    "fromMac": "已按 Mac 的偏好語言填入。",
+    "list": "{{items}}和{{last}}",
+    "listSeparator": "、",
+    "suggestedTitle": "適合{{languages}}的建議設定",
+    "noneTitle": "暫時沒有適合{{languages}}的建議設定",
+    "noneBody": "接下來的步驟會使用標準的內建模型。你仍可以在那裡選擇任何模型。",
+    "empty": "加入你會說的語言。也可以略過，屆時使用標準的內建模型。",
+    "nextSteps": "接下來兩步會預先選好這些模型。你在那裡逐一下載，或改選其他模型。",
+    "aiFallback": "較大的 AI 模型需要 16 GB 記憶體，所以 AI 潤色會先用較快的模型。",
+    "suggestedTag": "適合你的語言",
+    "bannerSpeech": "語音識別：{{model}}。",
+    "bannerAi": "AI 潤色：{{model}}。",
+    "notNow": "稍後再說",
+    "homeGroup": "適合你的語言",
+    "homeTitle": "適合{{languages}}的內建模型",
+    "homeBodyBoth": "{{speech}} 負責語音識別，{{ai}} 負責 AI 潤色。它們在這部 Mac 上執行，需下載 {{size}}。",
+    "homeBodySpeech": "{{speech}} 負責語音識別。它在這部 Mac 上執行，需下載 {{size}}。",
+    "homeBodyAi": "{{ai}} 負責 AI 潤色。它在這部 Mac 上執行，需下載 {{size}}。",
+    "dontShowAgain": "不再顯示"
   }
 }

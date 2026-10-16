@@ -13,6 +13,10 @@ with its decision; it does not change the application-overhead baseline.
 | [Baseline data](baseline.json) | Raw samples and provenance, usable with the benchmark runner's `--compare`. |
 | [Methodology](methodology.md) | Workloads, timing boundaries, statistics and limitations. |
 | [Report template](REPORT_TEMPLATE.md) | Standard report for each performance PR. |
+| [Polish hesitation sounds](reports/2026-10-09-polish-hesitation-sounds/README.md) | PR #81 measured with `evals/`: dev 70% to 78%, holdout 53% to 55%; lists kept. |
+| [Polish fillers and dashes](reports/2026-10-09-polish-dashes-and-fillers/README.md) | PR #81 with the built-in 4B model: English fillers and final dashes gone; Chinese fillers unchanged. |
+| [Language evaluations](reports/2026-10-09-language-evals/README.md) | First polish and speech quality baseline per language (`evals/`). |
+| [Built-in Chinese variants](reports/2026-10-09-builtin-chinese-variants/README.md) | Cantonese output comes from the Hong Kong language's instructions, not the models. |
 | [Whisper encoder window](reports/2026-10-05-whisper-audio-ctx/README.md) | Built-in speech about twice as fast on short dictations. |
 | [Chosen microphone](reports/2026-10-06-mic-device-cache/README.md) | Recording starts about 0.28 s sooner with a mic chosen in Settings. |
 | [Native target check](reports/2026-10-05-native-target-check/README.md) | Paste's target-app check without AppleScript, about 0.5 s per dictation. |

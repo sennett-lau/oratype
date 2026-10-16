@@ -61,6 +61,7 @@
     "couldNotReplace": "此应用不允许替换，结果已在剪贴板上。",
     "tryReplacingAgain": "再次尝试替换",
     "errorTitle": "出了点问题",
+    "unconfirmed": "无法从搜索结果中确认答案。请查看来源。",
     "sources": "来源",
     "sourcesCount_one": "{{count}} 个来源",
     "sourcesCount_other": "{{count}} 个来源",
@@ -69,7 +70,9 @@
     "sourceOpened": "已打开来源 {{n}}",
     "sourceLinkCopied": "已复制来源 {{n}} 的链接",
     "copySourceLink": "复制来源 {{n}} 的链接",
-    "openSource": "打开来源 {{n}}"
+    "openSource": "打开来源 {{n}}",
+    "translatedTo": "已翻译成{{language}}",
+    "translation": "翻译"
   },
   "errors": {
     "stt_timeout": "语音服务在 {{details}} 内没有响应。请确认服务正在运行，或换用更快的服务。",
@@ -85,7 +88,8 @@
     "llm_quota_exceeded": "AI 服务拒绝了请求（额度或速率限制）。请稍后重试或检查服务端点。",
     "output_wayland_clipboard_copy_only": "已复制到剪贴板。Wayland 下需要手动粘贴。",
     "mic_fallback_default": "所选麦克风「{{details}}」未连接，已改用系统默认麦克风。",
-    "stt_unreachable": "无法连接语音服务（{{details}}）。请检查「设置 → 语音」中的地址，并确认服务正在运行。"
+    "stt_unreachable": "无法连接语音服务（{{details}}）。请检查「设置 → 语音」中的地址，并确认服务正在运行。",
+    "output_held_no_accessibility": "缺少辅助功能权限，Typelite 无法输入文字。结果在“复制”胶囊里。请在“系统设置 → 隐私与安全性 → 辅助功能”中允许 Typelite。"
   },
   "home": {
     "headline": "说出来就好。",
@@ -306,7 +310,9 @@
       "ask": "Ask Anything",
       "askSub": "提一个问题，或用语音修改选中的文字。",
       "webSearch": "网络搜索",
-      "webSearchSub": "可选：让问答查询新闻、比分和赛程。"
+      "webSearchSub": "可选：让问答查询新闻、比分和赛程。",
+      "languages": "你的语言",
+      "languagesSub": "Typelite 会看看有没有适合你所说语言的建议配置。"
     },
     "layout": {
       "back": "返回",
@@ -416,7 +422,6 @@
     "keyboardSimulation": "直接打字",
     "clipboardPaste": "复制后粘贴",
     "restoreClipboardAfterPaste": "还原原剪贴板",
-    "restoreClipboardTextOnlyHint": "目前只恢复文本剪贴板，图片、文件和富文本暂不完整恢复。",
     "pasteShortcut": "粘贴快捷键",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",
@@ -459,8 +464,8 @@
     "askAnything": "Ask Anything",
     "askAnythingDesc": "语音提问，一次回答。不带聊天历史。",
     "tryAsk": "试用 Ask",
-    "selectedTextContext": "Ask/润色可读取选中文本",
-    "selectedTextContextDesc": "用于对选中文本提问、总结、改写或翻译。会增加 AI 用量。",
+    "selectedTextContext": "听写时读取选中文本",
+    "selectedTextContextDesc": "听写会读取选中的文字并作为上下文传给 AI，可以对它说“改短一点”。会增加 AI 用量。提问和翻译总会读取选中文字。",
     "targetLanguage": "翻译为",
     "aboutDescription": "开源 AI 语音输入工具。说话即写作 — 实时将语音转化为润色文本。",
     "openSource": "开源",
@@ -936,6 +941,13 @@
     "failed": "无法开始录制快捷键：{{error}}"
   },
   "whatsNew": {
+    "languageModels": "你的语言：告诉 Typelite 你会说哪些语言（在引导设置或“设置 → 语音”中）。说粤语的话，它会建议下载两个内置模型：把粤语照你所说写出来的 Qwen3-ASR，以及用于润色的 Qwen 3.5 4B。",
+    "clipboardSafe": "Typelite 不再动你的剪贴板：无法输入的结果会留在“复制”胶囊里；粘贴后会还原你原先复制的全部内容（包括图片和文件）；剪贴板管理工具也不再记录听写内容。",
+    "typeAfterSwitch": "点进一个 App 后立刻听写，现在会直接输入文字，而不是复制到剪贴板。",
+    "askReadsPages": "开启网页搜索后，提问会读取排名靠前的结果网页，新闻、比分和赛程等问题都能得到回答；无法确认的日期会标出来。",
+    "translateHighlight": "选中文字，按提问并说“把这个翻译成英文”：译文会在提问面板中显示，并提供复制和替换。",
+    "askSelectText": "提问面板里的文字可以选取，按 ⌘C 复制所选内容。",
+    "polishFillers": "润色会删除各种语言的口头禅和迟疑声（um、嗯、呃），改口时只保留你更正后的内容，也不再用破折号连接句子。",
     "fasterSpeech": "内置语音识别处理短句快了约一倍：不再为每段录音处理 30 秒的静音。",
     "fasterPaste": "结果粘贴提早约半秒：确认目标 App 仍在前台时不再运行 AppleScript。",
     "fasterMic": "在设置中选了麦克风时，录音提早约 0.3 秒开始，开头的字不会被截掉。",
@@ -1020,14 +1032,15 @@
     },
     "builtinTitle": "内置",
     "recommended": "推荐",
-    "builtinBody": "在这台电脑 上的 Typelite 里直接运行 Whisper。无需安装其他软件。",
+    "builtinBody": "在这台电脑上的 Typelite 里运行语音模型。无需安装其他软件。",
     "changeModel": "更换模型",
     "download": "下载",
     "use": "使用",
     "model": "模型",
     "models": {
       "large-v3-turbo": "最准确",
-      "small": "更快"
+      "small": "更快",
+      "qwen3Asr": "Qwen3-ASR"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "正在检查这台电脑…",
@@ -1055,6 +1068,9 @@
         "needs_memory": "较大的模型需要 8 GB 内存。",
         "needs_disk_space": "可用空间不足，无法使用较大的模型。"
       }
+    },
+    "modelDetails": {
+      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
     }
   },
   "speech": {
@@ -1094,7 +1110,7 @@
     "engines": {
       "builtin": {
         "title": "内置",
-        "detail": "在这台电脑 上的 Typelite 里运行 Whisper"
+        "detail": "在这台电脑上的 Typelite 里运行语音模型"
       },
       "server": {
         "title": "你的服务器或 API 密钥",
@@ -1129,11 +1145,13 @@
     "testing": "正在启动模型并测试…",
     "models": {
       "best": "质量最好",
-      "faster": "更快"
+      "faster": "更快",
+      "qwen35": "Qwen 3.5"
     },
     "modelDetail": {
       "best": "Qwen3 4B Instruct · {{size}}",
-      "faster": "Qwen3 1.7B · {{size}}"
+      "faster": "Qwen3 1.7B · {{size}}",
+      "qwen35": "Qwen 3.5 4B · {{size}}"
     },
     "errors": {
       "load": "{{reason}}",
@@ -1231,5 +1249,34 @@
     "restart": "重新启动以更新",
     "failed": "更新没有完成：{{message}}",
     "disabled": "开发版本不会自行更新。"
+  },
+  "languageSetup": {
+    "yourLanguages": "你的语言",
+    "add": "+ 添加语言",
+    "addLabel": "添加你会说的语言",
+    "remove": "移除{{language}}",
+    "hints": {
+      "yue": "粤语",
+      "zh": "普通话"
+    },
+    "fromMac": "已按 Mac 的首选语言填写。",
+    "list": "{{items}}和{{last}}",
+    "listSeparator": "、",
+    "suggestedTitle": "适合{{languages}}的建议配置",
+    "noneTitle": "暂无适合{{languages}}的建议配置",
+    "noneBody": "接下来的步骤会使用标准的内置模型。你仍可以在那里选择任何模型。",
+    "empty": "添加你会说的语言。也可以跳过，届时使用标准的内置模型。",
+    "nextSteps": "接下来两步会预先选好这些模型。你在那里逐个下载，或改选其他模型。",
+    "aiFallback": "较大的 AI 模型需要 16 GB 内存，因此 AI 润色先使用较快的模型。",
+    "suggestedTag": "适合你的语言",
+    "bannerSpeech": "语音识别：{{model}}。",
+    "bannerAi": "AI 润色：{{model}}。",
+    "notNow": "以后再说",
+    "homeGroup": "适合你的语言",
+    "homeTitle": "适合{{languages}}的内置模型",
+    "homeBodyBoth": "{{speech}} 用于语音识别，{{ai}} 用于 AI 润色。它们在这台 Mac 上运行，需下载 {{size}}。",
+    "homeBodySpeech": "{{speech}} 用于语音识别。它在这台 Mac 上运行，需下载 {{size}}。",
+    "homeBodyAi": "{{ai}} 用于 AI 润色。它在这台 Mac 上运行，需下载 {{size}}。",
+    "dontShowAgain": "不再显示"
   }
 }

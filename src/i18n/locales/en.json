@@ -61,6 +61,7 @@
     "couldNotReplace": "This app didn't allow the replacement. The result is on your clipboard.",
     "tryReplacingAgain": "Try replacing again",
     "errorTitle": "Something went wrong",
+    "unconfirmed": "Couldn’t confirm an answer from the search results. Check the sources.",
     "sources": "Sources",
     "sourcesCount_one": "{{count}} source",
     "sourcesCount_other": "{{count}} sources",
@@ -69,7 +70,9 @@
     "sourceOpened": "Source {{n}} opened",
     "sourceLinkCopied": "Link of source {{n}} copied",
     "copySourceLink": "Copy link of source {{n}}",
-    "openSource": "Open source {{n}}"
+    "openSource": "Open source {{n}}",
+    "translatedTo": "Translated to {{language}}",
+    "translation": "Translation"
   },
   "errors": {
     "stt_timeout": "The speech server did not answer within {{details}}. Check that it is running, or try a faster server.",
@@ -85,7 +88,8 @@
     "llm_quota_exceeded": "AI endpoint rejected the request (quota or rate limit). Try again later or check the endpoint.",
     "output_wayland_clipboard_copy_only": "Copied to clipboard. Paste manually on Wayland.",
     "mic_fallback_default": "Your selected microphone \"{{details}}\" is not connected, so the system default was used.",
-    "stt_unreachable": "Could not reach the speech server ({{details}}). Check the address in Settings → Speech and that the server is running."
+    "stt_unreachable": "Could not reach the speech server ({{details}}). Check the address in Settings → Speech and that the server is running.",
+    "output_held_no_accessibility": "Accessibility permission is missing, so Typelite cannot type. The result is in the Copy pill. Allow Typelite in System Settings → Privacy & Security → Accessibility."
   },
   "home": {
     "headline": "Just say it.",
@@ -306,7 +310,9 @@
       "ask": "Ask Anything",
       "askSub": "Ask a question, or change selected text by voice.",
       "webSearch": "Web search",
-      "webSearchSub": "Optional: lets Ask anything look up news, scores and schedules."
+      "webSearchSub": "Optional: lets Ask anything look up news, scores and schedules.",
+      "languages": "Your languages",
+      "languagesSub": "Typelite checks for a setup that suits the languages you speak."
     },
     "layout": {
       "back": "Back",
@@ -416,7 +422,6 @@
     "keyboardSimulation": "Type directly",
     "clipboardPaste": "Paste from clipboard",
     "restoreClipboardAfterPaste": "Restore previous clipboard",
-    "restoreClipboardTextOnlyHint": "Text clipboard only; images, files, and rich content are not fully restored yet.",
     "pasteShortcut": "Paste shortcut",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",
@@ -459,8 +464,8 @@
     "askAnything": "Ask Anything",
     "askAnythingDesc": "Voice question, one-shot answer. No chat history.",
     "tryAsk": "Try Ask",
-    "selectedTextContext": "Use selected text in Ask/polish",
-    "selectedTextContextDesc": "Lets Ask and polish summarize, rewrite, or translate selected text. Uses more AI tokens.",
+    "selectedTextContext": "Use selected text when dictating",
+    "selectedTextContextDesc": "Dictate reads the highlight and sends it to the AI as context, so you can say “make this shorter” over it. Uses more AI tokens. Ask and Translate always read the highlight.",
     "targetLanguage": "Translate to",
     "aboutDescription": "Open-source AI voice input tool. Speak to write — turn your voice into polished text in real time.",
     "openSource": "Open Source",
@@ -936,6 +941,13 @@
     "failed": "Could not start recording the shortcut: {{error}}"
   },
   "whatsNew": {
+    "languageModels": "Your languages: tell Typelite which languages you speak (in onboarding or Settings → Speech). For Cantonese it suggests two built-in models to download: Qwen3-ASR, which writes Cantonese the way you say it, and Qwen 3.5 4B for polish.",
+    "clipboardSafe": "Typelite leaves your clipboard alone: a result it cannot type waits in the Copy pill, a paste brings back everything you had copied (images and files too), and clipboard managers no longer record dictations.",
+    "typeAfterSwitch": "Clicking into an app and dictating right away now types the text instead of copying it.",
+    "askReadsPages": "Ask anything with web search reads the top result pages, so questions about news, scores and upcoming games get an answer. A date it cannot confirm is flagged.",
+    "translateHighlight": "Highlight text, press Ask and say “translate this into English”: the translation opens in the Ask panel with Copy and Replace.",
+    "askSelectText": "Text in the Ask panel can be selected, and ⌘C copies the selection.",
+    "polishFillers": "Polish removes fillers and hesitations (um, 嗯, 呃) in every language, keeps only your correction when you change your mind, and no longer joins sentences with dashes.",
     "fasterSpeech": "Built-in speech is about twice as fast for short dictations: it no longer processes 30 seconds of silence after every clip.",
     "fasterPaste": "Results paste about half a second sooner: checking that your app is still in front no longer runs AppleScript.",
     "fasterMic": "With a microphone chosen in Settings, recording starts about 0.3 seconds sooner, so your first words are not cut off.",
@@ -1020,14 +1032,15 @@
     },
     "builtinTitle": "Built-in",
     "recommended": "Recommended",
-    "builtinBody": "Runs Whisper inside Typelite on this computer. No other software needed.",
+    "builtinBody": "Runs a speech model inside Typelite on this computer. No other software needed.",
     "changeModel": "Change model",
     "download": "Download",
     "use": "Use",
     "model": "Model",
     "models": {
       "large-v3-turbo": "Best accuracy",
-      "small": "Faster"
+      "small": "Faster",
+      "qwen3Asr": "Qwen3-ASR"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "Checking this computer…",
@@ -1055,6 +1068,9 @@
         "needs_memory": "The larger model needs 8 GB of memory.",
         "needs_disk_space": "Not enough free space for the larger model."
       }
+    },
+    "modelDetails": {
+      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
     }
   },
   "speech": {
@@ -1094,7 +1110,7 @@
     "engines": {
       "builtin": {
         "title": "Built-in",
-        "detail": "Runs Whisper inside Typelite on this computer"
+        "detail": "Runs a speech model inside Typelite on this computer"
       },
       "server": {
         "title": "Your server or API key",
@@ -1129,11 +1145,13 @@
     "testing": "Starting the model and running a test…",
     "models": {
       "best": "Best quality",
-      "faster": "Faster"
+      "faster": "Faster",
+      "qwen35": "Qwen 3.5"
     },
     "modelDetail": {
       "best": "Qwen3 4B Instruct · {{size}}",
-      "faster": "Qwen3 1.7B · {{size}}"
+      "faster": "Qwen3 1.7B · {{size}}",
+      "qwen35": "Qwen 3.5 4B · {{size}}"
     },
     "errors": {
       "load": "{{reason}}",
@@ -1231,5 +1249,34 @@
     "restart": "Restart to update",
     "failed": "The update did not work: {{message}}",
     "disabled": "The development build does not update itself."
+  },
+  "languageSetup": {
+    "yourLanguages": "Your languages",
+    "add": "+ Add language",
+    "addLabel": "Add a language you speak",
+    "remove": "Remove {{language}}",
+    "hints": {
+      "yue": "Cantonese",
+      "zh": "Mandarin"
+    },
+    "fromMac": "Filled in from your Mac’s preferred languages.",
+    "list": "{{items}} and {{last}}",
+    "listSeparator": ", ",
+    "suggestedTitle": "Suggested setup for {{languages}}",
+    "noneTitle": "No suggested setup for {{languages}}",
+    "noneBody": "The next steps start with the standard built-in models. You can still choose any model there.",
+    "empty": "Add the languages you speak. You can also skip this; the standard built-in models are used.",
+    "nextSteps": "The next two steps start with these models chosen. You download each one there, or pick another.",
+    "aiFallback": "The larger AI model needs 16 GB of memory, so AI polish starts with the faster one.",
+    "suggestedTag": "Suggested for your languages",
+    "bannerSpeech": "Speech recognition: {{model}}.",
+    "bannerAi": "AI polish: {{model}}.",
+    "notNow": "Not now",
+    "homeGroup": "Suggested for your languages",
+    "homeTitle": "Built-in models for {{languages}}",
+    "homeBodyBoth": "{{speech}} for speech recognition and {{ai}} for AI polish. They run on this Mac; {{size}} to download.",
+    "homeBodySpeech": "{{speech}} for speech recognition. It runs on this Mac; {{size}} to download.",
+    "homeBodyAi": "{{ai}} for AI polish. It runs on this Mac; {{size}} to download.",
+    "dontShowAgain": "Don’t show again"
   }
 }

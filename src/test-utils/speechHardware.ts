@@ -6,6 +6,8 @@ const SIZES: Record<string, number> = {
   small: 190_085_487,
   'qwen3-4b': 2_497_281_120,
   'qwen3-1.7b': 1_107_409_472,
+  'qwen3-asr-1.7b': 2_520_744_288,
+  'qwen3.5-4b': 2_740_937_888,
 }
 
 /**

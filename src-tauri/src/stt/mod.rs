@@ -5,6 +5,7 @@ pub mod config;
 pub mod elevenlabs;
 pub mod hallucination;
 pub mod hardware;
+pub mod llama_asr;
 pub mod models;
 pub mod qwen_cloud;
 pub mod silence;
@@ -91,13 +92,19 @@ pub fn normalize_detected_language(raw: &str) -> Option<String> {
 }
 
 /// Creates the provider for a speech preset: whisper.cpp in the app for built-in presets
-/// (plan `quick-speech-setup`), Qwen Cloud's own API for `qwen_cloud` presets (plan
+/// (plan `quick-speech-setup`), the built-in speech server for a built-in Qwen3-ASR preset (plan
+/// `language-model-suggestions`), Qwen Cloud's own API for `qwen_cloud` presets (plan
 /// `qwen-cloud-speech`), ElevenLabs Scribe for `elevenlabs` presets (plan `elevenlabs-speech`),
 /// otherwise an OpenAI-compatible transcription upload.
 pub fn provider_for_preset(
     preset: &crate::storage::SpeechPreset,
     client: Option<reqwest::Client>,
 ) -> Result<Box<dyn SttProvider>, String> {
+    if llama_asr::asr_model_of(preset).is_some() {
+        return Ok(Box::new(llama_asr::LlamaAsrProvider::new(
+            llama_asr::config_for(preset)?,
+        )));
+    }
     if preset.is_builtin_whisper() {
         return Ok(Box::new(builtin::BuiltinProvider::new(
             config::build_builtin_config(preset)?,

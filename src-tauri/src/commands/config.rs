@@ -275,6 +275,8 @@ pub async fn update_config(
     // Plan `ai-polish-setup`: start the built-in AI server when Built-in AI became the engine in
     // use, stop it when another engine was picked.
     crate::llm::builtin::sync_with_config(&config);
+    // Plan `language-model-suggestions`: the same for the built-in speech server (Qwen3-ASR).
+    crate::stt::llama_asr::sync_with_config(&config);
     if refresh_provider_connections {
         if let Some(pipeline) = app.try_state::<crate::pipeline::PipelineHandle>() {
             let pipeline = pipeline.inner().clone();

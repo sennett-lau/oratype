@@ -120,6 +120,7 @@ pub fn build_whisper_config(preset: &SpeechPreset) -> Result<WhisperCompatConfig
         provider_name: preset.name.clone(),
         endpoint: transcription_endpoint(&preset.base_url)?,
         model: model.to_string(),
+        verbose_json: true,
     })
 }
 

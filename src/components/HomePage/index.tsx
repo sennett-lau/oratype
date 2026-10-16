@@ -14,6 +14,7 @@ import { Group } from '../ui/Group'
 import { KeyCaps } from '../ui/KeyCap'
 import { startShortcutTour, useShortcutTourAvailable } from '../../lib/shortcutTour'
 import { FinishSetup } from './FinishSetup'
+import { LanguageSetupCard } from './LanguageSetupCard'
 import { UpdateBar } from './UpdateBar'
 import { SpeedBoard } from './SpeedBoard'
 
@@ -291,6 +292,7 @@ export function HomePage() {
     >
       <UpdateBar />
       <FinishSetup />
+      <LanguageSetupCard />
       <ShortcutTiles />
       <TourLink />
       <div className="mt-[22px]">

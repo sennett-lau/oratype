@@ -61,6 +61,7 @@
     "couldNotReplace": "このアプリでは置き換えができませんでした。結果はクリップボードにあります。",
     "tryReplacingAgain": "もう一度置き換える",
     "errorTitle": "問題が発生しました",
+    "unconfirmed": "検索結果から答えを確認できませんでした。情報源を確認してください。",
     "sources": "出典",
     "sourcesCount_one": "{{count}} 件の出典",
     "sourcesCount_other": "{{count}} 件の出典",
@@ -69,7 +70,9 @@
     "sourceOpened": "出典 {{n}} を開きました",
     "sourceLinkCopied": "出典 {{n}} のリンクをコピーしました",
     "copySourceLink": "出典 {{n}} のリンクをコピー",
-    "openSource": "出典 {{n}} を開く"
+    "openSource": "出典 {{n}} を開く",
+    "translatedTo": "{{language}}に翻訳",
+    "translation": "翻訳"
   },
   "errors": {
     "stt_timeout": "音声サーバが {{details}} 以内に応答しませんでした。起動しているか確認するか、より速いサーバをお試しください。",
@@ -85,7 +88,8 @@
     "llm_quota_exceeded": "AI エンドポイントがリクエストを拒否しました（使用量またはレート制限）。後でもう一度試すか、エンドポイントを確認してください。",
     "output_wayland_clipboard_copy_only": "クリップボードにコピーしました。Wayland では手動でペーストしてください。",
     "mic_fallback_default": "選択したマイク「{{details}}」が接続されていないため、システムのデフォルトを使用しました。",
-    "stt_unreachable": "音声サーバに接続できませんでした（{{details}}）。設定 → 音声 のアドレスと、サーバが起動しているかを確認してください。"
+    "stt_unreachable": "音声サーバに接続できませんでした（{{details}}）。設定 → 音声 のアドレスと、サーバが起動しているかを確認してください。",
+    "output_held_no_accessibility": "アクセシビリティの許可がないため、Typelite は入力できません。結果は「コピー」ピルにあります。システム設定 → プライバシーとセキュリティ → アクセシビリティで Typelite を許可してください。"
   },
   "home": {
     "headline": "話すだけ。",
@@ -306,7 +310,9 @@
       "ask": "なんでも質問",
       "askSub": "質問したり、選択したテキストを声で直したりできます。",
       "webSearch": "Web 検索",
-      "webSearchSub": "任意：なんでも質問でニュース、スコア、予定を調べられます。"
+      "webSearchSub": "任意：なんでも質問でニュース、スコア、予定を調べられます。",
+      "languages": "話す言語",
+      "languagesSub": "話す言語に合った構成があるかどうかを Typelite が確認します。"
     },
     "layout": {
       "back": "戻る",
@@ -416,7 +422,6 @@
     "keyboardSimulation": "直接入力",
     "clipboardPaste": "クリップボードからペースト",
     "restoreClipboardAfterPaste": "元のクリップボードを復元",
-    "restoreClipboardTextOnlyHint": "テキストのクリップボードのみ対応。画像、ファイル、リッチコンテンツはまだ完全には復元されません。",
     "pasteShortcut": "ペーストのショートカット",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",
@@ -459,8 +464,8 @@
     "askAnything": "なんでも質問",
     "askAnythingDesc": "声で質問し、一度で回答。チャット履歴は残りません。",
     "tryAsk": "質問を試す",
-    "selectedTextContext": "質問と整形で選択テキストを使う",
-    "selectedTextContextDesc": "質問と整形で、選択したテキストを要約・書き直し・翻訳できます。AI のトークンを多く使います。",
+    "selectedTextContext": "音声入力で選択テキストを使う",
+    "selectedTextContextDesc": "音声入力が選択範囲を読み取り、文脈として AI に送ります。選択したまま「短くして」などと言えます。AI のトークンを多く使います。質問と翻訳は常に選択範囲を読み取ります。",
     "targetLanguage": "翻訳先",
     "aboutDescription": "オープンソースの AI 音声入力ツール。話すだけで書ける — 声をその場で整ったテキストに変えます。",
     "openSource": "オープンソース",
@@ -936,6 +941,13 @@
     "failed": "ショートカットの記録を開始できませんでした：{{error}}"
   },
   "whatsNew": {
+    "languageModels": "話す言語：話す言語を Typelite に伝えられます（初回設定または「設定 → 音声」）。広東語の場合は、ダウンロードできる内蔵モデルを 2 つ提案します。話したとおりに広東語を書く Qwen3-ASR と、整形用の Qwen 3.5 4B です。",
+    "clipboardSafe": "Typelite はクリップボードに手を出さなくなりました。入力できない結果は「コピー」ピルで待機し、貼り付け後はコピーしていた内容がすべて（画像やファイルも）元に戻り、クリップボード管理アプリにも音声入力の内容が残らなくなりました。",
+    "typeAfterSwitch": "アプリをクリックしてすぐに音声入力しても、コピーではなく文字が直接入力されるようになりました。",
+    "askReadsPages": "Web 検索を使う質問は上位の結果ページを読むようになり、ニュースやスコア、次の試合についての質問にも答えられます。確認できない日付は明示されます。",
+    "translateHighlight": "テキストを選択して質問を押し、「これを英語に翻訳して」と言うと、翻訳が質問パネルに表示され、コピーと置き換えができます。",
+    "askSelectText": "質問パネルのテキストを選択でき、⌘C で選択部分をコピーできます。",
+    "polishFillers": "整形ですべての言語のフィラーやためらい（um、嗯、呃）を取り除き、言い直したときは訂正後の内容だけを残し、文をダッシュでつながなくなりました。",
     "fasterSpeech": "内蔵の音声認識が短い音声で約 2 倍速くなりました。録音ごとに 30 秒分の無音を処理しなくなりました。",
     "fasterPaste": "結果の貼り付けが約 0.5 秒早くなりました。対象のアプリが前面にあるかの確認に AppleScript を使わなくなりました。",
     "fasterMic": "設定でマイクを選んでいる場合、録音が約 0.3 秒早く始まり、最初の言葉が切れなくなりました。",
@@ -1020,14 +1032,15 @@
     },
     "builtinTitle": "内蔵",
     "recommended": "推奨",
-    "builtinBody": "このコンピュータ上で Typelite 内の Whisper を実行します。他のソフトウェアは不要です。",
+    "builtinBody": "このコンピュータ上で Typelite 内の音声モデルを実行します。他のソフトウェアは不要です。",
     "changeModel": "モデルを変更",
     "download": "ダウンロード",
     "use": "使う",
     "model": "モデル",
     "models": {
       "large-v3-turbo": "最高精度",
-      "small": "高速"
+      "small": "高速",
+      "qwen3Asr": "Qwen3-ASR"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "このコンピュータを確認中…",
@@ -1055,6 +1068,9 @@
         "needs_memory": "大きいモデルには 8 GB のメモリが必要です。",
         "needs_disk_space": "大きいモデル用の空き容量が足りません。"
       }
+    },
+    "modelDetails": {
+      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
     }
   },
   "speech": {
@@ -1094,7 +1110,7 @@
     "engines": {
       "builtin": {
         "title": "内蔵",
-        "detail": "このコンピュータ上で Typelite 内の Whisper を実行"
+        "detail": "このコンピュータ上で Typelite 内の音声モデルを実行"
       },
       "server": {
         "title": "自分のサーバまたは API キー",
@@ -1129,11 +1145,13 @@
     "testing": "モデルを起動してテスト中…",
     "models": {
       "best": "最高品質",
-      "faster": "高速"
+      "faster": "高速",
+      "qwen35": "Qwen 3.5"
     },
     "modelDetail": {
       "best": "Qwen3 4B Instruct · {{size}}",
-      "faster": "Qwen3 1.7B · {{size}}"
+      "faster": "Qwen3 1.7B · {{size}}",
+      "qwen35": "Qwen 3.5 4B · {{size}}"
     },
     "errors": {
       "load": "{{reason}}",
@@ -1231,5 +1249,34 @@
     "restart": "再起動してアップデート",
     "failed": "アップデートできませんでした：{{message}}",
     "disabled": "開発ビルドは自動でアップデートされません。"
+  },
+  "languageSetup": {
+    "yourLanguages": "話す言語",
+    "add": "+ 言語を追加",
+    "addLabel": "話す言語を追加",
+    "remove": "{{language}}を削除",
+    "hints": {
+      "yue": "広東語",
+      "zh": "標準中国語"
+    },
+    "fromMac": "Mac の優先する言語から入力しました。",
+    "list": "{{items}}と{{last}}",
+    "listSeparator": "、",
+    "suggestedTitle": "{{languages}}におすすめの構成",
+    "noneTitle": "{{languages}}向けのおすすめ構成はありません",
+    "noneBody": "次のステップは標準の内蔵モデルで始まります。そこで任意のモデルを選ぶこともできます。",
+    "empty": "話す言語を追加してください。スキップすることもでき、その場合は標準の内蔵モデルを使います。",
+    "nextSteps": "次の 2 つのステップでは、これらのモデルが選択された状態で始まります。そこで 1 つずつダウンロードするか、別のモデルを選んでください。",
+    "aiFallback": "大きい AI モデルには 16 GB のメモリが必要なため、AI 整形は高速なモデルで始まります。",
+    "suggestedTag": "あなたの言語向け",
+    "bannerSpeech": "音声認識：{{model}}。",
+    "bannerAi": "AI 整形：{{model}}。",
+    "notNow": "後で",
+    "homeGroup": "あなたの言語向けの提案",
+    "homeTitle": "{{languages}}向けの内蔵モデル",
+    "homeBodyBoth": "音声認識に {{speech}}、AI 整形に {{ai}}。この Mac 上で動作し、ダウンロードは {{size}} です。",
+    "homeBodySpeech": "音声認識に {{speech}}。この Mac 上で動作し、ダウンロードは {{size}} です。",
+    "homeBodyAi": "AI 整形に {{ai}}。この Mac 上で動作し、ダウンロードは {{size}} です。",
+    "dontShowAgain": "今後表示しない"
   }
 }

@@ -1,9 +1,9 @@
 //! Plan `ai-polish-setup`: the model files that Built-in AI downloads, and which of them this Mac
 //! runs well.
 //!
-//! The files are Qwen3 GGUF models quantised to Q4_K_M. Qwen publishes no Q4_K_M GGUF of these
-//! two models itself, so they come from Unsloth's Hugging Face repositories, pinned to one
-//! commit. They live in the same `models` folder as the speech models and use the same
+//! The files are Qwen3 and Qwen 3.5 GGUF models quantised to Q4_K_M. Qwen publishes no Q4_K_M
+//! GGUF of these models itself, so they come from Unsloth's Hugging Face repositories, pinned to
+//! one commit. They live in the same `models` folder as the speech models and use the same
 //! download, resume and SHA-256 check (`stt::models::download_model`).
 
 use std::path::Path;
@@ -17,6 +17,9 @@ pub const BEST_MODEL_ID: &str = "qwen3-4b";
 pub const FASTER_MODEL_ID: &str = "qwen3-1.7b";
 /// The model setup picks when none is given.
 pub const DEFAULT_MODEL_ID: &str = BEST_MODEL_ID;
+/// Plan `language-model-suggestions`: Qwen 3.5 4B, the AI half of the setup suggested for
+/// Cantonese. It thinks by default; the server's `--reasoning off` turns that off.
+pub const QWEN35_MODEL_ID: &str = "qwen3.5-4b";
 
 const GB: u64 = 1024 * 1024 * 1024;
 
@@ -51,6 +54,17 @@ pub const AI_MODELS: &[AiModel] = &[
         },
         url: "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/d7f544eead698dbd1f15126ef60b45a1e1933222/Qwen3-1.7B-Q4_K_M.gguf",
         min_memory_bytes: 8 * GB,
+    },
+    // Last, so the recommendation and `left_out` still describe the two models above.
+    AiModel {
+        file: KnownModel {
+            id: QWEN35_MODEL_ID,
+            file_name: "Qwen3.5-4B-Q4_K_M.gguf",
+            size_bytes: 2_740_937_888,
+            sha256: "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
+        },
+        url: "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/e87f176479d0855a907a41277aca2f8ee7a09523/Qwen3.5-4B-Q4_K_M.gguf",
+        min_memory_bytes: 16 * GB,
     },
 ];
 
@@ -110,7 +124,11 @@ mod tests {
 
     #[test]
     fn the_model_table_is_well_formed() {
-        assert_eq!(AI_MODELS.len(), 2);
+        assert_eq!(AI_MODELS.len(), 3);
+        assert_eq!(
+            ai_model(QWEN35_MODEL_ID).unwrap().file.size_bytes,
+            2_740_937_888
+        );
         for model in AI_MODELS {
             assert_eq!(model.file.sha256.len(), 64);
             assert!(model
@@ -139,11 +157,12 @@ mod tests {
     #[test]
     fn a_16_gb_apple_silicon_mac_gets_both_best_first() {
         let offer = offer_models(&mac(ChipKind::AppleSilicon, 32, 50_000 * MB), &[]);
-        assert_eq!(ids(&offer), ["qwen3-4b", "qwen3-1.7b"]);
+        assert_eq!(ids(&offer), ["qwen3-4b", "qwen3-1.7b", "qwen3.5-4b"]);
         assert!(offer.models[0].recommended);
+        assert!(!offer.models[2].recommended);
         assert_eq!(offer.left_out, None);
         let offer = offer_models(&mac(ChipKind::AppleSilicon, 16, 50_000 * MB), &[]);
-        assert_eq!(ids(&offer), ["qwen3-4b", "qwen3-1.7b"]);
+        assert_eq!(ids(&offer), ["qwen3-4b", "qwen3-1.7b", "qwen3.5-4b"]);
     }
 
     #[test]

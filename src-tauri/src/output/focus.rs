@@ -139,6 +139,24 @@ pub fn typed_text_landed(
     Some(false)
 }
 
+/// Plan `clipboard-safety`: what Accessibility says about the selection in the focused element.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SelectedText {
+    /// The app reported the selected text (it may be only whitespace).
+    Text(String),
+    /// The app reported that nothing is selected.
+    Nothing,
+    /// The app does not tell (no focused element, no `AXSelectedText`, an error): only ⌘C can
+    /// find out.
+    Unknown,
+}
+
+/// The focused element's selected text, read through Accessibility, so reading a highlight does
+/// not have to go through the clipboard.
+pub fn focused_selected_text() -> SelectedText {
+    platform::focused_selected_text()
+}
+
 /// Asks Accessibility about the focused element and decides. Takes a few milliseconds (each
 /// attribute is a message to the focused app, capped by a short timeout). Logs the decision
 /// with the role name only.
@@ -215,6 +233,7 @@ mod platform {
         fn CFGetTypeID(cf: CFTypeRef) -> usize;
         fn CFStringGetTypeID() -> usize;
         fn CFStringGetLength(string: CFStringRef) -> isize;
+        fn CFStringGetMaximumSizeForEncoding(length: isize, encoding: u32) -> isize;
         fn CFNumberGetTypeID() -> usize;
         fn CFNumberGetValue(
             number: CFTypeRef,
@@ -325,6 +344,67 @@ mod platform {
         Some(unsafe { CFStringGetLength(value.0) } as i64)
     }
 
+    /// `kAXErrorNoValue`: the attribute exists but has no value.
+    const AX_ERROR_NO_VALUE: AXError = -25212;
+
+    /// A Core Foundation string of any length as UTF-8.
+    fn rust_string(value: CFTypeRef) -> Option<String> {
+        if unsafe { CFGetTypeID(value) != CFStringGetTypeID() } {
+            return None;
+        }
+        let length = unsafe { CFStringGetLength(value) };
+        let capacity =
+            unsafe { CFStringGetMaximumSizeForEncoding(length, CF_STRING_ENCODING_UTF8) } + 1;
+        let mut buffer = vec![0 as c_char; capacity.max(1) as usize];
+        let ok = unsafe {
+            CFStringGetCString(
+                value,
+                buffer.as_mut_ptr(),
+                buffer.len() as isize,
+                CF_STRING_ENCODING_UTF8,
+            )
+        };
+        (ok != 0).then(|| {
+            unsafe { CStr::from_ptr(buffer.as_ptr()) }
+                .to_string_lossy()
+                .into_owned()
+        })
+    }
+
+    /// Plan `clipboard-safety`: the focused element's `AXSelectedText`. An empty string, or an
+    /// attribute with no value, means nothing is selected; any other failure means the app does
+    /// not tell.
+    pub(super) fn focused_selected_text() -> super::SelectedText {
+        use super::SelectedText;
+        let Some(system) = Owned::new(unsafe { AXUIElementCreateSystemWide() }) else {
+            return SelectedText::Unknown;
+        };
+        unsafe { AXUIElementSetMessagingTimeout(system.0, MESSAGING_TIMEOUT_SECONDS) };
+        let Some(focused) = copy_attribute(system.0, "AXFocusedUIElement") else {
+            return SelectedText::Unknown;
+        };
+        unsafe { AXUIElementSetMessagingTimeout(focused.0, MESSAGING_TIMEOUT_SECONDS) };
+        let Some(attribute) = cf_string("AXSelectedText") else {
+            return SelectedText::Unknown;
+        };
+        let mut value: CFTypeRef = ptr::null();
+        let error = unsafe { AXUIElementCopyAttributeValue(focused.0, attribute.0, &mut value) };
+        if error == AX_ERROR_NO_VALUE {
+            return SelectedText::Nothing;
+        }
+        if error != AX_ERROR_SUCCESS {
+            return SelectedText::Unknown;
+        }
+        let Some(value) = Owned::new(value) else {
+            return SelectedText::Nothing;
+        };
+        match rust_string(value.0) {
+            Some(text) if text.is_empty() => SelectedText::Nothing,
+            Some(text) => SelectedText::Text(text),
+            None => SelectedText::Unknown,
+        }
+    }
+
     /// Reads the focused element's role and flags, or `None` when no element is focused or
     /// Accessibility is not available (for example without the permission).
     pub(super) fn focused_element_info() -> Option<FocusedElementInfo> {
@@ -360,6 +440,10 @@ mod platform {
 
     pub(super) fn focused_text_length() -> Option<i64> {
         None
+    }
+
+    pub(super) fn focused_selected_text() -> super::SelectedText {
+        super::SelectedText::Unknown
     }
 }
 

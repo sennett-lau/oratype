@@ -61,6 +61,7 @@
     "couldNotReplace": "Esta app no permitió el reemplazo. El resultado está en tu portapapeles.",
     "tryReplacingAgain": "Intentar reemplazar de nuevo",
     "errorTitle": "Algo salió mal",
+    "unconfirmed": "No se pudo confirmar una respuesta con los resultados de búsqueda. Revisa las fuentes.",
     "sources": "Fuentes",
     "sourcesCount_one": "{{count}} fuente",
     "sourcesCount_other": "{{count}} fuentes",
@@ -69,7 +70,9 @@
     "sourceOpened": "Fuente {{n}} abierta",
     "sourceLinkCopied": "Enlace de la fuente {{n}} copiado",
     "copySourceLink": "Copiar enlace de la fuente {{n}}",
-    "openSource": "Abrir fuente {{n}}"
+    "openSource": "Abrir fuente {{n}}",
+    "translatedTo": "Traducción: {{language}}",
+    "translation": "Traducción"
   },
   "errors": {
     "stt_timeout": "El servidor de voz no respondió en {{details}}. Comprueba que está en marcha o prueba un servidor más rápido.",
@@ -85,7 +88,8 @@
     "llm_quota_exceeded": "El servicio de IA rechazó la solicitud (cuota o límite de uso). Inténtalo más tarde o revisa el servicio.",
     "output_wayland_clipboard_copy_only": "Copiado al portapapeles. Pégalo a mano en Wayland.",
     "mic_fallback_default": "El micrófono que elegiste, \"{{details}}\", no está conectado, así que se usó el predeterminado del sistema.",
-    "stt_unreachable": "No se pudo conectar con el servidor de voz ({{details}}). Revisa la dirección en Ajustes → Voz y que el servidor esté en marcha."
+    "stt_unreachable": "No se pudo conectar con el servidor de voz ({{details}}). Revisa la dirección en Ajustes → Voz y que el servidor esté en marcha.",
+    "output_held_no_accessibility": "Falta el permiso de Accesibilidad, así que Typelite no puede escribir. El resultado está en la cápsula Copiar. Permite Typelite en Ajustes del Sistema → Privacidad y seguridad → Accesibilidad."
   },
   "home": {
     "headline": "Solo dilo.",
@@ -306,7 +310,9 @@
       "ask": "Pregunta lo que sea",
       "askSub": "Haz una pregunta o cambia el texto seleccionado con la voz.",
       "webSearch": "Búsqueda web",
-      "webSearchSub": "Opcional: permite a Pregunta lo que sea buscar noticias, resultados y horarios."
+      "webSearchSub": "Opcional: permite a Pregunta lo que sea buscar noticias, resultados y horarios.",
+      "languages": "Tus idiomas",
+      "languagesSub": "Typelite comprueba si hay una configuración adecuada para los idiomas que hablas."
     },
     "layout": {
       "back": "Atrás",
@@ -416,7 +422,6 @@
     "keyboardSimulation": "Escribir directamente",
     "clipboardPaste": "Pegar desde el portapapeles",
     "restoreClipboardAfterPaste": "Restaurar el portapapeles anterior",
-    "restoreClipboardTextOnlyHint": "Solo el portapapeles de texto; las imágenes, archivos y contenido enriquecido aún no se restauran del todo.",
     "pasteShortcut": "Atajo de pegar",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",
@@ -459,8 +464,8 @@
     "askAnything": "Pregunta lo que sea",
     "askAnythingDesc": "Pregunta por voz, respuesta única. Sin historial de chat.",
     "tryAsk": "Probar Preguntar",
-    "selectedTextContext": "Usar el texto seleccionado en Preguntar/pulido",
-    "selectedTextContextDesc": "Permite a Preguntar y al pulido resumir, reescribir o traducir el texto seleccionado. Usa más tokens de IA.",
+    "selectedTextContext": "Usar el texto seleccionado al dictar",
+    "selectedTextContextDesc": "Dictar lee la selección y la envía a la IA como contexto, para que puedas decir «hazlo más corto» sobre ella. Usa más tokens de IA. Preguntar y Traducir siempre leen la selección.",
     "targetLanguage": "Traducir a",
     "aboutDescription": "Herramienta de código abierto de dictado por voz con IA. Habla para escribir: convierte tu voz en texto pulido en tiempo real.",
     "openSource": "Código abierto",
@@ -936,6 +941,13 @@
     "failed": "No se pudo empezar a grabar el atajo: {{error}}"
   },
   "whatsNew": {
+    "languageModels": "Tus idiomas: dile a Typelite qué idiomas hablas (en la configuración inicial o en Ajustes → Voz). Para el cantonés sugiere dos modelos integrados para descargar: Qwen3-ASR, que escribe el cantonés tal como lo dices, y Qwen 3.5 4B para el pulido.",
+    "clipboardSafe": "Typelite ya no toca tu portapapeles: un resultado que no puede escribir espera en la cápsula Copiar, tras pegar vuelve todo lo que habías copiado (también imágenes y archivos) y los gestores de portapapeles ya no guardan los dictados.",
+    "typeAfterSwitch": "Si haces clic en una app y dictas enseguida, ahora el texto se escribe en lugar de copiarse.",
+    "askReadsPages": "Con la búsqueda web, Preguntar lee las primeras páginas de resultados, así que las preguntas sobre noticias, marcadores y próximos partidos obtienen respuesta. Las fechas que no puede confirmar se señalan.",
+    "translateHighlight": "Selecciona texto, pulsa Preguntar y di «traduce esto al inglés»: la traducción se abre en el panel de Preguntar con Copiar y Reemplazar.",
+    "askSelectText": "El texto del panel de Preguntar se puede seleccionar, y ⌘C copia la selección.",
+    "polishFillers": "El pulido quita muletillas y titubeos (um, 嗯, 呃) en todos los idiomas, conserva solo tu corrección cuando cambias de idea y ya no une frases con guiones.",
     "fasterSpeech": "El reconocimiento de voz integrado es casi el doble de rápido en dictados cortos: ya no procesa 30 segundos de silencio tras cada clip.",
     "fasterPaste": "El resultado se pega medio segundo antes: comprobar que tu app sigue al frente ya no usa AppleScript.",
     "fasterMic": "Con un micrófono elegido en Ajustes, la grabación empieza unos 0,3 segundos antes y no se pierden tus primeras palabras.",
@@ -1020,14 +1032,15 @@
     },
     "builtinTitle": "Integrado",
     "recommended": "Recomendado",
-    "builtinBody": "Ejecuta Whisper dentro de Typelite en este ordenador. No necesitas otro software.",
+    "builtinBody": "Ejecuta un modelo de voz dentro de Typelite en este ordenador. No necesitas otro software.",
     "changeModel": "Cambiar modelo",
     "download": "Descargar",
     "use": "Usar",
     "model": "Modelo",
     "models": {
       "large-v3-turbo": "Máxima precisión",
-      "small": "Más rápido"
+      "small": "Más rápido",
+      "qwen3Asr": "Qwen3-ASR"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "Comprobando este ordenador…",
@@ -1055,6 +1068,9 @@
         "needs_memory": "El modelo más grande necesita 8 GB de memoria.",
         "needs_disk_space": "No hay espacio libre suficiente para el modelo más grande."
       }
+    },
+    "modelDetails": {
+      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
     }
   },
   "speech": {
@@ -1094,7 +1110,7 @@
     "engines": {
       "builtin": {
         "title": "Integrado",
-        "detail": "Ejecuta Whisper dentro de Typelite en este ordenador"
+        "detail": "Ejecuta un modelo de voz dentro de Typelite en este ordenador"
       },
       "server": {
         "title": "Tu servidor o clave de API",
@@ -1129,11 +1145,13 @@
     "testing": "Iniciando el modelo y haciendo una prueba…",
     "models": {
       "best": "Mejor calidad",
-      "faster": "Más rápido"
+      "faster": "Más rápido",
+      "qwen35": "Qwen 3.5"
     },
     "modelDetail": {
       "best": "Qwen3 4B Instruct · {{size}}",
-      "faster": "Qwen3 1.7B · {{size}}"
+      "faster": "Qwen3 1.7B · {{size}}",
+      "qwen35": "Qwen 3.5 4B · {{size}}"
     },
     "errors": {
       "load": "{{reason}}",
@@ -1231,5 +1249,34 @@
     "restart": "Reiniciar para actualizar",
     "failed": "La actualización no funcionó: {{message}}",
     "disabled": "La versión de desarrollo no se actualiza sola."
+  },
+  "languageSetup": {
+    "yourLanguages": "Tus idiomas",
+    "add": "+ Añadir idioma",
+    "addLabel": "Añadir un idioma que hablas",
+    "remove": "Quitar {{language}}",
+    "hints": {
+      "yue": "Cantonés",
+      "zh": "Mandarín"
+    },
+    "fromMac": "Tomados de los idiomas preferidos de tu Mac.",
+    "list": "{{items}} y {{last}}",
+    "listSeparator": ", ",
+    "suggestedTitle": "Configuración sugerida para {{languages}}",
+    "noneTitle": "No hay configuración sugerida para {{languages}}",
+    "noneBody": "Los siguientes pasos empiezan con los modelos integrados estándar. Allí puedes elegir cualquier modelo.",
+    "empty": "Añade los idiomas que hablas. También puedes saltar este paso; se usan los modelos integrados estándar.",
+    "nextSteps": "Los dos pasos siguientes empiezan con estos modelos elegidos. Allí descargas cada uno, o eliges otro.",
+    "aiFallback": "El modelo de IA más grande necesita 16 GB de memoria, así que el pulido con IA empieza con el más rápido.",
+    "suggestedTag": "Sugerido para tus idiomas",
+    "bannerSpeech": "Reconocimiento de voz: {{model}}.",
+    "bannerAi": "Pulido con IA: {{model}}.",
+    "notNow": "Ahora no",
+    "homeGroup": "Sugerido para tus idiomas",
+    "homeTitle": "Modelos integrados para {{languages}}",
+    "homeBodyBoth": "{{speech}} para el reconocimiento de voz y {{ai}} para el pulido con IA. Se ejecutan en este Mac; {{size}} de descarga.",
+    "homeBodySpeech": "{{speech}} para el reconocimiento de voz. Se ejecuta en este Mac; {{size}} de descarga.",
+    "homeBodyAi": "{{ai}} para el pulido con IA. Se ejecuta en este Mac; {{size}} de descarga.",
+    "dontShowAgain": "No volver a mostrar"
   }
 }

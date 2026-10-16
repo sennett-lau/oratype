@@ -331,7 +331,10 @@ fn request_translation(
             &config.translation.targets,
         );
         let spoken = source == crate::voice_intent::language::TargetSource::Speech;
-        if spoken || config.translate_enabled {
+        // Plan `translate-selection-panel`: an Ask translation for the panel always translates,
+        // into the active translation language when no language was named.
+        let for_panel = intent.placement == crate::voice_intent::VoiceOutputPlacement::PopupAnswer;
+        if spoken || for_panel || config.translate_enabled {
             tracing::info!(
                 "Selection translation target: {} (from {})",
                 target,
@@ -939,6 +942,9 @@ struct PipelineVoiceExecutionBackend<'a> {
     config: &'a storage::AppConfig,
     already_copied: bool,
     popup_fallback_enabled: bool,
+    /// Plan `translate-selection-panel`: the Ask caller shows this result in its panel (an Ask
+    /// translation of a highlight), so "showing" it here is a no-op that succeeds.
+    answer_shown_by_caller: bool,
     copy_pill: Option<crate::copy_pill::CopyPillRun>,
 }
 
@@ -993,6 +999,9 @@ impl crate::voice_intent::executor::VoiceExecutionBackend for PipelineVoiceExecu
     }
 
     async fn popup_answer(&mut self, text: &str) -> std::result::Result<(), String> {
+        if self.answer_shown_by_caller {
+            return Ok(());
+        }
         if !self.popup_fallback_enabled {
             return Err("popup fallback is owned by the Ask caller".to_string());
         }
@@ -1955,7 +1964,17 @@ impl PipelineHandle {
             .unwrap_or_else(|e| e.into_inner())
             .clone()
             .unwrap_or_default();
-        let selected_text = if config_data.selected_text_enabled {
+        // Plan `translate-selection-panel`: Translate always reads the highlight; Dictate only
+        // with "Use selected text as polish context" on.
+        let run_voice_mode = self
+            .preloaded_voice_mode
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .unwrap_or(crate::voice_intent::VoiceMode::Dictate);
+        let selected_text = if crate::selection::should_capture_selection(
+            run_voice_mode,
+            config_data.selected_text_enabled,
+        ) {
             tokio::time::sleep(std::time::Duration::from_millis(
                 SELECTED_TEXT_CAPTURE_DELAY_MS,
             ))
@@ -2590,7 +2609,11 @@ impl PipelineHandle {
                                             "Typed text did not land (field length unchanged at {:?})",
                                             text_length_after
                                         );
-                                        self.hold_for_copy_pill(&response.polished_text, run);
+                                        self.hold_for_copy_pill(
+                                            &response.polished_text,
+                                            run,
+                                            crate::copy_pill::HoldReason::NoTextField,
+                                        );
                                         streaming_output_status = Some((
                                             "held_for_copy",
                                             "typed text did not land; offered Copy".to_string(),
@@ -2778,6 +2801,9 @@ impl PipelineHandle {
                     config,
                     already_copied: false,
                     popup_fallback_enabled,
+                    answer_shown_by_caller: !popup_fallback_enabled
+                        && voice_intent.placement
+                            == crate::voice_intent::VoiceOutputPlacement::PopupAnswer,
                     copy_pill: polished_copy_pill,
                 };
                 let execution = crate::voice_intent::executor::execute_voice_intent(
@@ -3107,13 +3133,48 @@ impl PipelineHandle {
                     retry_count: 0,
                 }
             });
+        let configured_strategy =
+            output::InsertionStrategy::from_config_value(&config.insertion_strategy);
+        let accessibility_trusted = is_accessibility_trusted();
+
+        // Plan `copy-when-no-field` and plan `clipboard-safety`: a Dictate or Translate result
+        // that cannot be typed into the app the user started in (another app is in front, no
+        // permission to type, or no text field) waits in the Copy pill. The clipboard is left
+        // alone; it used to be overwritten with the result.
+        let focus_check = || {
+            // A blocking Accessibility query of a few milliseconds.
+            tokio::task::block_in_place(output::focus::check_focus)
+        };
+        let hold = crate::copy_pill::copy_pill_hold(
+            copy_pill,
+            configured_strategy,
+            target_warning.is_none(),
+            accessibility_trusted || !strategy_uses_automated_input(configured_strategy),
+            focus_check,
+        );
+        if let (Some(reason), Some(run)) = (hold, copy_pill) {
+            self.hold_for_copy_pill(text, run, reason);
+            if reason == crate::copy_pill::HoldReason::CannotType {
+                let warning = crate::error::UserError {
+                    code: "output_held_no_accessibility".to_string(),
+                    details: None,
+                    retry_count: 0,
+                };
+                let _ = self.app_handle.emit("pipeline:warning", &warning);
+            }
+            return Ok(output::InsertResult::held_for_copy(
+                configured_strategy,
+                text.chars().count(),
+            ));
+        }
+
         let requested_strategy = if target_warning.is_some() {
             output::InsertionStrategy::ClipboardCopyOnly
         } else {
-            output::InsertionStrategy::from_config_value(&config.insertion_strategy)
+            configured_strategy
         };
         let (strategy, accessibility_warning) =
-            effective_strategy_for_accessibility(requested_strategy, is_accessibility_trusted());
+            effective_strategy_for_accessibility(requested_strategy, accessibility_trusted);
 
         // Linux: check keyboard availability before attempting
         let effective_strategy = if strategy.needs_keyboard_access() {
@@ -3139,26 +3200,6 @@ impl PipelineHandle {
         } else {
             strategy
         };
-
-        // Plan `copy-when-no-field`: with no text field to paste into, keep the result for the Copy
-        // pill.
-        let focus_check = || {
-            // A blocking Accessibility query of a few milliseconds.
-            tokio::task::block_in_place(output::focus::check_focus)
-        };
-        let hold = crate::copy_pill::should_hold_for_copy_pill(
-            copy_pill,
-            effective_strategy,
-            target_warning.is_none(),
-            focus_check,
-        );
-        if let (true, Some(run)) = (hold, copy_pill) {
-            self.hold_for_copy_pill(text, run);
-            return Ok(output::InsertResult::held_for_copy(
-                effective_strategy,
-                text.chars().count(),
-            ));
-        }
 
         let clipboard_options = output::clipboard::ClipboardOutputOptions {
             restore_after_paste: config.restore_clipboard_after_paste,
@@ -3213,9 +3254,14 @@ impl PipelineHandle {
 
     /// Shows the Copy pill with `text` instead of pasting it. Nothing is pasted and the
     /// clipboard is not touched; the text stays in memory only until the pill closes.
-    fn hold_for_copy_pill(&self, text: &str, run: &crate::copy_pill::CopyPillRun) {
+    fn hold_for_copy_pill(
+        &self,
+        text: &str,
+        run: &crate::copy_pill::CopyPillRun,
+        reason: crate::copy_pill::HoldReason,
+    ) {
         tracing::info!(
-            "No text field has focus; showing the Copy pill ({} chars)",
+            "Showing the Copy pill ({reason:?}, {} chars)",
             text.chars().count()
         );
         self.copy_offer.hold(text);
@@ -3999,6 +4045,37 @@ mod tests {
             request_translation(&intent, "make it shorter", &config),
             (true, "ja".to_string())
         );
+    }
+
+    #[test]
+    fn ask_panel_translation_uses_the_named_language_else_the_active_one() {
+        // Plan `translate-selection-panel`: an Ask run never sets `translate_enabled`, yet its
+        // translation for the panel still translates.
+        let mut config = storage::AppConfig::default();
+        config.translation.active_target = "ja".to_string();
+        assert!(!config.translate_enabled);
+        for (speech, expected) in [
+            ("translate to English", "en"),
+            ("翻譯成廣東話", "zh-Hant-HK"),
+            ("translate this", "ja"),
+        ] {
+            let intent = route_pipeline_voice_intent(
+                crate::voice_intent::VoiceMode::Ask,
+                speech,
+                Some("選択したテキスト"),
+                &config,
+            );
+            assert_eq!(
+                intent.placement,
+                crate::voice_intent::VoiceOutputPlacement::PopupAnswer,
+                "{speech}"
+            );
+            assert_eq!(
+                request_translation(&intent, speech, &config),
+                (true, expected.to_string()),
+                "{speech}"
+            );
+        }
     }
 
     #[test]

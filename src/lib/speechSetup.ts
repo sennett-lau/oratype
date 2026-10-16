@@ -22,6 +22,8 @@ export const SMALL_SETUP_MODEL = 'small'
 export const MODEL_SIZE_BYTES: Record<string, number> = {
   [DEFAULT_SETUP_MODEL]: 574_041_195,
   [SMALL_SETUP_MODEL]: 190_085_487,
+  // Plan `language-model-suggestions`: the model and its audio projector together.
+  'qwen3-asr-1.7b': 2_520_744_288,
 }
 
 /** Decimal megabytes, as Finder shows file sizes: "574 MB". */

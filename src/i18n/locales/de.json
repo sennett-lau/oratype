@@ -61,6 +61,7 @@
     "couldNotReplace": "Diese App hat das Ersetzen nicht zugelassen. Das Ergebnis ist in deiner Zwischenablage.",
     "tryReplacingAgain": "Erneut ersetzen",
     "errorTitle": "Etwas ist schiefgelaufen",
+    "unconfirmed": "Aus den Suchergebnissen ließ sich keine Antwort bestätigen. Sieh dir die Quellen an.",
     "sources": "Quellen",
     "sourcesCount_one": "{{count}} Quelle",
     "sourcesCount_other": "{{count}} Quellen",
@@ -69,7 +70,9 @@
     "sourceOpened": "Quelle {{n}} geöffnet",
     "sourceLinkCopied": "Link von Quelle {{n}} kopiert",
     "copySourceLink": "Link von Quelle {{n}} kopieren",
-    "openSource": "Quelle {{n}} öffnen"
+    "openSource": "Quelle {{n}} öffnen",
+    "translatedTo": "Übersetzung: {{language}}",
+    "translation": "Übersetzung"
   },
   "errors": {
     "stt_timeout": "Der Sprachserver hat nicht innerhalb von {{details}} geantwortet. Prüfe, ob er läuft, oder versuche einen schnelleren Server.",
@@ -85,7 +88,8 @@
     "llm_quota_exceeded": "Der KI-Endpunkt hat die Anfrage abgelehnt (Kontingent oder Ratenlimit). Versuche es später erneut oder prüfe den Endpunkt.",
     "output_wayland_clipboard_copy_only": "In die Zwischenablage kopiert. Unter Wayland bitte manuell einfügen.",
     "mic_fallback_default": "Dein ausgewähltes Mikrofon „{{details}}“ ist nicht verbunden, daher wurde der Systemstandard verwendet.",
-    "stt_unreachable": "Der Sprachserver ist nicht erreichbar ({{details}}). Prüfe die Adresse unter Einstellungen → Sprache und ob der Server läuft."
+    "stt_unreachable": "Der Sprachserver ist nicht erreichbar ({{details}}). Prüfe die Adresse unter Einstellungen → Sprache und ob der Server läuft.",
+    "output_held_no_accessibility": "Die Bedienungshilfen-Berechtigung fehlt, daher kann Typelite nicht tippen. Das Ergebnis liegt in der Kopieren-Pille. Erlaube Typelite unter Systemeinstellungen → Datenschutz & Sicherheit → Bedienungshilfen."
   },
   "home": {
     "headline": "Sag es einfach.",
@@ -306,7 +310,9 @@
       "ask": "Frag alles",
       "askSub": "Stell eine Frage oder ändere ausgewählten Text per Stimme.",
       "webSearch": "Websuche",
-      "webSearchSub": "Optional: Frag alles kann Nachrichten, Ergebnisse und Termine nachschlagen."
+      "webSearchSub": "Optional: Frag alles kann Nachrichten, Ergebnisse und Termine nachschlagen.",
+      "languages": "Deine Sprachen",
+      "languagesSub": "Typelite prüft, ob es eine passende Einrichtung für die Sprachen gibt, die du sprichst."
     },
     "layout": {
       "back": "Zurück",
@@ -416,7 +422,6 @@
     "keyboardSimulation": "Direkt tippen",
     "clipboardPaste": "Aus der Zwischenablage einfügen",
     "restoreClipboardAfterPaste": "Vorherige Zwischenablage wiederherstellen",
-    "restoreClipboardTextOnlyHint": "Nur Text in der Zwischenablage; Bilder, Dateien und formatierte Inhalte werden noch nicht vollständig wiederhergestellt.",
     "pasteShortcut": "Kurzbefehl zum Einfügen",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",
@@ -459,8 +464,8 @@
     "askAnything": "Frag alles",
     "askAnythingDesc": "Sprachfrage, einmalige Antwort. Kein Chatverlauf.",
     "tryAsk": "Fragen ausprobieren",
-    "selectedTextContext": "Ausgewählten Text für Fragen/Überarbeitung nutzen",
-    "selectedTextContextDesc": "Lässt Fragen und Überarbeitung ausgewählten Text zusammenfassen, umschreiben oder übersetzen. Verbraucht mehr KI-Tokens.",
+    "selectedTextContext": "Ausgewählten Text beim Diktieren nutzen",
+    "selectedTextContextDesc": "Diktieren liest die Markierung und sendet sie als Kontext an die KI, sodass du darüber etwa „kürzer machen“ sagen kannst. Verbraucht mehr KI-Tokens. Fragen und Übersetzen lesen die Markierung immer.",
     "targetLanguage": "Übersetzen in",
     "aboutDescription": "Open-Source-Werkzeug für KI-Spracheingabe. Sprechen statt schreiben – deine Stimme wird in Echtzeit zu überarbeitetem Text.",
     "openSource": "Open Source",
@@ -936,6 +941,13 @@
     "failed": "Die Aufnahme des Kurzbefehls konnte nicht gestartet werden: {{error}}"
   },
   "whatsNew": {
+    "languageModels": "Deine Sprachen: Sag Typelite, welche Sprachen du sprichst (in der Ersteinrichtung oder unter Einstellungen → Sprache). Für Kantonesisch schlägt es zwei integrierte Modelle zum Laden vor: Qwen3-ASR, das Kantonesisch so schreibt, wie du es sagst, und Qwen 3.5 4B für die Überarbeitung.",
+    "clipboardSafe": "Typelite lässt deine Zwischenablage in Ruhe: Ein Ergebnis, das es nicht tippen kann, wartet in der Kopieren-Pille, nach dem Einfügen kommt alles zurück, was du kopiert hattest (auch Bilder und Dateien), und Zwischenablage-Manager speichern keine Diktate mehr.",
+    "typeAfterSwitch": "Wenn du in eine App klickst und sofort diktierst, wird der Text jetzt getippt statt kopiert.",
+    "askReadsPages": "Mit Websuche liest „Frag etwas“ die obersten Ergebnisseiten, sodass Fragen zu Nachrichten, Spielständen und kommenden Spielen eine Antwort bekommen. Ein Datum, das es nicht bestätigen kann, wird markiert.",
+    "translateHighlight": "Markiere Text, drück Fragen und sag „übersetze das ins Englische“: Die Übersetzung öffnet sich im Fragen-Fenster mit Kopieren und Ersetzen.",
+    "askSelectText": "Text im Fragen-Fenster lässt sich markieren, und ⌘C kopiert die Auswahl.",
+    "polishFillers": "Die Überarbeitung entfernt Füllwörter und Zögerlaute (ähm, 嗯, 呃) in jeder Sprache, behält bei einer Korrektur nur die korrigierte Fassung und verbindet Sätze nicht mehr mit Gedankenstrichen.",
     "fasterSpeech": "Die eingebaute Spracherkennung ist bei kurzen Diktaten etwa doppelt so schnell: Sie verarbeitet nicht mehr 30 Sekunden Stille nach jeder Aufnahme.",
     "fasterPaste": "Ergebnisse werden etwa eine halbe Sekunde früher eingefügt: Die Prüfung, ob deine App noch vorne ist, nutzt kein AppleScript mehr.",
     "fasterMic": "Mit einem in den Einstellungen gewählten Mikrofon startet die Aufnahme etwa 0,3 Sekunden früher, sodass deine ersten Worte nicht fehlen.",
@@ -1020,14 +1032,15 @@
     },
     "builtinTitle": "Integriert",
     "recommended": "Empfohlen",
-    "builtinBody": "Führt Whisper in Typelite auf diesem Computer aus. Keine weitere Software nötig.",
+    "builtinBody": "Führt ein Sprachmodell in Typelite auf diesem Computer aus. Keine weitere Software nötig.",
     "changeModel": "Modell ändern",
     "download": "Laden",
     "use": "Verwenden",
     "model": "Modell",
     "models": {
       "large-v3-turbo": "Höchste Genauigkeit",
-      "small": "Schneller"
+      "small": "Schneller",
+      "qwen3Asr": "Qwen3-ASR"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "Dieser Computer wird geprüft…",
@@ -1055,6 +1068,9 @@
         "needs_memory": "Das größere Modell braucht 8 GB Arbeitsspeicher.",
         "needs_disk_space": "Nicht genug freier Speicher für das größere Modell."
       }
+    },
+    "modelDetails": {
+      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
     }
   },
   "speech": {
@@ -1094,7 +1110,7 @@
     "engines": {
       "builtin": {
         "title": "Integriert",
-        "detail": "Führt Whisper in Typelite auf diesem Computer aus"
+        "detail": "Führt ein Sprachmodell in Typelite auf diesem Computer aus"
       },
       "server": {
         "title": "Dein Server oder API-Schlüssel",
@@ -1129,11 +1145,13 @@
     "testing": "Modell wird gestartet und getestet…",
     "models": {
       "best": "Beste Qualität",
-      "faster": "Schneller"
+      "faster": "Schneller",
+      "qwen35": "Qwen 3.5"
     },
     "modelDetail": {
       "best": "Qwen3 4B Instruct · {{size}}",
-      "faster": "Qwen3 1.7B · {{size}}"
+      "faster": "Qwen3 1.7B · {{size}}",
+      "qwen35": "Qwen 3.5 4B · {{size}}"
     },
     "errors": {
       "load": "{{reason}}",
@@ -1231,5 +1249,34 @@
     "restart": "Neu starten zum Aktualisieren",
     "failed": "Das Update hat nicht funktioniert: {{message}}",
     "disabled": "Der Entwicklungs-Build aktualisiert sich nicht selbst."
+  },
+  "languageSetup": {
+    "yourLanguages": "Deine Sprachen",
+    "add": "+ Sprache hinzufügen",
+    "addLabel": "Eine Sprache hinzufügen, die du sprichst",
+    "remove": "{{language}} entfernen",
+    "hints": {
+      "yue": "Kantonesisch",
+      "zh": "Mandarin"
+    },
+    "fromMac": "Aus den bevorzugten Sprachen deines Macs übernommen.",
+    "list": "{{items}} und {{last}}",
+    "listSeparator": ", ",
+    "suggestedTitle": "Vorgeschlagene Einrichtung für {{languages}}",
+    "noneTitle": "Keine vorgeschlagene Einrichtung für {{languages}}",
+    "noneBody": "Die nächsten Schritte beginnen mit den integrierten Standardmodellen. Dort kannst du trotzdem jedes Modell wählen.",
+    "empty": "Füge die Sprachen hinzu, die du sprichst. Du kannst den Schritt auch überspringen; dann werden die integrierten Standardmodelle verwendet.",
+    "nextSteps": "Die nächsten beiden Schritte beginnen mit diesen Modellen. Dort lädst du jedes einzeln, oder wählst ein anderes.",
+    "aiFallback": "Das größere KI-Modell braucht 16 GB Arbeitsspeicher, daher beginnt die KI-Überarbeitung mit dem schnelleren.",
+    "suggestedTag": "Vorgeschlagen für deine Sprachen",
+    "bannerSpeech": "Spracherkennung: {{model}}.",
+    "bannerAi": "KI-Überarbeitung: {{model}}.",
+    "notNow": "Jetzt nicht",
+    "homeGroup": "Vorgeschlagen für deine Sprachen",
+    "homeTitle": "Integrierte Modelle für {{languages}}",
+    "homeBodyBoth": "{{speech}} für die Spracherkennung und {{ai}} für die KI-Überarbeitung. Sie laufen auf diesem Mac; {{size}} zum Laden.",
+    "homeBodySpeech": "{{speech}} für die Spracherkennung. Es läuft auf diesem Mac; {{size}} zum Laden.",
+    "homeBodyAi": "{{ai}} für die KI-Überarbeitung. Es läuft auf diesem Mac; {{size}} zum Laden.",
+    "dontShowAgain": "Nicht mehr anzeigen"
   }
 }

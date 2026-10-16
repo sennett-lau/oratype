@@ -5,6 +5,10 @@ import { formatTestTime } from '../../lib/speechTypes'
 import { useAppStore } from '../../stores/appStore'
 import { isSetupRunning } from '../../stores/modelSetupStore'
 import { useSetupHardware, useSetupStatus } from '../../hooks/useSpeechSetup'
+import { useLanguageSetup } from '../../hooks/useLanguageSetup'
+import { modelLabel } from '../../lib/languageSetups'
+import { SpokenLanguagesPicker } from '../Languages/SpokenLanguages'
+import { spokenLanguageList } from '../../lib/spokenLanguages'
 import { ModelOptions, ProgressTrack } from './BuiltinParts'
 import {
   failedBadge,
@@ -22,10 +26,18 @@ import { SPEECH_SERVICE, builtinPresetOf, type EngineService } from './services'
  * "Model" group with the option cards this Mac is offered (hardware note at the top right), then
  * one status row for the selected model: Not downloaded + Download, Downloading + Cancel, In use +
  * Delete, Download failed + Try again. When no model suits this Mac, the cards and the status row
- * are hidden and only the note shows.
+ * are hidden and only the note shows. Plan `language-model-suggestions`: above it, the languages
+ * the user speaks, and a banner when their suggested setup has a model that is not in use here.
  */
 export function BuiltinSettings({ service = SPEECH_SERVICE }: { service?: EngineService }) {
   const { t } = useTranslation()
+  const { languages, suggestion } = useLanguageSetup()
+  const suggested = suggestion
+    ? service.id === 'speech'
+      ? suggestion.speech
+      : suggestion.ai
+    : null
+  const [bannerHidden, setBannerHidden] = useState(false)
   const status = useSetupStatus(service.store)
   const hardware = useSetupHardware(service.store)
   const models = service.store((s) => s.models)
@@ -179,8 +191,63 @@ export function BuiltinSettings({ service = SPEECH_SERVICE }: { service?: Engine
     row = <span className="status-detail">{t('speechSetup.checkingMac')}</span>
   }
 
+  const suggestedInfo = suggested ? (models ?? []).find((model) => model.id === suggested) : null
+  const showBanner =
+    !bannerHidden &&
+    !noModel &&
+    suggested !== null &&
+    !(suggestion?.aiFallback && service.id === 'ai') &&
+    offered.some((model) => model.id === suggested) &&
+    !(suggestedInfo?.installed && suggestedInfo.fileName === inUseFile) &&
+    !(running && status.modelId === suggested)
+
   return (
     <div data-testid="builtin-settings">
+      <div className="mx-1 mt-5 mb-[7px]">
+        <span id={`${service.id}-spoken-languages`} className="group-label m-0">
+          {t('languageSetup.yourLanguages')}
+        </span>
+      </div>
+      <div className="row-group px-3.5 py-3">
+        <SpokenLanguagesPicker labelId={`${service.id}-spoken-languages`} />
+      </div>
+      {showBanner && suggested && (
+        <div className="setup-banner mt-2.5" data-testid="setup-banner">
+          <div className="min-w-[200px] flex-1">
+            <span className="block text-[13px] font-semibold text-text-primary">
+              {t('languageSetup.suggestedTitle', {
+                languages: spokenLanguageList(languages, t),
+              })}
+            </span>
+            <span className="status-detail">
+              {t(
+                service.id === 'speech' ? 'languageSetup.bannerSpeech' : 'languageSetup.bannerAi',
+                {
+                  model: modelLabel(suggested),
+                },
+              )}
+            </span>
+          </div>
+          {button(
+            suggestedInfo?.installed
+              ? t('speechSetup.use')
+              : `${t('speechSetup.download')} · ${formatSize(
+                  offered.find((model) => model.id === suggested)?.sizeBytes ?? 0,
+                )}`,
+            () => {
+              select(suggested)
+              service.start(suggested)
+            },
+          )}
+          <button
+            type="button"
+            className="link-button link-button-muted"
+            onClick={() => setBannerHidden(true)}
+          >
+            {t('languageSetup.notNow')}
+          </button>
+        </div>
+      )}
       <div className="mx-1 mt-5 mb-[7px] flex flex-wrap items-end justify-between gap-2.5">
         <span className="group-label m-0">{t('speechSetup.model')}</span>
         {!noModel && (
@@ -202,6 +269,7 @@ export function BuiltinSettings({ service = SPEECH_SERVICE }: { service?: Engine
                 selected={selected}
                 onSelect={select}
                 service={service}
+                suggested={suggested}
               />
             </div>
           )}

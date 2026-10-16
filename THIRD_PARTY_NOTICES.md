@@ -41,9 +41,13 @@ SOFTWARE.
 Whisper model files downloaded by Quick setup come from the whisper.cpp Hugging Face repository
 and are released by OpenAI under the MIT License.
 
+The Qwen3-ASR-1.7B model and audio projector files downloaded by Built-in speech (Q8_0 GGUF files
+from ggml-org's Hugging Face repository) are released by the Qwen team under the Apache License
+2.0 (https://www.apache.org/licenses/LICENSE-2.0). They are downloaded, not shipped with Typelite.
+
 ## AI models
 
-The Qwen3 model files downloaded by Built-in AI (Qwen3-4B-Instruct-2507 and Qwen3-1.7B, as
-Q4_K_M GGUF files from Unsloth's Hugging Face repositories) are released by the Qwen team under
+The Qwen3 and Qwen 3.5 model files downloaded by Built-in AI (Qwen3-4B-Instruct-2507, Qwen3-1.7B
+and Qwen3.5-4B, as Q4_K_M GGUF files from Unsloth's Hugging Face repositories) are released by the Qwen team under
 the Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0). They are downloaded, not
 shipped with Typelite.
