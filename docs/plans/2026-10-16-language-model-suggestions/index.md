@@ -6,7 +6,7 @@ otherwise the standard ones are used. The built-in lists also grow beyond a larg
 model, so a Cantonese speaker can install Qwen3-ASR 1.7B and Qwen 3.5 4B on the Mac, the pair
 that already works well on a llama.cpp server, without setting up a server.
 
-Status: draft - 2026-10-16.
+Status: building - 2026-10-16.
 
 ## Goals and non-goals
 
@@ -35,7 +35,21 @@ Status: draft - 2026-10-16.
   eval clips), which polish cannot undo.
 - **Qwen3-ASR runs in a second built-in llama-server** on its own port. Reason: llama-server
   already ships with Typelite and serves `/v1/audio/transcriptions`, so the existing
-  OpenAI-compatible speech client (with its `language X<asr_text>` handling) can use it.
+  OpenAI-compatible speech client (with its `language X<asr_text>` handling) can use it. It is
+  still the one "Built-in" speech preset, with Qwen3-ASR as its model; the provider picks
+  whisper.cpp or the speech server by model. The server gets 8192 tokens of context (about ten
+  minutes of audio at 13 tokens per second) and is never asked for `verbose_json`, which it
+  refuses.
+- **Spoken languages are their own setting** (`spoken_languages`), not the Translate list.
+  Reason: Translate holds up to three languages the user writes into; spoken languages are what
+  they say. Codes are spoken languages (`yue`, `zh`), not scripts. Until the user chooses, the
+  Mac's preferred languages stand in (`zh-Hant-HK` counts as Cantonese). Changes save at once,
+  not through the Settings Save bar.
+- **The stock Qwen 3.5 4B, not the uncensored build the PC runs.** Reason: a setup suggested to
+  everyone should be the publisher's model. The Cantonese guide still recommends the uncensored
+  one, on a server, for slang and swear words.
+- **Home leaves services on the user's own server alone.** Reason: someone who already runs
+  Qwen3-ASR on a server needs no nudge to install it.
 - **Home shows the suggestion until it is used or dismissed.** A "Suggested for your languages"
   group, styled like Finish setup, appears while a model from the matching setup is not in use
   (for example after skipping it in onboarding). "Set up" opens the Settings pane, as Finish
@@ -58,16 +72,17 @@ Welcome → Voice input → Your languages (new) → Speech recognition → AI p
 | File | What it covers |
 |---|---|
 | [catalogue.md](catalogue.md) | The proposed models, sizes and suggested setups |
-| [mock.html](mock.html) | UI mock: the whole onboarding flow and the Settings model lists |
+| [mock.html](mock.html) | UI mock: the whole onboarding flow, Settings and Home |
+| [Report](../../benchmarks/reports/2026-10-16-language-model-suggestions/README.md) | Speech and polish evaluations behind the Cantonese setup |
 
 ## Open questions
 
-- Does llama.cpp `b11177` (the built-in server's tag) load Qwen3-ASR, or does the tag need to move
-  to `b11205` or later, as on the PC?
-- Official Qwen 3.5 4B or the abliterated build the PC uses? The official weights are the safer
-  default to suggest; the evals should compare them on Cantonese polish.
-- Speed and memory of Qwen3-ASR on Apple Silicon with both servers loaded, measured with
-  `scripts/benchmark.mjs`.
 - Which other combinations deserve a setup (Mandarin with English, for example)? Each needs eval
   results first.
+- Real Cantonese recordings in `evals/speech`: the clips so far are synthetic.
+- How Qwen3-ASR and the faster AI model share an 8 GB Mac (about 2.9 GB plus 1.5 GB).
 - Should the languages step also fill the Translate languages later in the tour?
+
+Answered while building: llama.cpp `b11177` loads Qwen3-ASR; on an M1 Pro a short clip takes
+0.35–0.5 s and the server uses about 2.9 GB of memory; the stock Qwen 3.5 4B is suggested (see
+Key decisions and the report).

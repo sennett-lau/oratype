@@ -9,7 +9,7 @@ setup. Part of plan [`language-model-suggestions`](index.md).
 |---|---|---|---|
 | Best accuracy | Whisper large-v3-turbo (q5_0) | 574 MB | Typelite (whisper.cpp) |
 | Faster | Whisper small (q5_1) | 190 MB | Typelite (whisper.cpp) |
-| Qwen3-ASR 1.7B | Qwen3-ASR 1.7B Q8_0 + mmproj | 2.5 GB | Built-in llama-server |
+| Qwen3-ASR | Qwen3-ASR 1.7B Q8_0 + mmproj (ggml-org) | 2.5 GB | Built-in speech server (`llama-server`) |
 
 ## AI polish
 
@@ -26,7 +26,8 @@ matches, the standard models (Best accuracy, Best quality) are used.
 
 | Combination | Speech | AI polish | Evidence |
 |---|---|---|---|
-| Any combination with Cantonese | Qwen3-ASR 1.7B | Qwen 3.5 4B (Qwen3 1.7B under 16 GB) | Speech evals: Whisper writes Cantonese as written Chinese; the PC setup keeps spoken Cantonese |
+| Any combination with Cantonese | Qwen3-ASR 1.7B | Qwen 3.5 4B (Qwen3 1.7B under 16 GB) | Speech evals: Cantonese 2% error against Whisper's 44%, no regression in English or Mandarin. Polish evals: Cantonese 78% against Qwen3 4B's 70% ([report](../../benchmarks/reports/2026-10-16-language-model-suggestions/README.md)) |
 
-Adding a row needs results from `evals/` for that combination. The table lives in code next to
-the model lists, so a new setup is one entry plus its tests.
+Adding a row needs results from `evals/` for that combination. The table is
+`LANGUAGE_SETUPS` in `src/lib/languageSetups.ts`, next to the model lists, so a new setup is one
+entry plus its tests.

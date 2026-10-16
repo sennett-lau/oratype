@@ -40,7 +40,12 @@ was said.
 
 ## Set it up
 
-1. **Run Qwen3-ASR** on your Mac or on a computer with an NVIDIA GPU, with llama.cpp's
+1. **Easiest: Built-in.** Typelite runs Qwen3-ASR itself. Add Cantonese under **Your languages**
+   (onboarding, or **Settings → Speech**); the Built-in card then has **Qwen3-ASR** chosen.
+   Press **Set up** (or **Download**, 2.5 GB) and go on to step 3. Its suggested AI model is
+   the stock Qwen 3.5 4B; for slang and swear words use the uncensored one of step 5.
+
+   **Or run it yourself** on your Mac or on a computer with an NVIDIA GPU, with llama.cpp's
    `llama-server` (on Windows, the CUDA build from llama.cpp's releases; see
    [Qwen3-ASR](../speech/openai-compatible.md#qwen3-asr) for vLLM and other options):
 
@@ -52,7 +57,8 @@ was said.
    computers, use `--host 0.0.0.0` and allow the port through that computer's firewall for your
    network only.
 
-2. **Add it in Typelite:** **Settings → Speech → Your server or API key**, address
+2. **Add your server in Typelite** (skip this with Built-in): **Settings → Speech → Your server
+   or API key**, address
    `http://127.0.0.1:8180/v1` (or that computer's address), model `qwen3-asr`, no API key, and
    leave **Spoken language** on **Auto-detect**. Press **Test**, then **Save**.
 
