@@ -941,6 +941,13 @@
     "failed": "Die Aufnahme des Kurzbefehls konnte nicht gestartet werden: {{error}}"
   },
   "whatsNew": {
+    "languageModels": "Deine Sprachen: Sag Typelite, welche Sprachen du sprichst (in der Ersteinrichtung oder unter Einstellungen → Sprache). Für Kantonesisch schlägt es zwei integrierte Modelle zum Laden vor: Qwen3-ASR, das Kantonesisch so schreibt, wie du es sagst, und Qwen 3.5 4B für die Überarbeitung.",
+    "clipboardSafe": "Typelite lässt deine Zwischenablage in Ruhe: Ein Ergebnis, das es nicht tippen kann, wartet in der Kopieren-Pille, nach dem Einfügen kommt alles zurück, was du kopiert hattest (auch Bilder und Dateien), und Zwischenablage-Manager speichern keine Diktate mehr.",
+    "typeAfterSwitch": "Wenn du in eine App klickst und sofort diktierst, wird der Text jetzt getippt statt kopiert.",
+    "askReadsPages": "Mit Websuche liest „Frag etwas“ die obersten Ergebnisseiten, sodass Fragen zu Nachrichten, Spielständen und kommenden Spielen eine Antwort bekommen. Ein Datum, das es nicht bestätigen kann, wird markiert.",
+    "translateHighlight": "Markiere Text, drück Fragen und sag „übersetze das ins Englische“: Die Übersetzung öffnet sich im Fragen-Fenster mit Kopieren und Ersetzen.",
+    "askSelectText": "Text im Fragen-Fenster lässt sich markieren, und ⌘C kopiert die Auswahl.",
+    "polishFillers": "Die Überarbeitung entfernt Füllwörter und Zögerlaute (ähm, 嗯, 呃) in jeder Sprache, behält bei einer Korrektur nur die korrigierte Fassung und verbindet Sätze nicht mehr mit Gedankenstrichen.",
     "fasterSpeech": "Die eingebaute Spracherkennung ist bei kurzen Diktaten etwa doppelt so schnell: Sie verarbeitet nicht mehr 30 Sekunden Stille nach jeder Aufnahme.",
     "fasterPaste": "Ergebnisse werden etwa eine halbe Sekunde früher eingefügt: Die Prüfung, ob deine App noch vorne ist, nutzt kein AppleScript mehr.",
     "fasterMic": "Mit einem in den Einstellungen gewählten Mikrofon startet die Aufnahme etwa 0,3 Sekunden früher, sodass deine ersten Worte nicht fehlen.",
