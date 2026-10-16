@@ -1,10 +1,25 @@
+//! Reading the user's highlight for Ask, Translate and (optionally) Dictate.
+//!
+//! Plan `clipboard-safety`: Accessibility first. Most apps report the focused element's selected
+//! text (`AXSelectedText`), or that nothing is selected, and the clipboard is not involved at
+//! all. Only an app that does not tell gets a ⌘C. Then the clipboard is copied as a whole first,
+//! its change count tells whether the app copied anything, and everything that was there is put
+//! back. If the app copied nothing, the clipboard was never written. An app that answers the ⌘C
+//! after Typelite stopped waiting would overwrite the clipboard, so it is watched a little longer
+//! and put back.
+
 #[cfg(not(target_os = "macos"))]
 use enigo::{Direction, Enigo, Key, Keyboard, Settings as EnigoSettings};
+
+use crate::output::focus::{self, SelectedText};
+use crate::output::pasteboard;
 
 /// How long to wait for the app to put the selection on the clipboard after ⌘C. Browsers can
 /// take well over 100 ms, so the clipboard is polled instead of read once.
 const CLIPBOARD_COPY_TIMEOUT_MS: u64 = 500;
 const CLIPBOARD_POLL_MS: u64 = 25;
+/// After a ⌘C that copied nothing in time: how long a late copy is still put back.
+const LATE_COPY_WATCH_MS: u64 = 1500;
 /// How long to wait for the shortcut's own modifier keys (Control, Shift, ...) to be released,
 /// so the app sees a plain ⌘C and not, say, ⌃⌘C.
 const MODIFIER_RELEASE_TIMEOUT_MS: u64 = 400;
@@ -23,19 +38,21 @@ pub fn should_capture_selection(
     }
 }
 
-/// Polls `read` every `poll` until it returns something other than the sentinel (the app
-/// copied), or `timeout` passes. Returns the last value read.
+/// Polls `read` (the clipboard's change count) every `poll` until it differs from `before` (the
+/// app copied) or `timeout` passes. True when it changed.
 fn wait_for_clipboard_change(
-    mut read: impl FnMut() -> Option<String>,
-    sentinel: &str,
+    mut read: impl FnMut() -> Option<i64>,
+    before: i64,
     timeout: std::time::Duration,
     poll: std::time::Duration,
-) -> Option<String> {
+) -> bool {
     let deadline = std::time::Instant::now() + timeout;
     loop {
-        let value = read();
-        if value.as_deref() != Some(sentinel) || std::time::Instant::now() >= deadline {
-            return value;
+        if read().is_some_and(|count| count != before) {
+            return true;
+        }
+        if std::time::Instant::now() >= deadline {
+            return false;
         }
         std::thread::sleep(poll);
     }
@@ -81,28 +98,6 @@ fn wait_for_modifier_release() {
 
 #[cfg(not(target_os = "macos"))]
 fn wait_for_modifier_release() {}
-
-pub fn selected_text_from_clipboard_result(
-    selected: Option<String>,
-    sentinel: &str,
-) -> Option<String> {
-    match selected {
-        Some(text) if !text.trim().is_empty() && text != sentinel => Some(text),
-        _ => None,
-    }
-}
-
-fn clipboard_copy_sentinel() -> String {
-    let nanos = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map(|duration| duration.as_nanos())
-        .unwrap_or_default();
-    format!(
-        "__typelite_copy_sentinel_{}_{}__",
-        std::process::id(),
-        nanos
-    )
-}
 
 #[cfg(target_os = "macos")]
 fn copy_selected_text_to_clipboard() -> bool {
@@ -153,48 +148,88 @@ fn copy_selected_text_to_clipboard() -> bool {
     pressed
 }
 
+/// The user's highlight, or `None` when nothing is selected or it cannot be read.
 pub fn capture_selected_text() -> Option<String> {
-    let mut clipboard = arboard::Clipboard::new().ok()?;
-    let backup = clipboard.get_text().ok();
-    let sentinel = clipboard_copy_sentinel();
-    let _ = clipboard.set_text(&sentinel);
-
     wait_for_modifier_release();
     let started = std::time::Instant::now();
-    let selected = if copy_selected_text_to_clipboard() {
-        wait_for_clipboard_change(
-            || clipboard.get_text().ok(),
-            &sentinel,
-            std::time::Duration::from_millis(CLIPBOARD_COPY_TIMEOUT_MS),
-            std::time::Duration::from_millis(CLIPBOARD_POLL_MS),
-        )
-    } else {
-        tracing::debug!("Selected text copy shortcut could not be sent");
-        None
-    };
-
-    if let Some(ref b) = backup {
-        let _ = clipboard.set_text(b);
-    } else {
-        let _ = clipboard.set_text("");
+    match focus::focused_selected_text() {
+        SelectedText::Text(text) => {
+            tracing::info!(
+                "Selected text: {} chars through Accessibility in {} ms",
+                text.chars().count(),
+                started.elapsed().as_millis()
+            );
+            return (!text.trim().is_empty()).then_some(text);
+        }
+        SelectedText::Nothing => {
+            tracing::info!(
+                "Selected text: none (Accessibility) in {} ms",
+                started.elapsed().as_millis()
+            );
+            return None;
+        }
+        SelectedText::Unknown => {}
     }
+    capture_with_copy(started)
+}
 
+/// ⌘C for an app that does not report its selection through Accessibility.
+fn capture_with_copy(started: std::time::Instant) -> Option<String> {
+    let before = pasteboard::change_count()?;
+    let saved = pasteboard::snapshot();
+    if !copy_selected_text_to_clipboard() {
+        tracing::debug!("Selected text copy shortcut could not be sent");
+        return None;
+    }
+    let copied = wait_for_clipboard_change(
+        pasteboard::change_count,
+        before,
+        std::time::Duration::from_millis(CLIPBOARD_COPY_TIMEOUT_MS),
+        std::time::Duration::from_millis(CLIPBOARD_POLL_MS),
+    );
+    if !copied {
+        // Nothing was copied, so the clipboard is untouched.
+        tracing::info!(
+            "Selected text: none (⌘C copied nothing in {} ms)",
+            started.elapsed().as_millis()
+        );
+        if let Some(saved) = saved {
+            put_back_a_late_copy(before, saved);
+        }
+        return None;
+    }
+    let selected = pasteboard::read_text();
+    let restored = saved.as_ref().is_some_and(pasteboard::restore);
     tracing::info!(
-        "Selected text capture: backup_len={}, selected_len={}, wait_ms={}",
-        backup.as_deref().map(|s| s.len()).unwrap_or(0),
+        "Selected text: {} chars through ⌘C in {} ms, clipboard {}",
         selected
             .as_deref()
-            .filter(|text| *text != sentinel)
-            .map(|s| s.len())
+            .map(|text| text.chars().count())
             .unwrap_or(0),
-        started.elapsed().as_millis()
+        started.elapsed().as_millis(),
+        if restored { "restored" } else { "not restored" }
     );
+    selected.filter(|text| !text.trim().is_empty())
+}
 
-    let result = selected_text_from_clipboard_result(selected, &sentinel);
-    if result.is_none() {
-        tracing::debug!("Selected text capture did not produce fresh clipboard text");
-    }
-    result
+/// An app that answers the ⌘C after Typelite stopped waiting would leave the selection on the
+/// clipboard. For a short while, a change is taken as that late copy and the clipboard is put
+/// back once.
+fn put_back_a_late_copy(before: i64, saved: pasteboard::Snapshot) {
+    std::thread::spawn(move || {
+        if wait_for_clipboard_change(
+            pasteboard::change_count,
+            before,
+            std::time::Duration::from_millis(LATE_COPY_WATCH_MS),
+            std::time::Duration::from_millis(CLIPBOARD_POLL_MS),
+        ) {
+            let restored = pasteboard::restore(&saved);
+            tracing::info!(
+                "Selected text: an app copied after the wait; clipboard {}",
+                if restored { "restored" } else { "not restored" }
+            );
+        }
+    });
 }
 
 #[cfg(test)]
@@ -213,26 +248,31 @@ mod tests {
     }
 
     #[test]
-    fn clipboard_is_polled_until_the_app_copies() {
-        let mut reads = vec!["S", "S", "copied"].into_iter();
-        let value = wait_for_clipboard_change(
-            || reads.next().map(str::to_string),
-            "S",
+    fn the_change_count_is_polled_until_the_app_copies() {
+        let mut reads = vec![7, 7, 8].into_iter();
+        assert!(wait_for_clipboard_change(
+            || reads.next(),
+            7,
             std::time::Duration::from_secs(1),
             std::time::Duration::from_millis(1),
-        );
-        assert_eq!(value.as_deref(), Some("copied"));
+        ));
     }
 
     #[test]
-    fn clipboard_polling_gives_up_after_the_timeout() {
-        let value = wait_for_clipboard_change(
-            || Some("S".to_string()),
-            "S",
+    fn polling_gives_up_when_nothing_was_copied() {
+        assert!(!wait_for_clipboard_change(
+            || Some(7),
+            7,
             std::time::Duration::from_millis(20),
             std::time::Duration::from_millis(5),
-        );
-        assert_eq!(selected_text_from_clipboard_result(value, "S"), None);
+        ));
+        // An unreadable count is not a change.
+        assert!(!wait_for_clipboard_change(
+            || None,
+            7,
+            std::time::Duration::from_millis(20),
+            std::time::Duration::from_millis(5),
+        ));
     }
 
     #[test]
@@ -244,29 +284,5 @@ mod tests {
             "System Events got an error: osascript is not allowed to send keystrokes. (1002)"
         ));
         assert!(!is_permission_error("syntax error"));
-    }
-
-    #[test]
-    fn selected_text_rejects_copy_sentinel_when_clipboard_was_unchanged() {
-        assert_eq!(
-            selected_text_from_clipboard_result(Some("__sentinel__".to_string()), "__sentinel__"),
-            None
-        );
-    }
-
-    #[test]
-    fn selected_text_accepts_text_that_matches_previous_clipboard_backup() {
-        assert_eq!(
-            selected_text_from_clipboard_result(Some("selected text".to_string()), "__sentinel__"),
-            Some("selected text".to_string())
-        );
-    }
-
-    #[test]
-    fn selected_text_rejects_whitespace_only_clipboard() {
-        assert_eq!(
-            selected_text_from_clipboard_result(Some(" \n\t ".to_string()), "__sentinel__"),
-            None
-        );
     }
 }

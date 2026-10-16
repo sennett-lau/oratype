@@ -88,7 +88,8 @@
     "llm_quota_exceeded": "Der KI-Endpunkt hat die Anfrage abgelehnt (Kontingent oder Ratenlimit). Versuche es später erneut oder prüfe den Endpunkt.",
     "output_wayland_clipboard_copy_only": "In die Zwischenablage kopiert. Unter Wayland bitte manuell einfügen.",
     "mic_fallback_default": "Dein ausgewähltes Mikrofon „{{details}}“ ist nicht verbunden, daher wurde der Systemstandard verwendet.",
-    "stt_unreachable": "Der Sprachserver ist nicht erreichbar ({{details}}). Prüfe die Adresse unter Einstellungen → Sprache und ob der Server läuft."
+    "stt_unreachable": "Der Sprachserver ist nicht erreichbar ({{details}}). Prüfe die Adresse unter Einstellungen → Sprache und ob der Server läuft.",
+    "output_held_no_accessibility": "Die Bedienungshilfen-Berechtigung fehlt, daher kann Typelite nicht tippen. Das Ergebnis liegt in der Kopieren-Pille. Erlaube Typelite unter Systemeinstellungen → Datenschutz & Sicherheit → Bedienungshilfen."
   },
   "home": {
     "headline": "Sag es einfach.",
@@ -419,7 +420,6 @@
     "keyboardSimulation": "Direkt tippen",
     "clipboardPaste": "Aus der Zwischenablage einfügen",
     "restoreClipboardAfterPaste": "Vorherige Zwischenablage wiederherstellen",
-    "restoreClipboardTextOnlyHint": "Nur Text in der Zwischenablage; Bilder, Dateien und formatierte Inhalte werden noch nicht vollständig wiederhergestellt.",
     "pasteShortcut": "Kurzbefehl zum Einfügen",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",

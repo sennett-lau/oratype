@@ -208,17 +208,28 @@ impl ContextDetectorHandle {
     }
 
     pub fn snapshot_for_recording_enabled(&self, enabled: bool) -> RecordingContext {
+        // Plan `clipboard-safety`: the app in front right now, read in-process like the paste
+        // check does. The cache is refreshed about once a second through AppleScript, so a
+        // shortcut pressed right after switching apps recorded the previous app, and the paste
+        // check then found "another app" and copied instead of typing.
+        let front = self.source.front_app_guard();
         let cached = self
             .cached
             .read()
             .unwrap_or_else(|error| error.into_inner());
-        let stale = cached.snapshot.captured_at.elapsed() > self.stale_after;
+        let switched = front.as_ref().is_some_and(|front| {
+            !cached.target_guard.is_empty() && !cached.target_guard.matches(front)
+        });
+        let stale = cached.snapshot.captured_at.elapsed() > self.stale_after || switched;
         let profile = if enabled && !stale {
             cached.snapshot.profile.clone()
+        } else if switched {
+            // The cached profile belongs to the previous app.
+            ContextProfile::general_native()
         } else {
             fallback_for_profile(&cached.snapshot.profile)
         };
-        let target_guard = cached.target_guard.clone();
+        let target_guard = front.unwrap_or_else(|| cached.target_guard.clone());
         let mapped_scene_id = if enabled && !stale {
             cached.mapped_scene_id.clone()
         } else {
@@ -251,7 +262,9 @@ impl ContextDetectorHandle {
             .lock()
             .unwrap_or_else(|error| error.into_inner()) = next_candidate;
 
-        if stale {
+        if switched {
+            self.notify_focus_changed();
+        } else if stale {
             self.request_refresh();
         }
         RecordingContext {
@@ -595,6 +608,38 @@ mod tests {
         let captured = handle.snapshot_for_recording();
         assert_eq!(captured.profile.id, "general.browser");
         assert_eq!(captured.target_guard.process_id, Some(42));
+    }
+
+    #[test]
+    fn the_target_is_the_app_in_front_when_the_shortcut_is_pressed() {
+        let source = Arc::new(FakeSource::new(Some(gmail_signals())));
+        let handle = detector(source.clone());
+        wait_for_profile(&handle, "email.gmail");
+        // The user switches to Slack and presses the shortcut before the cache is refreshed.
+        handle.replace_cached_for_test(
+            handle.latest_profile(),
+            Instant::now(),
+            TargetAppGuard {
+                process_id: Some(42),
+                native_identity: Some("com.google.Chrome".to_string()),
+            },
+        );
+        source.set(Some(ContextSignals {
+            native_identity: Some("com.tinyspeck.slackmacgap".to_string()),
+            process_alias: Some("Slack".to_string()),
+            process_id: Some(77),
+            ..ContextSignals::default()
+        }));
+
+        let captured = handle.snapshot_for_recording();
+        assert_eq!(captured.target_guard.process_id, Some(77));
+        assert_eq!(
+            captured.target_guard.native_identity.as_deref(),
+            Some("com.tinyspeck.slackmacgap")
+        );
+        // The previous app's profile is not used; a refresh picks up Slack's.
+        assert_eq!(captured.profile.id, "general.native");
+        wait_for_profile(&handle, "chat.slack");
     }
 
     #[test]

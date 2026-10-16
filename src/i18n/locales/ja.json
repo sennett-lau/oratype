@@ -88,7 +88,8 @@
     "llm_quota_exceeded": "AI エンドポイントがリクエストを拒否しました（使用量またはレート制限）。後でもう一度試すか、エンドポイントを確認してください。",
     "output_wayland_clipboard_copy_only": "クリップボードにコピーしました。Wayland では手動でペーストしてください。",
     "mic_fallback_default": "選択したマイク「{{details}}」が接続されていないため、システムのデフォルトを使用しました。",
-    "stt_unreachable": "音声サーバに接続できませんでした（{{details}}）。設定 → 音声 のアドレスと、サーバが起動しているかを確認してください。"
+    "stt_unreachable": "音声サーバに接続できませんでした（{{details}}）。設定 → 音声 のアドレスと、サーバが起動しているかを確認してください。",
+    "output_held_no_accessibility": "アクセシビリティの許可がないため、Typelite は入力できません。結果は「コピー」ピルにあります。システム設定 → プライバシーとセキュリティ → アクセシビリティで Typelite を許可してください。"
   },
   "home": {
     "headline": "話すだけ。",
@@ -419,7 +420,6 @@
     "keyboardSimulation": "直接入力",
     "clipboardPaste": "クリップボードからペースト",
     "restoreClipboardAfterPaste": "元のクリップボードを復元",
-    "restoreClipboardTextOnlyHint": "テキストのクリップボードのみ対応。画像、ファイル、リッチコンテンツはまだ完全には復元されません。",
     "pasteShortcut": "ペーストのショートカット",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",

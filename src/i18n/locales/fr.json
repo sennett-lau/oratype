@@ -88,7 +88,8 @@
     "llm_quota_exceeded": "Le service d’IA a refusé la requête (quota ou limite de débit). Réessayez plus tard ou vérifiez le service.",
     "output_wayland_clipboard_copy_only": "Copié dans le presse-papiers. Collez manuellement sous Wayland.",
     "mic_fallback_default": "Le micro sélectionné « {{details}} » n’est pas connecté ; le micro par défaut du système a été utilisé.",
-    "stt_unreachable": "Impossible de joindre le serveur vocal ({{details}}). Vérifiez l’adresse dans Réglages → Parole et que le serveur fonctionne."
+    "stt_unreachable": "Impossible de joindre le serveur vocal ({{details}}). Vérifiez l’adresse dans Réglages → Parole et que le serveur fonctionne.",
+    "output_held_no_accessibility": "L’autorisation Accessibilité manque, Typelite ne peut donc pas écrire. Le résultat est dans la pastille Copier. Autorisez Typelite dans Réglages Système → Confidentialité et sécurité → Accessibilité."
   },
   "home": {
     "headline": "Dites-le, tout simplement.",
@@ -419,7 +420,6 @@
     "keyboardSimulation": "Saisie directe",
     "clipboardPaste": "Coller depuis le presse-papiers",
     "restoreClipboardAfterPaste": "Restaurer le presse-papiers précédent",
-    "restoreClipboardTextOnlyHint": "Texte uniquement ; les images, fichiers et contenus enrichis ne sont pas encore entièrement restaurés.",
     "pasteShortcut": "Raccourci de collage",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",

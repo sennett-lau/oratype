@@ -88,7 +88,8 @@
     "llm_quota_exceeded": "El servicio de IA rechazó la solicitud (cuota o límite de uso). Inténtalo más tarde o revisa el servicio.",
     "output_wayland_clipboard_copy_only": "Copiado al portapapeles. Pégalo a mano en Wayland.",
     "mic_fallback_default": "El micrófono que elegiste, \"{{details}}\", no está conectado, así que se usó el predeterminado del sistema.",
-    "stt_unreachable": "No se pudo conectar con el servidor de voz ({{details}}). Revisa la dirección en Ajustes → Voz y que el servidor esté en marcha."
+    "stt_unreachable": "No se pudo conectar con el servidor de voz ({{details}}). Revisa la dirección en Ajustes → Voz y que el servidor esté en marcha.",
+    "output_held_no_accessibility": "Falta el permiso de Accesibilidad, así que Typelite no puede escribir. El resultado está en la cápsula Copiar. Permite Typelite en Ajustes del Sistema → Privacidad y seguridad → Accesibilidad."
   },
   "home": {
     "headline": "Solo dilo.",
@@ -419,7 +420,6 @@
     "keyboardSimulation": "Escribir directamente",
     "clipboardPaste": "Pegar desde el portapapeles",
     "restoreClipboardAfterPaste": "Restaurar el portapapeles anterior",
-    "restoreClipboardTextOnlyHint": "Solo el portapapeles de texto; las imágenes, archivos y contenido enriquecido aún no se restauran del todo.",
     "pasteShortcut": "Atajo de pegar",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",

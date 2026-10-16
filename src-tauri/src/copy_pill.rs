@@ -1,8 +1,11 @@
 //! Plan `copy-when-no-field`: the Copy pill. When a Dictate or Translate result is ready and focus
-//! is clearly
-//! not on a text field, the result is not pasted. It is kept here instead, the clipboard is
-//! left alone, and the pill shows the start of the text with a Copy button. The pill closes on
-//! Copy, on Escape, when its countdown runs out, or when a new run starts.
+//! is clearly not on a text field, the result is not pasted. It is kept here instead, the
+//! clipboard is left alone, and the pill shows the start of the text with a Copy button. The pill
+//! closes on Copy, on Escape, when its countdown runs out, or when a new run starts.
+//!
+//! Plan `clipboard-safety`: the same happens when another app is in front than when the
+//! recording started, or when Typelite may not type (no Accessibility permission). Those results
+//! used to be copied to the clipboard on their own, over whatever the user had copied.
 
 use crate::output::focus::FocusDecision;
 use crate::output::InsertionStrategy;
@@ -63,19 +66,38 @@ fn strategy_pastes(strategy: InsertionStrategy) -> bool {
     strategy != InsertionStrategy::ClipboardCopyOnly
 }
 
-/// Whether a result goes to the Copy pill instead of being pasted. `focus` runs only when it
-/// matters (it asks Accessibility). Only a clear "not a text field" holds the result: unknown
-/// focus pastes as before, and a changed target app keeps its own copy-to-clipboard fallback.
-pub fn should_hold_for_copy_pill(
+/// Why a result goes to the Copy pill instead of being typed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HoldReason {
+    /// Focus is clearly not on a text field.
+    NoTextField,
+    /// Plan `clipboard-safety`: another app is in front than when the recording started.
+    TargetChanged,
+    /// Plan `clipboard-safety`: Typelite may not type or paste (no Accessibility permission).
+    CannotType,
+}
+
+/// Whether, and why, a result goes to the Copy pill instead of being typed. `strategy` is the
+/// user's insertion setting; with copy-only set they asked for the clipboard, so nothing is
+/// held. `focus` runs only when it matters (it asks Accessibility), and only a clear "not a text
+/// field" holds the result there: unknown focus types as before.
+pub fn copy_pill_hold(
     run: Option<&CopyPillRun>,
     strategy: InsertionStrategy,
     target_still_matches: bool,
+    can_type: bool,
     focus: impl FnOnce() -> FocusDecision,
-) -> bool {
-    run.is_some()
-        && strategy_pastes(strategy)
-        && target_still_matches
-        && focus() == FocusDecision::NotEditable
+) -> Option<HoldReason> {
+    if run.is_none() || !strategy_pastes(strategy) {
+        return None;
+    }
+    if !target_still_matches {
+        return Some(HoldReason::TargetChanged);
+    }
+    if !can_type {
+        return Some(HoldReason::CannotType);
+    }
+    (focus() == FocusDecision::NotEditable).then_some(HoldReason::NoTextField)
 }
 
 /// Whether live streaming into the app may start. Streaming types while the AI is still
@@ -96,53 +118,62 @@ mod tests {
 
     #[test]
     fn a_dictation_with_no_text_field_is_held_for_the_pill() {
-        assert!(should_hold_for_copy_pill(
-            Some(&run()),
-            InsertionStrategy::Auto,
-            true,
-            || FocusDecision::NotEditable
-        ));
-        assert!(should_hold_for_copy_pill(
-            Some(&run()),
-            InsertionStrategy::ClipboardPaste,
-            true,
-            || FocusDecision::NotEditable
-        ));
-    }
-
-    #[test]
-    fn editable_or_unknown_focus_pastes_as_before() {
-        for focus in [FocusDecision::Editable, FocusDecision::Unknown] {
-            assert!(!should_hold_for_copy_pill(
-                Some(&run()),
-                InsertionStrategy::Auto,
-                true,
-                || focus
-            ));
+        for strategy in [InsertionStrategy::Auto, InsertionStrategy::ClipboardPaste] {
+            assert_eq!(
+                copy_pill_hold(Some(&run()), strategy, true, true, || {
+                    FocusDecision::NotEditable
+                }),
+                Some(HoldReason::NoTextField)
+            );
         }
     }
 
     #[test]
-    fn ask_copy_only_and_changed_targets_never_ask_for_focus() {
+    fn editable_or_unknown_focus_types_as_before() {
+        for focus in [FocusDecision::Editable, FocusDecision::Unknown] {
+            assert_eq!(
+                copy_pill_hold(Some(&run()), InsertionStrategy::Auto, true, true, || focus),
+                None
+            );
+        }
+    }
+
+    #[test]
+    fn a_changed_app_or_no_permission_is_held_instead_of_copied() {
         let never = || -> FocusDecision { panic!("focus must not be checked") };
-        assert!(!should_hold_for_copy_pill(
-            None,
-            InsertionStrategy::Auto,
-            true,
-            never
-        ));
-        assert!(!should_hold_for_copy_pill(
-            Some(&run()),
-            InsertionStrategy::ClipboardCopyOnly,
-            true,
-            never
-        ));
-        assert!(!should_hold_for_copy_pill(
-            Some(&run()),
-            InsertionStrategy::Auto,
-            false,
-            never
-        ));
+        assert_eq!(
+            copy_pill_hold(Some(&run()), InsertionStrategy::Auto, false, true, never),
+            Some(HoldReason::TargetChanged)
+        );
+        assert_eq!(
+            copy_pill_hold(
+                Some(&run()),
+                InsertionStrategy::Keyboard,
+                true,
+                false,
+                never
+            ),
+            Some(HoldReason::CannotType)
+        );
+    }
+
+    #[test]
+    fn ask_and_a_copy_only_setting_are_never_held() {
+        let never = || -> FocusDecision { panic!("focus must not be checked") };
+        assert_eq!(
+            copy_pill_hold(None, InsertionStrategy::Auto, false, false, never),
+            None
+        );
+        assert_eq!(
+            copy_pill_hold(
+                Some(&run()),
+                InsertionStrategy::ClipboardCopyOnly,
+                false,
+                false,
+                never
+            ),
+            None
+        );
     }
 
     #[test]

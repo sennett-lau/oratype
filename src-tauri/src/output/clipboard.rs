@@ -4,6 +4,7 @@ use std::sync::Mutex;
 
 use crate::error::AppError;
 
+use super::pasteboard::{self, Snapshot};
 #[cfg(test)]
 use super::InsertStatus;
 use super::{InsertResult, InsertionStrategy, OutputMode, TextOutput};
@@ -50,15 +51,6 @@ pub struct ClipboardOutput {
     options: ClipboardOutputOptions,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ClipboardRestoreScope {
-    TextOnly,
-}
-
-pub fn clipboard_restore_scope() -> ClipboardRestoreScope {
-    ClipboardRestoreScope::TextOnly
-}
-
 impl Default for ClipboardOutput {
     fn default() -> Self {
         Self::new()
@@ -80,26 +72,16 @@ fn should_auto_paste_after_clipboard(session_type: &str) -> bool {
     !session_type.eq_ignore_ascii_case("wayland")
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum ClipboardRestoreDecision {
-    Restore(String),
-    KeepOutput,
-}
-
-fn clipboard_restore_decision(
+/// Plan `clipboard-safety`: whether to put the user's clipboard back after a paste. Only when the
+/// paste went through, restoring is on, there is something to restore, and the clipboard still
+/// holds what Typelite wrote (no app or person copied something since).
+fn should_restore_clipboard(
     restore_enabled: bool,
     paste_succeeded: bool,
-    previous_text: Option<&str>,
-    current_text: Option<&str>,
-    inserted_text: &str,
-) -> ClipboardRestoreDecision {
-    if restore_enabled && paste_succeeded && current_text == Some(inserted_text) {
-        if let Some(previous_text) = previous_text {
-            return ClipboardRestoreDecision::Restore(previous_text.to_string());
-        }
-    }
-
-    ClipboardRestoreDecision::KeepOutput
+    have_previous: bool,
+    still_ours: bool,
+) -> bool {
+    restore_enabled && paste_succeeded && have_previous && still_ours
 }
 
 fn clipboard_insert_result(paste_succeeded: bool, inserted_text: &str) -> InsertResult {
@@ -116,40 +98,41 @@ fn clipboard_insert_result(paste_succeeded: bool, inserted_text: &str) -> Insert
     }
 }
 
+/// The restore waiting after a paste. Pastes in quick succession share one: the clipboard from
+/// before the first is the one that comes back, after the last.
 #[derive(Debug)]
 struct PendingClipboardRestore {
     latest_restore_id: u64,
-    original_text: Option<String>,
+    original: Option<Snapshot>,
 }
 
 static NEXT_CLIPBOARD_RESTORE_ID: AtomicU64 = AtomicU64::new(1);
 static PENDING_CLIPBOARD_RESTORE: Mutex<Option<PendingClipboardRestore>> = Mutex::new(None);
 
-fn schedule_clipboard_restore(inserted_text: String, previous_text: Option<String>) {
-    let (restore_id, original_text) = remember_pending_clipboard_restore(previous_text);
+/// Puts `previous` back after [`CLIPBOARD_RESTORE_DELAY_MS`], if the clipboard still holds the
+/// pasted text then (its change count is still `written`).
+fn schedule_clipboard_restore(previous: Option<Snapshot>, written: i64) {
+    let (restore_id, original) = remember_pending_clipboard_restore(previous);
     std::thread::spawn(move || {
         std::thread::sleep(std::time::Duration::from_millis(CLIPBOARD_RESTORE_DELAY_MS));
-        restore_clipboard_if_safe(inserted_text, original_text, restore_id);
+        restore_clipboard_if_safe(original, written, restore_id);
     });
 }
 
-fn remember_pending_clipboard_restore(previous_text: Option<String>) -> (u64, Option<String>) {
+fn remember_pending_clipboard_restore(previous: Option<Snapshot>) -> (u64, Option<Snapshot>) {
     let restore_id = NEXT_CLIPBOARD_RESTORE_ID.fetch_add(1, Ordering::SeqCst);
-    let original_text = {
-        let mut pending = PENDING_CLIPBOARD_RESTORE
-            .lock()
-            .unwrap_or_else(|e| e.into_inner());
-        let original = pending
-            .as_ref()
-            .map(|batch| batch.original_text.clone())
-            .unwrap_or(previous_text);
-        *pending = Some(PendingClipboardRestore {
-            latest_restore_id: restore_id,
-            original_text: original.clone(),
-        });
-        original
+    let mut pending = PENDING_CLIPBOARD_RESTORE
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
+    let original = match pending.take() {
+        Some(batch) => batch.original,
+        None => previous,
     };
-    (restore_id, original_text)
+    *pending = Some(PendingClipboardRestore {
+        latest_restore_id: restore_id,
+        original: original.clone(),
+    });
+    (restore_id, original)
 }
 
 fn is_latest_clipboard_restore(restore_id: u64) -> bool {
@@ -171,37 +154,20 @@ fn clear_pending_clipboard_restore(restore_id: u64) {
     }
 }
 
-fn restore_clipboard_if_safe(
-    inserted_text: String,
-    original_text: Option<String>,
-    restore_id: u64,
-) {
+fn restore_clipboard_if_safe(original: Option<Snapshot>, written: i64, restore_id: u64) {
     if !is_latest_clipboard_restore(restore_id) {
         return;
     }
-
-    let mut clipboard = match arboard::Clipboard::new() {
-        Ok(clipboard) => clipboard,
-        Err(error) => {
-            tracing::warn!("Failed to reopen clipboard for restore: {error}");
-            clear_pending_clipboard_restore(restore_id);
-            return;
+    let still_ours = pasteboard::change_count() == Some(written);
+    if should_restore_clipboard(true, true, original.is_some(), still_ours) {
+        if let Some(original) = &original {
+            if !pasteboard::restore(original) {
+                tracing::warn!("Failed to restore the previous clipboard");
+            }
         }
-    };
-    let current_text = clipboard.get_text().ok();
-
-    if let ClipboardRestoreDecision::Restore(value) = clipboard_restore_decision(
-        true,
-        true,
-        original_text.as_deref(),
-        current_text.as_deref(),
-        &inserted_text,
-    ) {
-        if let Err(error) = clipboard.set_text(value) {
-            tracing::warn!("Failed to restore previous clipboard text: {error}");
-        }
+    } else if !still_ours {
+        tracing::debug!("Clipboard changed after the paste; not restoring it");
     }
-
     clear_pending_clipboard_restore(restore_id);
 }
 
@@ -279,20 +245,32 @@ impl TextOutput for ClipboardOutput {
         let text = text.to_string();
         let options = self.options;
         tokio::task::spawn_blocking(move || -> Result<InsertResult, AppError> {
-            let mut clipboard = arboard::Clipboard::new()
-                .map_err(|e| AppError::Output(format!("Failed to access clipboard: {}", e)))?;
-            let previous_text = clipboard.get_text().ok();
-
-            clipboard
-                .set_text(&text)
-                .map_err(|e| AppError::Output(format!("Failed to set clipboard: {}", e)))?;
-
             if !options.auto_paste {
+                // The user asked for the text (Copy): a normal copy that stays.
+                pasteboard::write_text(&text)
+                    .then_some(())
+                    .ok_or_else(|| AppError::Output("Failed to set clipboard".to_string()))?;
                 return Ok(InsertResult::copied_fallback(
                     InsertionStrategy::ClipboardCopyOnly,
                     text.chars().count(),
                 ));
             }
+
+            // Plan `clipboard-safety`: keep everything that was there (images, files, formatted
+            // text), and mark the pasted text as transient so clipboard managers skip it. With
+            // restoring off the text is meant to stay, so it is a normal copy.
+            let previous = options
+                .restore_after_paste
+                .then(pasteboard::snapshot)
+                .flatten();
+            let written = if options.restore_after_paste {
+                pasteboard::write_transient_text(&text)
+            } else {
+                pasteboard::write_text(&text)
+                    .then(pasteboard::change_count)
+                    .flatten()
+            }
+            .ok_or_else(|| AppError::Output("Failed to set clipboard".to_string()))?;
 
             std::thread::sleep(std::time::Duration::from_millis(CLIPBOARD_SETTLE_MS));
 
@@ -305,12 +283,14 @@ impl TextOutput for ClipboardOutput {
             }
 
             if let Err(error) = simulate_paste(options.paste_shortcut) {
+                // The text must not be lost: leave it on the clipboard as a normal copy.
                 tracing::warn!("Clipboard paste failed; leaving output text on clipboard: {error}");
+                pasteboard::write_text(&text);
                 return Ok(clipboard_insert_result(false, &text));
             }
 
             if options.restore_after_paste {
-                schedule_clipboard_restore(text.clone(), previous_text);
+                schedule_clipboard_restore(previous, written);
             }
 
             Ok(clipboard_insert_result(true, &text))
@@ -341,41 +321,39 @@ mod tests {
     }
 
     #[test]
-    fn clipboard_restore_decision_restores_only_after_successful_unchanged_paste() {
-        assert_eq!(
-            clipboard_restore_decision(true, true, Some("before"), Some("inserted"), "inserted"),
-            ClipboardRestoreDecision::Restore("before".to_string())
+    fn the_clipboard_comes_back_only_after_a_successful_paste_it_still_holds() {
+        assert!(should_restore_clipboard(true, true, true, true));
+        assert!(
+            !should_restore_clipboard(true, false, true, true),
+            "paste failed"
+        );
+        assert!(
+            !should_restore_clipboard(true, true, true, false),
+            "something was copied since"
+        );
+        assert!(
+            !should_restore_clipboard(false, true, true, true),
+            "restoring is off"
+        );
+        assert!(
+            !should_restore_clipboard(true, true, false, true),
+            "nothing to restore"
         );
     }
 
     #[test]
-    fn clipboard_restore_decision_keeps_output_when_paste_failed() {
-        assert_eq!(
-            clipboard_restore_decision(true, false, Some("before"), Some("inserted"), "inserted"),
-            ClipboardRestoreDecision::KeepOutput
-        );
-    }
-
-    #[test]
-    fn clipboard_restore_decision_keeps_user_changed_clipboard() {
-        assert_eq!(
-            clipboard_restore_decision(
-                true,
-                true,
-                Some("before"),
-                Some("user-copied-something-else"),
-                "inserted",
-            ),
-            ClipboardRestoreDecision::KeepOutput
-        );
-    }
-
-    #[test]
-    fn clipboard_restore_decision_respects_disabled_restore() {
-        assert_eq!(
-            clipboard_restore_decision(false, true, Some("before"), Some("inserted"), "inserted"),
-            ClipboardRestoreDecision::KeepOutput
-        );
+    fn quick_pastes_restore_the_clipboard_from_before_the_first() {
+        let before = pasteboard::text_snapshot("what the user copied");
+        let (first_id, first) = remember_pending_clipboard_restore(Some(before.clone()));
+        assert_eq!(first.as_ref(), Some(&before));
+        // A second paste before the restore: its "previous" is Typelite's own first text.
+        let (second_id, second) =
+            remember_pending_clipboard_restore(Some(pasteboard::text_snapshot("first dictation")));
+        assert_eq!(second.as_ref(), Some(&before));
+        assert!(!is_latest_clipboard_restore(first_id));
+        assert!(is_latest_clipboard_restore(second_id));
+        clear_pending_clipboard_restore(second_id);
+        assert!(!is_latest_clipboard_restore(second_id));
     }
 
     #[test]
@@ -407,10 +385,5 @@ mod tests {
         assert_eq!(result.strategy_used, InsertionStrategy::ClipboardPaste);
         assert_eq!(result.chars_inserted, 0);
         assert_eq!(result.chars_copied, 10);
-    }
-
-    #[test]
-    fn clipboard_restore_scope_is_text_only() {
-        assert_eq!(clipboard_restore_scope(), ClipboardRestoreScope::TextOnly);
     }
 }

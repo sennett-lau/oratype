@@ -2609,7 +2609,11 @@ impl PipelineHandle {
                                             "Typed text did not land (field length unchanged at {:?})",
                                             text_length_after
                                         );
-                                        self.hold_for_copy_pill(&response.polished_text, run);
+                                        self.hold_for_copy_pill(
+                                            &response.polished_text,
+                                            run,
+                                            crate::copy_pill::HoldReason::NoTextField,
+                                        );
                                         streaming_output_status = Some((
                                             "held_for_copy",
                                             "typed text did not land; offered Copy".to_string(),
@@ -3129,13 +3133,48 @@ impl PipelineHandle {
                     retry_count: 0,
                 }
             });
+        let configured_strategy =
+            output::InsertionStrategy::from_config_value(&config.insertion_strategy);
+        let accessibility_trusted = is_accessibility_trusted();
+
+        // Plan `copy-when-no-field` and plan `clipboard-safety`: a Dictate or Translate result
+        // that cannot be typed into the app the user started in (another app is in front, no
+        // permission to type, or no text field) waits in the Copy pill. The clipboard is left
+        // alone; it used to be overwritten with the result.
+        let focus_check = || {
+            // A blocking Accessibility query of a few milliseconds.
+            tokio::task::block_in_place(output::focus::check_focus)
+        };
+        let hold = crate::copy_pill::copy_pill_hold(
+            copy_pill,
+            configured_strategy,
+            target_warning.is_none(),
+            accessibility_trusted || !strategy_uses_automated_input(configured_strategy),
+            focus_check,
+        );
+        if let (Some(reason), Some(run)) = (hold, copy_pill) {
+            self.hold_for_copy_pill(text, run, reason);
+            if reason == crate::copy_pill::HoldReason::CannotType {
+                let warning = crate::error::UserError {
+                    code: "output_held_no_accessibility".to_string(),
+                    details: None,
+                    retry_count: 0,
+                };
+                let _ = self.app_handle.emit("pipeline:warning", &warning);
+            }
+            return Ok(output::InsertResult::held_for_copy(
+                configured_strategy,
+                text.chars().count(),
+            ));
+        }
+
         let requested_strategy = if target_warning.is_some() {
             output::InsertionStrategy::ClipboardCopyOnly
         } else {
-            output::InsertionStrategy::from_config_value(&config.insertion_strategy)
+            configured_strategy
         };
         let (strategy, accessibility_warning) =
-            effective_strategy_for_accessibility(requested_strategy, is_accessibility_trusted());
+            effective_strategy_for_accessibility(requested_strategy, accessibility_trusted);
 
         // Linux: check keyboard availability before attempting
         let effective_strategy = if strategy.needs_keyboard_access() {
@@ -3161,26 +3200,6 @@ impl PipelineHandle {
         } else {
             strategy
         };
-
-        // Plan `copy-when-no-field`: with no text field to paste into, keep the result for the Copy
-        // pill.
-        let focus_check = || {
-            // A blocking Accessibility query of a few milliseconds.
-            tokio::task::block_in_place(output::focus::check_focus)
-        };
-        let hold = crate::copy_pill::should_hold_for_copy_pill(
-            copy_pill,
-            effective_strategy,
-            target_warning.is_none(),
-            focus_check,
-        );
-        if let (true, Some(run)) = (hold, copy_pill) {
-            self.hold_for_copy_pill(text, run);
-            return Ok(output::InsertResult::held_for_copy(
-                effective_strategy,
-                text.chars().count(),
-            ));
-        }
 
         let clipboard_options = output::clipboard::ClipboardOutputOptions {
             restore_after_paste: config.restore_clipboard_after_paste,
@@ -3235,9 +3254,14 @@ impl PipelineHandle {
 
     /// Shows the Copy pill with `text` instead of pasting it. Nothing is pasted and the
     /// clipboard is not touched; the text stays in memory only until the pill closes.
-    fn hold_for_copy_pill(&self, text: &str, run: &crate::copy_pill::CopyPillRun) {
+    fn hold_for_copy_pill(
+        &self,
+        text: &str,
+        run: &crate::copy_pill::CopyPillRun,
+        reason: crate::copy_pill::HoldReason,
+    ) {
         tracing::info!(
-            "No text field has focus; showing the Copy pill ({} chars)",
+            "Showing the Copy pill ({reason:?}, {} chars)",
             text.chars().count()
         );
         self.copy_offer.hold(text);

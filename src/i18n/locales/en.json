@@ -88,7 +88,8 @@
     "llm_quota_exceeded": "AI endpoint rejected the request (quota or rate limit). Try again later or check the endpoint.",
     "output_wayland_clipboard_copy_only": "Copied to clipboard. Paste manually on Wayland.",
     "mic_fallback_default": "Your selected microphone \"{{details}}\" is not connected, so the system default was used.",
-    "stt_unreachable": "Could not reach the speech server ({{details}}). Check the address in Settings → Speech and that the server is running."
+    "stt_unreachable": "Could not reach the speech server ({{details}}). Check the address in Settings → Speech and that the server is running.",
+    "output_held_no_accessibility": "Accessibility permission is missing, so Typelite cannot type. The result is in the Copy pill. Allow Typelite in System Settings → Privacy & Security → Accessibility."
   },
   "home": {
     "headline": "Just say it.",
@@ -419,7 +420,6 @@
     "keyboardSimulation": "Type directly",
     "clipboardPaste": "Paste from clipboard",
     "restoreClipboardAfterPaste": "Restore previous clipboard",
-    "restoreClipboardTextOnlyHint": "Text clipboard only; images, files, and rich content are not fully restored yet.",
     "pasteShortcut": "Paste shortcut",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",
