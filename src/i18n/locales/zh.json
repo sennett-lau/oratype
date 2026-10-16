@@ -88,7 +88,8 @@
     "llm_quota_exceeded": "AI 服务拒绝了请求（额度或速率限制）。请稍后重试或检查服务端点。",
     "output_wayland_clipboard_copy_only": "已复制到剪贴板。Wayland 下需要手动粘贴。",
     "mic_fallback_default": "所选麦克风「{{details}}」未连接，已改用系统默认麦克风。",
-    "stt_unreachable": "无法连接语音服务（{{details}}）。请检查「设置 → 语音」中的地址，并确认服务正在运行。"
+    "stt_unreachable": "无法连接语音服务（{{details}}）。请检查「设置 → 语音」中的地址，并确认服务正在运行。",
+    "output_held_no_accessibility": "缺少辅助功能权限，Typelite 无法输入文字。结果在“复制”胶囊里。请在“系统设置 → 隐私与安全性 → 辅助功能”中允许 Typelite。"
   },
   "home": {
     "headline": "说出来就好。",
@@ -419,7 +420,6 @@
     "keyboardSimulation": "直接打字",
     "clipboardPaste": "复制后粘贴",
     "restoreClipboardAfterPaste": "还原原剪贴板",
-    "restoreClipboardTextOnlyHint": "目前只恢复文本剪贴板，图片、文件和富文本暂不完整恢复。",
     "pasteShortcut": "粘贴快捷键",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",

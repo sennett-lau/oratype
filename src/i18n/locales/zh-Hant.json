@@ -88,7 +88,8 @@
     "llm_quota_exceeded": "AI 服務拒絕了請求（額度或速率限制）。請稍後重試或檢查服務端點。",
     "output_wayland_clipboard_copy_only": "已複製到剪貼簿。Wayland 下需要手動貼上。",
     "mic_fallback_default": "所選麥克風「{{details}}」未連線，已改用系統預設麥克風。",
-    "stt_unreachable": "無法連線語音服務（{{details}}）。請檢查「設定 → 語音」中的地址，並確認服務正在執行。"
+    "stt_unreachable": "無法連線語音服務（{{details}}）。請檢查「設定 → 語音」中的地址，並確認服務正在執行。",
+    "output_held_no_accessibility": "缺少輔助使用權限，Typelite 無法輸入文字。結果在「拷貝」膠囊裡。請在「系統設定 → 隱私權與安全性 → 輔助使用」中允許 Typelite。"
   },
   "home": {
     "headline": "說出來就好。",
@@ -419,7 +420,6 @@
     "keyboardSimulation": "直接打字",
     "clipboardPaste": "複製後貼上",
     "restoreClipboardAfterPaste": "還原原剪貼簿",
-    "restoreClipboardTextOnlyHint": "目前只恢復文本剪貼簿，圖片、檔案和富文本暫不完整恢復。",
     "pasteShortcut": "貼上快捷鍵",
     "pasteShortcutCtrlV": "Ctrl+V",
     "pasteShortcutCtrlShiftV": "Ctrl+Shift+V",

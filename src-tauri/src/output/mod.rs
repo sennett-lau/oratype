@@ -1,6 +1,7 @@
 pub mod clipboard;
 pub mod focus;
 pub mod keyboard;
+pub mod pasteboard;
 pub mod windows_modifier_guard;
 pub mod windows_sendinput;
 
