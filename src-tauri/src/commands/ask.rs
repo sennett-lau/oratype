@@ -1843,11 +1843,23 @@ pub async fn stop_ask_dictation(
             return Err(message);
         }
 
-        let transcript = session
+        let mut transcript = session
             .transcript
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .clone();
+        // Plan `hands-free-mode` (routing.md): "Thanks, Sam" ended the request; it is not part
+        // of it. A request that was only that is no request.
+        if hands_free {
+            let hands_free_config = config_state
+                .load()
+                .await
+                .map_err(|e| e.to_string())?
+                .hands_free;
+            transcript =
+                crate::hands_free::matcher::WakePhrase::from_name(&hands_free_config.wake_name)
+                    .strip_end_phrase(&transcript, hands_free_config.sensitivity);
+        }
         if transcript.trim().is_empty() {
             failure_code = "stt_no_speech_detected";
             return Err(ASK_NO_SPEECH_ERROR.to_string());
@@ -1874,10 +1886,25 @@ pub async fn stop_ask_dictation(
             .unwrap_or_else(|e| e.into_inner())
             .clone();
         let (question, answer_language) = route_question(&app, &config, question, &heard);
-        // Plan `hands-free-mode`: a request after the wake phrase is routed by meaning first.
-        if hands_free {
-            match crate::hands_free::routing::route(&question) {
-                crate::hands_free::routing::HandsFreeRoute::Dictate(text) => {
+        // Plan `hands-free-mode`: a request after the wake phrase is typed or asked, as set in
+        // Settings, unless its first words say otherwise ("ask …", "type …").
+        let question = if hands_free {
+            use crate::hands_free::routing::{self, HandsFreeRoute};
+            let action = config.hands_free.action;
+            let mut route = routing::route(&question, action);
+            if let HandsFreeRoute::VoiceCommand(command) = &route {
+                if routing::run_voice_command(&app, command) {
+                    return Ok(AskDictationResult::new(
+                        question,
+                        String::new(),
+                        VoiceIntentKind::DictateInsert,
+                        AskDictationResultMetadata::dictated(None),
+                    ));
+                }
+                route = routing::fallback(&question, action);
+            }
+            match route {
+                HandsFreeRoute::Dictate(text) => {
                     failure_code = "llm_failed";
                     pastes = true;
                     let started = std::time::Instant::now();
@@ -1894,19 +1921,18 @@ pub async fn stop_ask_dictation(
                         AskDictationResultMetadata::dictated(execution.execution.as_ref()),
                     ));
                 }
-                crate::hands_free::routing::HandsFreeRoute::VoiceCommand(command) => {
-                    if crate::hands_free::routing::run_voice_command(&app, &command) {
-                        return Ok(AskDictationResult::new(
-                            question,
-                            String::new(),
-                            VoiceIntentKind::DictateInsert,
-                            AskDictationResultMetadata::dictated(None),
-                        ));
-                    }
+                HandsFreeRoute::Ask(asked) if !asked.trim().is_empty() => asked,
+                // "Ask" with nothing after it: nothing to ask.
+                HandsFreeRoute::Ask(_) => {
+                    failure_code = "stt_no_speech_detected";
+                    return Err(ASK_NO_SPEECH_ERROR.to_string());
                 }
-                crate::hands_free::routing::HandsFreeRoute::Ask => {}
+                // Not handled above; `fallback` never returns a voice command.
+                HandsFreeRoute::VoiceCommand(_) => question,
             }
-        }
+        } else {
+            question
+        };
         let voice_intent = route_ask_intent(
             &question,
             used_selected_text,

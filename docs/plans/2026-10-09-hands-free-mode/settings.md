@@ -17,11 +17,18 @@ to start a recording, next to the shortcuts and the microphone.
   - **Wake name**: the name after "Hey", default "Sam", at most 32 characters. An empty name
     falls back to "Sam". A typed "Hey Jarvis" is the same as "Jarvis";
   - **Sensitivity**: Low / Normal / High (see [wake-check.md](wake-check.md));
-  - a hint: ask a question, say "translate …", or say "type …" to write into the app.
+  - **After "Hey {name}"**: *Type what I say* (default) / *Ask anything*, with help that names
+    the words for the other one ("ask …" / "type …"), "translate …", and how a request ends
+    ("Thanks, {name}", or 3 s of quiet). See [routing.md](routing.md).
 
-Config: `hands_free: { enabled, wake_name, sensitivity }` in `AppConfig` (serde defaults, so
-older settings load with the feature off). Saving the settings applies them at once: the
-listener starts, restarts or stops.
+The missing-model line says why there is a download: the wake phrase is heard on the Mac by a
+small model, so nothing leaves the Mac before it.
+
+Config: `hands_free: { enabled, wake_name, sensitivity, action }` in `AppConfig` (serde
+defaults, so older settings load with the feature off and typing as the action). Saving the
+settings applies them at once: the listener starts, restarts or stops. `update_config` puts
+`hands_free` and `input_device` in its change patch for this; without them a new wake name,
+sensitivity or microphone took effect only after a restart.
 
 ## Wake model download
 

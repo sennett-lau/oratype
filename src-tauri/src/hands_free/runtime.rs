@@ -5,6 +5,7 @@
 //! ```text
 //! mic (16 kHz) ─> Listening: WakeSegmenter ─candidate─> WakeChecker ─match─> start Ask
 //!                 Request:   AutoStop ─stop reason─> stop Ask
+//!                            end-check WakeSegmenter ─"Thanks, Sam"─> stop Ask
 //!                 Paused:    audio dropped while any other run is busy
 //! ```
 //!
@@ -167,10 +168,20 @@ fn start(app: &tauri::AppHandle, settings: ListenerSettings) -> Result<Running, 
 
 enum Phase {
     Listening(WakeSegmenter),
-    /// A hands-free Ask run is recording; `AutoStop` decides when it ends.
-    Request(AutoStop),
+    /// A hands-free Ask run is recording; it ends at "Thanks, Sam" or when `AutoStop` says so.
+    Request {
+        auto_stop: AutoStop,
+        end_check: WakeSegmenter,
+    },
     /// Waiting for the hands-free run (or any other run) to finish.
     Paused,
+}
+
+/// The hands-free Ask run is still starting, recording or thinking. It is not when Escape or
+/// the pill ended it, or when it stopped by itself.
+fn ask_busy(app: &tauri::AppHandle) -> bool {
+    app.try_state::<crate::commands::ask::AskDictationState>()
+        .is_some_and(|ask| ask.is_busy())
 }
 
 fn other_run_busy(app: &tauri::AppHandle) -> bool {
@@ -219,7 +230,7 @@ fn listen(
                 } else {
                     let mut next = None;
                     for candidate in segmenter.feed(&samples) {
-                        match checker.check(&candidate.samples, settings.sensitivity) {
+                        match checker.check_candidate(&candidate, settings.sensitivity) {
                             Ok(check) => {
                                 if let Some(found) = check.matched {
                                     tracing::info!(
@@ -242,17 +253,37 @@ fn listen(
                     next.unwrap_or(Phase::Listening(segmenter))
                 }
             }
-            Phase::Request(mut auto_stop) => match auto_stop.feed(&samples) {
-                Some(reason) => {
-                    on_stop(&app, reason);
-                    Phase::Paused
+            Phase::Request {
+                mut auto_stop,
+                mut end_check,
+            } => {
+                let mut reason = auto_stop.feed(&samples);
+                for candidate in end_check.feed(&samples) {
+                    match checker.check_end(&candidate.samples, settings.sensitivity) {
+                        Ok(true) => reason = Some(StopReason::EndPhrase),
+                        Ok(false) => {}
+                        Err(error) => tracing::warn!("Hands-free: {error}"),
+                    }
                 }
-                None => Phase::Request(auto_stop),
-            },
+                match reason {
+                    Some(reason) => {
+                        on_stop(&app, reason);
+                        Phase::Paused
+                    }
+                    // Escape or the pill ended the run: listen again once all runs are idle.
+                    None if !ask_busy(&app) => Phase::Paused,
+                    None => Phase::Request {
+                        auto_stop,
+                        end_check,
+                    },
+                }
+            }
             Phase::Paused => {
                 if other_run_busy(&app) {
                     Phase::Paused
                 } else {
+                    // The new segmenter counts sample positions from zero again.
+                    checker.forget_greeting();
                     Phase::Listening(WakeSegmenter::new())
                 }
             }
@@ -272,7 +303,10 @@ fn on_wake(app: &tauri::AppHandle, max_request_ms: u32) -> Phase {
         "Hands-free: Ask start requested in {} ms",
         started.elapsed().as_millis()
     );
-    Phase::Request(AutoStop::new(max_request_ms))
+    Phase::Request {
+        auto_stop: AutoStop::new(max_request_ms),
+        end_check: WakeSegmenter::for_end_check(),
+    }
 }
 
 fn on_stop(app: &tauri::AppHandle, reason: StopReason) {

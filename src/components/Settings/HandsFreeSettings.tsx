@@ -18,14 +18,17 @@ const DEFAULT_HANDS_FREE: HandsFreeConfig = {
   enabled: false,
   wake_name: 'Sam',
   sensitivity: 'normal',
+  action: 'dictate',
 }
 
-/** Plan `hands-free-mode` (settings.md): the switch, wake name and sensitivity. */
+/** Plan `hands-free-mode` (settings.md): the switch, wake name, sensitivity and what a request
+ *  does. */
 export function HandsFreeSettings() {
   const { t } = useTranslation()
   const config = useAppStore((s) => s.config)
   const updateConfig = useAppStore((s) => s.updateConfig)
-  const handsFree = config.hands_free ?? DEFAULT_HANDS_FREE
+  // A config saved before a field existed lacks it; the backend fills it in on load.
+  const handsFree = { ...DEFAULT_HANDS_FREE, ...config.hands_free }
   const [status, setStatus] = useState<HandsFreeStatus | null>(null)
   const [setup, setSetup] = useState<SpeechSetupStatus | null>(null)
 
@@ -82,7 +85,7 @@ export function HandsFreeSettings() {
     } else if (setup?.phase === 'error' && setup.error?.code !== 'cancelled') {
       note = { text: t('settings.handsFree.downloadFailed'), tone: 'error' }
     } else if (status && !status.modelInstalled) {
-      note = { text: t('settings.handsFree.needsModel', { size: sizeMb }), tone: 'muted' }
+      note = { text: t('settings.handsFree.needsModel', { name, size: sizeMb }), tone: 'muted' }
     } else if (status?.listener === 'listening') {
       note = { text: t('settings.handsFree.listening', { name }), tone: 'muted' }
     } else if (status?.listener === 'micError') {
@@ -166,10 +169,24 @@ export function HandsFreeSettings() {
               onChange={(v) => update({ sensitivity: v as HandsFreeConfig['sensitivity'] })}
             />
           </Row>
-          <Row>
-            <p className="text-[12px] text-text-secondary">
-              {t('settings.handsFree.requests', { name })}
-            </p>
+          <Row
+            label={t('settings.handsFree.action', { name })}
+            help={t(
+              handsFree.action === 'ask'
+                ? 'settings.handsFree.requestsAsk'
+                : 'settings.handsFree.requestsDictate',
+              { name },
+            )}
+          >
+            <SegmentedControl
+              ariaLabel={t('settings.handsFree.action', { name })}
+              options={[
+                { value: 'dictate', label: t('settings.handsFree.actionDictate') },
+                { value: 'ask', label: t('settings.handsFree.actionAsk') },
+              ]}
+              value={handsFree.action}
+              onChange={(v) => update({ action: v as HandsFreeConfig['action'] })}
+            />
           </Row>
         </>
       )}

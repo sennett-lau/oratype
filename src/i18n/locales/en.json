@@ -587,14 +587,18 @@
       "low": "Low",
       "normal": "Normal",
       "high": "High",
-      "needsModel": "Hands-free needs a small speech model ({{size}} MB).",
+      "needsModel": "Hands-free listens for “Hey {{name}}” with a small speech model on this Mac ({{size}} MB), so nothing leaves the Mac before the wake phrase.",
       "download": "Download",
       "downloading": "Downloading the wake model… {{percent}}%",
       "downloadFailed": "The download failed. Try again.",
       "cancel": "Cancel",
       "listening": "Listening for “Hey {{name}}”",
       "micError": "Could not open the microphone.",
-      "requests": "After “Hey {{name}}”, ask a question, say “translate …”, or say “type …” to write into the app. Recording stops when you pause."
+      "action": "After “Hey {{name}}”",
+      "actionDictate": "Type what I say",
+      "actionAsk": "Ask anything",
+      "requestsDictate": "Your words are typed into the app. Say “ask …” to ask instead, or “translate …”. Finish with “Thanks, {{name}}”, or stop talking for 3 seconds.",
+      "requestsAsk": "Ask a question or say “translate …”; say “type …” to write into the app. Finish with “Thanks, {{name}}”, or stop talking for 3 seconds."
     }
   },
   "contextFamilies": {

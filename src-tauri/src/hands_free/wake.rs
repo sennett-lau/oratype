@@ -12,6 +12,7 @@ use std::time::{Duration, Instant};
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 
 use super::matcher::{Sensitivity, WakeMatch, WakePhrase};
+use super::segment::WakeCandidate;
 use crate::stt::models::KnownModel;
 
 /// The wake model: Whisper base, multilingual, 5-bit quantised (60 MB). Downloaded by the app
@@ -33,8 +34,21 @@ pub const WAKE_AUDIO_CTX: i32 = 512;
 /// phrase as the prompt, Whisper treats a spoken "Hey Sam, what's ..." as a continuation of the
 /// prompt and leaves "Hey Sam" out, and it turned "Hey Pam" into "Hey Sam" (measurements.md).
 pub const WAKE_PROMPT: &str = "{name}.";
-/// The decoder never needs more than a few words.
+/// The decoder never needs more than a few words for the wake phrase. An end check reads the
+/// last few seconds of a request, which can hold a sentence before "Thanks, Sam".
 const WAKE_MAX_TOKENS: i32 = 12;
+const END_MAX_TOKENS: i32 = 48;
+/// A segment's loudest sample is raised to this level before the check (dBFS). A built-in Mac
+/// microphone at arm's length peaks around -25 dBFS, about 20 dB under the clips the model was
+/// measured with, and at that level base heard "Hey, sir" and "Hey there" for "Hey Sam"
+/// (measurements.md).
+const CHECK_PEAK_DBFS: f32 = -3.0;
+/// The most a segment is raised (dB), so near-silence is not blown up into noise.
+const MAX_GAIN_DB: f32 = 30.0;
+/// A segment that was only a greeting ("Hey.") is kept this long for the next one: a quiet
+/// "Hey, … Sam" reaches the gate as two stretches when the comma pause is longer than the
+/// gate's hangover.
+pub const GREETING_CARRY_MS: u64 = 1_000;
 /// whisper.cpp skips input shorter than one second.
 const MIN_SAMPLES: usize = 16_000 + 1_600;
 
@@ -78,6 +92,8 @@ pub struct WakeChecker {
     /// Sam"), automatic for a name in another script.
     language: Option<&'static str>,
     options: WakeCheckOptions,
+    /// A segment heard as only a greeting, and where it ended (absolute sample position).
+    carried_greeting: Option<(String, u64)>,
 }
 
 impl WakeChecker {
@@ -100,6 +116,7 @@ impl WakeChecker {
             phrase: WakePhrase::from_name(wake_name),
             language: None,
             options,
+            carried_greeting: None,
         };
         checker.set_wake_name(wake_name);
         Ok(checker)
@@ -133,25 +150,86 @@ impl WakeChecker {
         &self.phrase
     }
 
-    /// Transcribes one segment (16 kHz mono) and matches it (blocking).
+    /// Checks one wake candidate (blocking). When the segment before it was only a greeting
+    /// and ended less than [`GREETING_CARRY_MS`] before this one began, the two are matched
+    /// together ("Hey." then "Sam.").
+    pub fn check_candidate(
+        &mut self,
+        candidate: &WakeCandidate,
+        sensitivity: Sensitivity,
+    ) -> Result<WakeCheck, String> {
+        let mut check = self.check(&candidate.samples, sensitivity)?;
+        let carried = self.carried_greeting.take();
+        if check.matched.is_none() {
+            if let Some((greeting, end)) = carried {
+                if candidate.start.saturating_sub(end) <= GREETING_CARRY_MS * 16 {
+                    let joined = format!("{greeting} {}", check.text);
+                    check.matched = self.phrase.matches(&joined, sensitivity);
+                }
+            }
+        }
+        if check.matched.is_none() && self.phrase.is_greeting_only(&check.text) {
+            self.carried_greeting = Some((check.text.clone(), candidate.end));
+        }
+        Ok(check)
+    }
+
+    /// Forgets a kept greeting (the listener paused, or its sample positions restart).
+    pub fn forget_greeting(&mut self) {
+        self.carried_greeting = None;
+    }
+
+    /// Transcribes one segment (16 kHz mono) and matches it against the wake phrase
+    /// (blocking).
     pub fn check(
         &mut self,
         samples: &[i16],
         sensitivity: Sensitivity,
     ) -> Result<WakeCheck, String> {
         let started = Instant::now();
-        let mut audio: Vec<f32> = samples.iter().map(|&s| f32::from(s) / 32768.0).collect();
+        let text = self.transcribe(samples, WAKE_MAX_TOKENS, self.language)?;
+        let matched = self.phrase.matches(&text, sensitivity);
+        Ok(WakeCheck {
+            matched,
+            elapsed: started.elapsed(),
+            text,
+        })
+    }
+
+    /// Whether the last seconds of a request end with "Thanks, Sam" (blocking). The text is
+    /// only compared. A Latin name is decoded as English first; when that misses, once more as
+    /// Chinese, because a request in Chinese ends with 多謝 Sam / 谢谢 Sam, which the English
+    /// decode turns into other words.
+    pub fn check_end(&mut self, samples: &[i16], sensitivity: Sensitivity) -> Result<bool, String> {
+        let text = self.transcribe(samples, END_MAX_TOKENS, self.language)?;
+        if self.phrase.end_phrase_start(&text, sensitivity).is_some() {
+            return Ok(true);
+        }
+        if self.language.is_none() {
+            return Ok(false);
+        }
+        let text = self.transcribe(samples, END_MAX_TOKENS, Some("zh"))?;
+        Ok(self.phrase.end_phrase_start(&text, sensitivity).is_some())
+    }
+
+    fn transcribe(
+        &mut self,
+        samples: &[i16],
+        max_tokens: i32,
+        language: Option<&'static str>,
+    ) -> Result<String, String> {
+        let mut audio = normalized(samples);
         if audio.len() < MIN_SAMPLES {
             audio.resize(MIN_SAMPLES, 0.0);
         }
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
         params.set_n_threads(self.options.threads);
-        params.set_language(self.language.or(Some("auto")));
+        params.set_language(language.or(Some("auto")));
         params.set_translate(false);
         params.set_no_context(true);
         params.set_single_segment(true);
         params.set_no_timestamps(true);
-        params.set_max_tokens(WAKE_MAX_TOKENS);
+        params.set_max_tokens(max_tokens);
         params.set_audio_ctx(self.options.audio_ctx);
         params.set_temperature_inc(0.0);
         params.set_suppress_blank(true);
@@ -175,11 +253,49 @@ impl WakeChecker {
                 text.push_str(&piece);
             }
         }
-        let matched = self.phrase.matches(&text, sensitivity);
-        Ok(WakeCheck {
-            matched,
-            elapsed: started.elapsed(),
-            text,
-        })
+        Ok(text)
+    }
+}
+
+/// The samples as Whisper's floats, raised so the loudest one is at [`CHECK_PEAK_DBFS`]
+/// (never lowered, and raised by at most [`MAX_GAIN_DB`]).
+fn normalized(samples: &[i16]) -> Vec<f32> {
+    let peak = samples
+        .iter()
+        .map(|&s| f32::from(s).abs() / 32768.0)
+        .fold(0.0, f32::max);
+    let gain = if peak > 0.0 {
+        (10f32.powf(CHECK_PEAK_DBFS / 20.0) / peak).clamp(1.0, 10f32.powf(MAX_GAIN_DB / 20.0))
+    } else {
+        1.0
+    };
+    samples
+        .iter()
+        .map(|&s| f32::from(s) / 32768.0 * gain)
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn quiet_audio_is_raised_but_loud_audio_is_left_alone() {
+        // A -25 dBFS peak is raised to -3 dBFS.
+        let quiet: Vec<i16> = [0.056f32, -0.03, 0.01]
+            .iter()
+            .map(|v| (v * 32768.0) as i16)
+            .collect();
+        let raised = normalized(&quiet);
+        let peak = raised.iter().fold(0.0f32, |m, v| m.max(v.abs()));
+        assert!((20.0 * peak.log10() - CHECK_PEAK_DBFS).abs() < 0.1);
+        // Loud audio is not lowered.
+        let loud = vec![30_000i16, -30_000];
+        assert!((normalized(&loud)[0] - 30_000.0 / 32768.0).abs() < 1e-6);
+        // Near-silence is raised by 30 dB at most.
+        let hiss = vec![10i16, -10];
+        let gain = normalized(&hiss)[0] / (10.0 / 32768.0);
+        assert!((20.0 * gain.log10() - MAX_GAIN_DB).abs() < 0.1);
+        assert!(normalized(&[0, 0]).iter().all(|&v| v == 0.0));
     }
 }

@@ -51,6 +51,34 @@ the Mandarin TTS voice saying "Sam", which every setting heard as "Peace him".
 | base, prompt "Hey Sam." | 18/27 | 0/47 (1/47 with an earlier matcher) | 37 ms |
 | tiny q5_1, "Sam." prompt, ctx 512 | 22/27 | 0/47 | 28 ms |
 
+## At a built-in microphone's level (2026-10-17)
+
+In first use on the target Mac the wake phrase was often missed. A real voice on the built-in
+microphone peaks at −23 to −27 dBFS (the voice check's log lines), about 20 dB under the `say`
+clips (−2 to −4 dBFS). `benchmark_wake --gain-db -22` plays the clips that much quieter, with the
+room noise still at −65 dBFS. The fixtures now also hold 18 end-phrase clips ("Thanks, Sam.",
+"See you at six. Thank you, Sam.", 多謝 Sam, 谢谢 Sam) and 18 that must not end a request
+("I'll ask Sam about it tomorrow.", 多謝晒你哋嘅幫忙。), 112 clips in all. Same machine, Normal.
+
+| Version | Level | Wake accepted | Other accepted | End phrases heard | False ends |
+| --- | --- | --- | --- | --- | --- |
+| first build | as recorded | 25/27 | 0/47 | | |
+| first build | −22 dB | 13/27 | 0/47 | | |
+| first build, peak raised to −3 dBFS | −22 dB | 20/27 | 0/47 | | |
+| **current** (peak raised, lone "Hey." joined) | as recorded | 24/27 | 0/47 | 18/18 | 0/18 |
+| **current** | −22 dB | 24/27 | 0/47 | 16/18 | 0/18 |
+| **current** | −30 dB | 6/27 | 0/47 | 0/18 | 0/18 |
+
+- At −22 dB the first build heard "Hey, sir", "Hey there" and "Peace, Sam", and split "Hey, Sam!"
+  into "Hey." and "Sam."; raising the level fixed the first, joining a lone greeting the second.
+- At full level the current build misses one more "Hey Sam, what's the weather like today?"
+  said in one breath (an open question in [index.md](index.md)).
+- The end check needs the last 2.5 s, not only the last stretch: at −22 dB "Thanks," and "Sam"
+  are two stretches (3/18 heard with the last stretch only). Decoding 多謝 Sam as English never
+  matched; the second, Chinese decode hears both Chinese clips.
+- −30 dB (a voice further away than arm's length) is out of reach for base; check p50 stayed at
+  30–33 ms and background talk at 0 false wakes.
+
 ## What these numbers do not cover
 
 - **Real voices, accents, distance and noise.** `say` voices are clean and consistent. Real

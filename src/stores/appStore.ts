@@ -406,6 +406,8 @@ export interface HandsFreeConfig {
   /** The name after "Hey" ("Sam"). */
   wake_name: string
   sensitivity: 'low' | 'normal' | 'high'
+  /** What a request does: type it (default) or ask it. "ask …" / "type …" reach the other. */
+  action: 'dictate' | 'ask'
 }
 
 export interface AppConfig {
@@ -1320,7 +1322,7 @@ const defaultConfig: AppConfig = {
   show_in_dock: true,
   mute_output_while_recording: false,
   auto_update: true,
-  hands_free: { enabled: false, wake_name: 'Sam', sensitivity: 'normal' },
+  hands_free: { enabled: false, wake_name: 'Sam', sensitivity: 'normal', action: 'dictate' },
   builtin_presets_version: 1,
   shortcut_tour_completed: false,
   shortcut_tour_prompt_dismissed: false,

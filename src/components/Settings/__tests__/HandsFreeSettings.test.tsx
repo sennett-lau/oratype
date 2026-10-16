@@ -77,6 +77,16 @@ describe('HandsFreeSettings', () => {
     expect(handsFree().sensitivity).toBe('high')
   })
 
+  it('types by default and can be set to ask', () => {
+    render(<HandsFreeSettings />)
+    fireEvent.click(screen.getByRole('switch', { name: 'settings.handsFree.enable' }))
+    expect(handsFree().action).toBe('dictate')
+    expect(screen.getByText('settings.handsFree.requestsDictate')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'settings.handsFree.actionAsk' }))
+    expect(handsFree().action).toBe('ask')
+    expect(screen.getByText('settings.handsFree.requestsAsk')).toBeInTheDocument()
+  })
+
   it('offers the wake model download when it is missing', async () => {
     vi.mocked(getHandsFreeStatus).mockResolvedValue({
       listener: 'needsModel',
@@ -85,7 +95,7 @@ describe('HandsFreeSettings', () => {
       setup: idleSetup as never,
     })
     useAppStore.getState().updateConfig({
-      hands_free: { enabled: true, wake_name: 'Sam', sensitivity: 'normal' },
+      hands_free: { enabled: true, wake_name: 'Sam', sensitivity: 'normal', action: 'dictate' },
     })
     render(<HandsFreeSettings />)
     expect(await screen.findByText('settings.handsFree.needsModel')).toBeInTheDocument()

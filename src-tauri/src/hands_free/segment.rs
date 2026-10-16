@@ -1,5 +1,6 @@
 //! Plan `hands-free-mode` (listening.md, wake-check.md): turns the microphone stream into short
-//! voiced segments for the wake check, and decides when a hands-free request has ended.
+//! voiced segments for the wake check (and, during a request, for the "Thanks, Sam" check), and
+//! decides when a hands-free request has ended.
 //!
 //! Both are plain state machines fed with samples, so tests drive them without a microphone.
 
@@ -21,11 +22,19 @@ pub const MAX_WAKE_SEGMENT_MS: u64 = 2_000;
 /// minimum).
 pub const MIN_WAKE_VOICED_MS: u32 = crate::stt::silence::MIN_VOICED_MS;
 
+/// During a request, the end check reads this much audio before each pause, across earlier
+/// pauses: a quiet "Thanks, … Sam" reaches the gate as two stretches, and "…, thanks Sam" may
+/// come in one breath with the sentence before it.
+pub const END_CHECK_MS: u64 = 2_500;
+
 /// A stretch of audio worth a wake check. Memory only; never logged or stored.
 #[derive(Debug, Clone, PartialEq)]
 pub struct WakeCandidate {
     pub samples: Vec<i16>,
     pub voiced_ms: u32,
+    /// Absolute sample positions of the stretch (since the segmenter was made).
+    pub start: u64,
+    pub end: u64,
 }
 
 /// Splits the stream into wake candidates.
@@ -37,6 +46,9 @@ pub struct WakeSegmenter {
     segment_start: Option<u64>,
     /// The current segment was already checked at its maximum length.
     checked: bool,
+    /// Candidates for the end check: one at each pause, the last [`END_CHECK_MS`] of audio
+    /// before it, and no check in the middle of long speech.
+    end_check: bool,
 }
 
 impl Default for WakeSegmenter {
@@ -53,6 +65,16 @@ impl WakeSegmenter {
             pending: Vec::with_capacity(FRAME_SAMPLES),
             segment_start: None,
             checked: false,
+            end_check: false,
+        }
+    }
+
+    /// A segmenter for the end check during a request: a candidate at each pause, holding the
+    /// last [`END_CHECK_MS`] of audio before it (also from before an earlier pause).
+    pub fn for_end_check() -> Self {
+        Self {
+            end_check: true,
+            ..Self::new()
         }
     }
 
@@ -99,17 +121,30 @@ impl WakeSegmenter {
                     return None;
                 }
                 // Drop most of the trailing quiet, keep 100 ms.
-                let end = now.saturating_sub(
-                    u64::from(WAKE_HANGOVER_MS.saturating_sub(100)) * SAMPLES_PER_MS,
-                );
+                let end = now
+                    .saturating_sub(
+                        u64::from(WAKE_HANGOVER_MS.saturating_sub(100)) * SAMPLES_PER_MS,
+                    )
+                    .max(start);
+                let start = if self.end_check {
+                    end.saturating_sub(END_CHECK_MS * SAMPLES_PER_MS)
+                        .max(self.ring.oldest())
+                } else {
+                    start
+                };
                 Some(WakeCandidate {
-                    samples: self.ring.range(start, end.max(start)),
+                    samples: self.ring.range(start, end),
                     voiced_ms,
+                    start,
+                    end,
                 })
             }
             GateEvent::None => {
                 let start = self.segment_start?;
-                if self.checked || now - start < MAX_WAKE_SEGMENT_MS * SAMPLES_PER_MS {
+                if self.end_check
+                    || self.checked
+                    || now - start < MAX_WAKE_SEGMENT_MS * SAMPLES_PER_MS
+                {
                     return None;
                 }
                 self.checked = true;
@@ -117,6 +152,8 @@ impl WakeSegmenter {
                 (voiced_ms >= MIN_WAKE_VOICED_MS).then(|| WakeCandidate {
                     samples: self.ring.range(start, now),
                     voiced_ms,
+                    start,
+                    end: now,
                 })
             }
         }
@@ -124,8 +161,11 @@ impl WakeSegmenter {
 }
 
 /// Plan `hands-free-mode` (routing.md): how long a hands-free request may stay quiet before it
-/// ends.
-pub const END_OF_SPEECH_MS: u32 = 900;
+/// ends. Long enough for a thinking pause in dictation; "Thanks, Sam" ends it at once.
+pub const END_OF_SPEECH_MS: u32 = 3_000;
+/// Less voice than this is a breath, a click or a bump, not speech: it neither counts as the
+/// request having started nor ends it (the voice check's minimum).
+pub const MIN_REQUEST_VOICED_MS: u32 = crate::stt::silence::MIN_VOICED_MS;
 /// A request with no speech at all ends after this long (the user said only "Hey Sam").
 pub const NO_SPEECH_TIMEOUT_MS: u32 = 5_000;
 
@@ -138,6 +178,8 @@ pub enum StopReason {
     NoSpeech,
     /// The request reached its maximum length.
     MaxLength,
+    /// The speaker said "Thanks, Sam".
+    EndPhrase,
 }
 
 impl StopReason {
@@ -146,6 +188,7 @@ impl StopReason {
             Self::EndOfSpeech => "end of speech",
             Self::NoSpeech => "no speech",
             Self::MaxLength => "max length",
+            Self::EndPhrase => "end phrase",
         }
     }
 }
@@ -182,9 +225,15 @@ impl AutoStop {
             self.pending.clear();
             self.elapsed_ms += WINDOW_MS;
             match event {
-                GateEvent::SpeechStarted { .. } => self.heard_speech = true,
-                GateEvent::SpeechEnded { .. } => return Some(StopReason::EndOfSpeech),
+                // A breath or a click while the speaker waits for the pill is not the request.
+                GateEvent::SpeechEnded { voiced_ms } if voiced_ms >= MIN_REQUEST_VOICED_MS => {
+                    return Some(StopReason::EndOfSpeech)
+                }
+                GateEvent::SpeechStarted { .. } | GateEvent::SpeechEnded { .. } => {}
                 GateEvent::None => {}
+            }
+            if self.gate.voiced_ms() >= MIN_REQUEST_VOICED_MS {
+                self.heard_speech = true;
             }
             if self.elapsed_ms >= self.max_ms {
                 return Some(StopReason::MaxLength);
@@ -282,14 +331,67 @@ mod tests {
     #[test]
     fn auto_stop_waits_for_speech_then_stops_after_the_pause() {
         let mut room = Room::new();
-        let mut stop = AutoStop::new(30_000);
+        let mut stop = AutoStop::new(60_000);
         assert_eq!(stop.feed(&room.quiet(1_000)), None);
         assert_eq!(stop.feed(&room.voice(1_500)), None);
-        // A 500 ms pause inside the request does not stop it.
-        assert_eq!(stop.feed(&room.quiet(500)), None);
+        // A 2.5 s thinking pause inside the request does not stop it.
+        assert_eq!(stop.feed(&room.quiet(2_500)), None);
         assert_eq!(stop.feed(&room.voice(800)), None);
-        assert_eq!(stop.feed(&room.quiet(860)), None);
+        assert_eq!(stop.feed(&room.quiet(2_960)), None);
         assert_eq!(stop.feed(&room.quiet(60)), Some(StopReason::EndOfSpeech));
+    }
+
+    #[test]
+    fn a_breath_before_the_request_does_not_end_it() {
+        // The speaker waits for the pill; a 100 ms breath and the quiet after it are not a
+        // finished request (it ended one in real use, 2 s after the wake phrase).
+        let mut room = Room::new();
+        let mut stop = AutoStop::new(60_000);
+        assert_eq!(stop.feed(&room.quiet(500)), None);
+        assert_eq!(stop.feed(&room.voice(100)), None);
+        assert_eq!(stop.feed(&room.quiet(3_200)), None);
+        assert_eq!(stop.feed(&room.voice(1_200)), None);
+        assert_eq!(stop.feed(&room.quiet(3_020)), Some(StopReason::EndOfSpeech));
+    }
+
+    #[test]
+    fn the_end_check_gets_the_last_seconds_at_each_pause() {
+        let mut room = Room::new();
+        let mut segmenter = WakeSegmenter::for_end_check();
+        segmenter.feed(&room.quiet(500));
+        // Long speech is not checked in the middle.
+        assert!(segmenter.feed(&room.voice(6_000)).is_empty());
+        let candidates = segmenter.feed(&room.quiet(500));
+        assert_eq!(candidates.len(), 1);
+        let ms = candidates[0].samples.len() as u64 / SAMPLES_PER_MS;
+        assert_eq!(ms, END_CHECK_MS);
+        // A short phrase after a pause comes with what was said before it ("Thanks, … Sam").
+        segmenter.feed(&room.voice(800));
+        let candidates = segmenter.feed(&room.quiet(500));
+        assert_eq!(candidates.len(), 1);
+        let ms = candidates[0].samples.len() as u64 / SAMPLES_PER_MS;
+        assert_eq!(ms, END_CHECK_MS);
+        // Right after the wake phrase there is less audio than that.
+        let mut segmenter = WakeSegmenter::for_end_check();
+        segmenter.feed(&room.quiet(300));
+        segmenter.feed(&room.voice(800));
+        let ms = segmenter.feed(&room.quiet(500))[0].samples.len() as u64 / SAMPLES_PER_MS;
+        assert!((1_200..=1_300).contains(&ms), "{ms}");
+    }
+
+    #[test]
+    fn candidates_say_where_they_are() {
+        let mut room = Room::new();
+        let mut segmenter = WakeSegmenter::new();
+        segmenter.feed(&room.quiet(1_000));
+        segmenter.feed(&room.voice(400));
+        let first = segmenter.feed(&room.quiet(500)).remove(0);
+        segmenter.feed(&room.voice(400));
+        let second = segmenter.feed(&room.quiet(500)).remove(0);
+        assert_eq!(first.end - first.start, first.samples.len() as u64);
+        // The gap between them (end of one to start of the next) is under a second.
+        let gap_ms = (second.start - first.end) / SAMPLES_PER_MS;
+        assert!(gap_ms < 1_000, "{gap_ms}");
     }
 
     #[test]

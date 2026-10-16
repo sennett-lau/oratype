@@ -47,6 +47,15 @@ fn config_patch_between(previous: &storage::AppConfig, next: &storage::AppConfig
     if previous.hotkeys != next.hotkeys {
         patch.insert("hotkeys".to_string(), json!(next.hotkeys));
     }
+    // Plan `hands-free-mode`: `update_config` restarts the wake listener when one of these is in
+    // the patch. Without them a new wake name, sensitivity or microphone, and the switch itself,
+    // took effect only after a restart.
+    if previous.hands_free != next.hands_free {
+        patch.insert("hands_free".to_string(), json!(next.hands_free));
+    }
+    if previous.input_device != next.input_device {
+        patch.insert("input_device".to_string(), json!(next.input_device));
+    }
     Value::Object(patch)
 }
 
@@ -453,6 +462,23 @@ mod tests {
         assert!(config_patch_between(&previous, &previous)
             .get("show_in_dock")
             .is_none());
+    }
+
+    #[test]
+    fn config_patch_includes_hands_free_and_microphone_changes() {
+        // Plan `hands-free-mode`: these keys restart the wake listener.
+        let previous = storage::AppConfig::default();
+        let mut next = previous.clone();
+        next.hands_free.wake_name = "Peter".to_string();
+        let patch = config_patch_between(&previous, &next);
+        assert_eq!(patch["hands_free"]["wake_name"], "Peter");
+        assert!(patch.get("input_device").is_none());
+
+        let mut next = previous.clone();
+        next.input_device = "USB Microphone".to_string();
+        let patch = config_patch_between(&previous, &next);
+        assert_eq!(patch["input_device"], "USB Microphone");
+        assert!(patch.get("hands_free").is_none());
     }
 
     #[test]

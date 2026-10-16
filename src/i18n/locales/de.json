@@ -587,14 +587,18 @@
       "low": "Niedrig",
       "normal": "Normal",
       "high": "Hoch",
-      "needsModel": "Der freihändige Modus braucht ein kleines Sprachmodell ({{size}} MB).",
+      "needsModel": "Der freihändige Modus hört mit einem kleinen Sprachmodell auf diesem Mac ({{size}} MB) auf „Hey {{name}}“. Vor dem Aktivierungswort verlässt nichts den Mac.",
       "download": "Laden",
       "downloading": "Aktivierungsmodell wird geladen … {{percent}} %",
       "downloadFailed": "Der Download ist fehlgeschlagen. Versuch es noch einmal.",
       "cancel": "Abbrechen",
       "listening": "Wartet auf „Hey {{name}}“",
       "micError": "Das Mikrofon konnte nicht geöffnet werden.",
-      "requests": "Nach „Hey {{name}}“ stell eine Frage, sag „translate …“ oder sag „type …“, um in die App zu schreiben. Die Aufnahme endet, wenn du eine Pause machst."
+      "action": "Nach „Hey {{name}}“",
+      "actionDictate": "Gesagtes tippen",
+      "actionAsk": "Frag alles",
+      "requestsDictate": "Deine Worte werden in die App getippt. Sag „ask …“, um stattdessen zu fragen, oder „translate …“. Beende mit „Thanks, {{name}}“ oder sprich 3 Sekunden nicht.",
+      "requestsAsk": "Stell eine Frage oder sag „translate …“; sag „type …“, um in die App zu schreiben. Beende mit „Thanks, {{name}}“ oder sprich 3 Sekunden nicht."
     }
   },
   "contextFamilies": {

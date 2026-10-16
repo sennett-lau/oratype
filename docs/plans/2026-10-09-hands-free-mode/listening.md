@@ -30,7 +30,8 @@ The listener pauses while the pipeline is not idle, or while Ask is starting, re
 thinking. This covers the Dictate, Translate and Ask shortcuts, the tray and the CLI. While
 paused, the stream stays open and its audio is dropped. When the runs are idle again, the
 segmenter starts empty, so audio from before the pause is never checked. CoreAudio lets the
-listener and a recording read the same device at once.
+listener and a recording read the same device at once. During its own request the listener
+does not pause: it watches that request for its end ([routing.md](routing.md)).
 
 ## Turning off and quitting
 

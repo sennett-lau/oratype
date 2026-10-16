@@ -1,12 +1,15 @@
 //! Plan `hands-free-mode` (measurements.md): measures the hands-free pipeline on synthetic audio.
 //!
 //! Usage: `cargo run --release --example benchmark_wake -- <wake model> <fixtures dir>
-//! [--ctx N] [--no-prompt] [--threads N] [--sensitivity low|normal|high] [--verbose]`
+//! [--ctx N] [--no-prompt] [--threads N] [--sensitivity low|normal|high] [--gain-db N]
+//! [--verbose]`
 //!
 //! The fixtures come from `benchmarks/hands-free/make_fixtures.sh` (macOS `say`). Each clip is
-//! played through the real listener logic (voice gate, segmenter, wake check) with one second
-//! of room noise before and after it. Prints one JSON object per clip and a summary.
-//! `--verbose` adds the wake check's transcript of the synthetic clips (never done in the app).
+//! played through the real listener logic (voice gate, segmenter, wake check, or the end check
+//! for the "end"/"notend" clips) with one second of room noise before and after it. Prints one
+//! JSON object per clip and a summary. `--gain-db -22` plays the clips 22 dB quieter, as a
+//! built-in Mac microphone hears a voice (the room noise stays at -65 dBFS). `--verbose` adds
+//! the wake check's transcript of the synthetic clips (never done in the app).
 
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
@@ -62,6 +65,7 @@ fn main() {
     let mut options = WakeCheckOptions::default();
     let mut sensitivity = Sensitivity::Normal;
     let mut verbose = false;
+    let mut gain_db = 0.0f32;
     let mut i = 3;
     while i < args.len() {
         match args[i].as_str() {
@@ -79,6 +83,10 @@ fn main() {
                 i += 1;
             }
             "--verbose" => verbose = true,
+            "--gain-db" => {
+                gain_db = args[i + 1].parse().unwrap();
+                i += 1;
+            }
             "--sensitivity" => {
                 sensitivity = match args[i + 1].as_str() {
                     "low" => Sensitivity::Low,
@@ -121,6 +129,8 @@ fn main() {
 
     let manifest = std::fs::read_to_string(dir.join("manifest.tsv")).expect("manifest");
     let (mut wake_total, mut wake_hit, mut other_total, mut other_hit) = (0, 0, 0, 0);
+    let (mut end_total, mut end_hit, mut notend_total, mut notend_hit) = (0, 0, 0, 0);
+    let gain = 10f32.powf(gain_db / 20.0);
     let (mut talk_seconds, mut talk_checks, mut talk_wakes, mut talk_cpu) =
         (0.0, 0, 0, Duration::ZERO);
     let mut check_ms: Vec<f64> = Vec::new();
@@ -128,7 +138,10 @@ fn main() {
     for line in manifest.lines() {
         let cols: Vec<&str> = line.split('\t').collect();
         let (label, file, voice, text) = (cols[0], cols[1], cols[2], cols[3]);
-        let clip = read_wav(&dir.join(file));
+        let clip: Vec<i16> = read_wav(&dir.join(file))
+            .iter()
+            .map(|&sample| (f32::from(sample) * gain) as i16)
+            .collect();
         let mut stream = room_noise(1_000, &mut seed);
         let noise = room_noise(clip.len() / 16 + 20, &mut seed);
         stream.extend(
@@ -138,7 +151,13 @@ fn main() {
         );
         stream.extend(room_noise(1_000, &mut seed));
 
-        let mut segmenter = WakeSegmenter::new();
+        let ends = label == "end" || label == "notend";
+        let mut segmenter = if ends {
+            WakeSegmenter::for_end_check()
+        } else {
+            WakeSegmenter::new()
+        };
+        checker.forget_greeting();
         let mut checks = 0;
         let mut woke = false;
         let mut texts = Vec::new();
@@ -147,8 +166,12 @@ fn main() {
         for chunk in stream.chunks(320) {
             for candidate in segmenter.feed(chunk) {
                 checks += 1;
+                if ends {
+                    woke |= checker.check_end(&candidate.samples, sensitivity).unwrap();
+                    continue;
+                }
                 let cpu0 = cpu_time();
-                let result = checker.check(&candidate.samples, sensitivity).unwrap();
+                let result = checker.check_candidate(&candidate, sensitivity).unwrap();
                 check_cpu_ms.push((cpu_time() - cpu0).as_secs_f64() * 1000.0);
                 check_ms.push(result.elapsed.as_secs_f64() * 1000.0);
                 if let Some(m) = result.matched {
@@ -169,6 +192,14 @@ fn main() {
             "other" => {
                 other_total += 1;
                 other_hit += usize::from(woke);
+            }
+            "end" => {
+                end_total += 1;
+                end_hit += usize::from(woke);
+            }
+            "notend" => {
+                notend_total += 1;
+                notend_hit += usize::from(woke);
             }
             _ => {
                 talk_seconds += clip.len() as f64 / 16_000.0;
@@ -198,6 +229,9 @@ fn main() {
             "wake_accepted": format!("{wake_hit}/{wake_total}"),
             "false_reject_rate": 1.0 - wake_hit as f64 / wake_total.max(1) as f64,
             "other_false_accepts": format!("{other_hit}/{other_total}"),
+            "gain_db": gain_db,
+            "end_phrases_heard": format!("{end_hit}/{end_total}"),
+            "false_ends": format!("{notend_hit}/{notend_total}"),
             "talk_seconds": talk_seconds, "talk_checks": talk_checks, "talk_false_wakes": talk_wakes,
             "talk_cpu_percent_of_realtime": talk_cpu.as_secs_f64() / talk_seconds.max(1.0) * 100.0,
             "check_ms_p50": pct(&check_ms, 0.5), "check_ms_p90": pct(&check_ms, 0.9),

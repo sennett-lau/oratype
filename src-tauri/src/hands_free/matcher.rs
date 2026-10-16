@@ -7,6 +7,8 @@
 //! ("Hey Sem") and, at higher sensitivity, one wrong letter. The phrase must come at the start
 //! of what was heard (up to two filler words before it, "Oh, hey Sam"), so a conversation that
 //! merely mentions "hey Sam" in the middle of a sentence does not wake Typelite.
+//!
+//! The same name ends a request: "Thanks, Sam" at the very end of what was heard (routing.md).
 
 use serde::{Deserialize, Serialize};
 
@@ -35,6 +37,21 @@ const GREETINGS: &[&str] = &[
 const AFTER_HE: &[&str] = &["is", "s"];
 /// Words a speaker may say before the greeting ("Oh, hey Sam").
 const MAX_LEADING_WORDS: usize = 2;
+/// Words before the name that end a request ("Thanks, Sam"), after normalising. Chinese is one
+/// word per character: 多謝 / 谢谢 / 唔該 in both scripts.
+const CLOSINGS: &[&[&str]] = &[
+    &["thanks"],
+    &["thank", "you"],
+    &["thankyou"],
+    &["thank"],
+    &["thx"],
+    &["多", "謝"],
+    &["多", "谢"],
+    &["謝", "謝"],
+    &["谢", "谢"],
+    &["唔", "該"],
+    &["唔", "该"],
+];
 /// Chinese transliterations Whisper writes for the default name.
 const SAM_ALIASES: &[&str] = &["山姆", "森姆", "三姆", "沙姆", "心", "森", "三"];
 
@@ -171,21 +188,73 @@ impl WakePhrase {
 
     /// Best score of the name against the first one to four words of `words`.
     fn name_score(&self, words: &[String], sensitivity: Sensitivity) -> Option<f32> {
-        let mut best: Option<f32> = None;
-        for take in 1..=words.len().min(4) {
-            let heard = fold(&words[..take].concat());
-            for name in &self.names {
+        (1..=words.len().min(4))
+            .filter_map(|take| self.exact_name_score(&words[..take], sensitivity))
+            .max_by(f32::total_cmp)
+    }
+
+    /// Score of the name against exactly `words`, joined.
+    fn exact_name_score(&self, words: &[String], sensitivity: Sensitivity) -> Option<f32> {
+        let heard = fold(&words.concat());
+        self.names
+            .iter()
+            .filter_map(|name| {
                 let length = name.chars().count().max(1) as f32;
                 let cost = weighted_edit_distance(name, &heard);
-                if cost <= allowed_cost(length, sensitivity) {
-                    let score = (1.0 - cost / length).max(0.0);
-                    if best.is_none_or(|b| score > b) {
-                        best = Some(score);
-                    }
+                (cost <= allowed_cost(length, sensitivity)).then(|| (1.0 - cost / length).max(0.0))
+            })
+            .max_by(f32::total_cmp)
+    }
+
+    /// The text was only a greeting ("Hey."). A quiet "Hey, … Sam" can reach the wake check
+    /// as two stretches; the listener keeps such a greeting for the next one (wake-check.md).
+    pub fn is_greeting_only(&self, transcript: &str) -> bool {
+        let words = tokens(transcript);
+        !words.is_empty() && words.len() <= 2 && words.iter().all(|word| is_greeting(word))
+    }
+
+    /// Where the end phrase ("Thanks, Sam", 多謝 Sam) starts, as a byte offset into
+    /// `transcript`, when the transcript ends with it. Only the very end counts: "thanks Sam
+    /// for the notes" goes on.
+    pub fn end_phrase_start(&self, transcript: &str, sensitivity: Sensitivity) -> Option<usize> {
+        let words = tokens_at(transcript);
+        let plain: Vec<String> = words.iter().map(|(word, _)| word.clone()).collect();
+        let count = plain.len();
+        for name_words in 1..=count.min(4) {
+            let before = count - name_words;
+            if self
+                .exact_name_score(&plain[before..], sensitivity)
+                .is_none()
+            {
+                continue;
+            }
+            for closing in CLOSINGS {
+                let Some(start) = before.checked_sub(closing.len()) else {
+                    continue;
+                };
+                if plain[start..before]
+                    .iter()
+                    .zip(closing.iter())
+                    .all(|(word, expected)| word == expected)
+                {
+                    return Some(words[start].1);
                 }
             }
         }
-        best
+        None
+    }
+
+    /// The transcript without a closing "Thanks, Sam" and the punctuation that joined it.
+    pub fn strip_end_phrase(&self, transcript: &str, sensitivity: Sensitivity) -> String {
+        match self.end_phrase_start(transcript, sensitivity) {
+            Some(start) => transcript[..start]
+                .trim_end_matches(|c: char| {
+                    c.is_whitespace()
+                        || matches!(c, ',' | '，' | '、' | ';' | '；' | ':' | '：' | '-' | '—')
+                })
+                .to_string(),
+            None => transcript.to_string(),
+        }
     }
 }
 
@@ -210,24 +279,35 @@ fn is_cjk(c: char) -> bool {
 
 /// Lower-case words; punctuation splits words; each CJK character is its own word.
 fn tokens(text: &str) -> Vec<String> {
+    tokens_at(text).into_iter().map(|(word, _)| word).collect()
+}
+
+/// [`tokens`], each with the byte offset in `text` where it starts.
+fn tokens_at(text: &str) -> Vec<(String, usize)> {
     let mut out = Vec::new();
     let mut current = String::new();
-    for c in text.chars().flat_map(char::to_lowercase) {
-        if is_cjk(c) {
-            if !current.is_empty() {
-                out.push(std::mem::take(&mut current));
+    let mut start = 0;
+    for (at, original) in text.char_indices() {
+        for c in original.to_lowercase() {
+            if is_cjk(c) {
+                if !current.is_empty() {
+                    out.push((std::mem::take(&mut current), start));
+                }
+                out.push((c.to_string(), at));
+            } else if c.is_alphanumeric() || c == '\'' {
+                if c != '\'' {
+                    if current.is_empty() {
+                        start = at;
+                    }
+                    current.push(c);
+                }
+            } else if !current.is_empty() {
+                out.push((std::mem::take(&mut current), start));
             }
-            out.push(c.to_string());
-        } else if c.is_alphanumeric() || c == '\'' {
-            if c != '\'' {
-                current.push(c);
-            }
-        } else if !current.is_empty() {
-            out.push(std::mem::take(&mut current));
         }
     }
     if !current.is_empty() {
-        out.push(current);
+        out.push((current, start));
     }
     out
 }
@@ -408,6 +488,78 @@ mod tests {
         assert_eq!(WakePhrase::from_name("  ").spoken(), "Hey Sam");
         assert_eq!(WakePhrase::from_name("hey Jarvis").spoken(), "Hey Jarvis");
         assert!(wakes("", "Hey Sam", Sensitivity::Low));
+    }
+
+    #[test]
+    fn the_end_phrase_ends_a_request_only_at_the_very_end() {
+        let sam = WakePhrase::from_name("Sam");
+        let normal = Sensitivity::Normal;
+        for heard in [
+            "Thanks, Sam.",
+            " Thank you, Sam!",
+            "I'll be there at six. Thanks Sam",
+            "see you then, thank you Sam.",
+            "多謝 Sam",
+            "我今晚唔返嚟食飯，多謝Sam。",
+            "谢谢，Sam",
+            "Thanks, Sem.",
+        ] {
+            assert!(sam.end_phrase_start(heard, normal).is_some(), "{heard:?}");
+        }
+        for heard in [
+            "Thanks Sam for the notes.",
+            "Thank you.",
+            "Sam.",
+            "Hey Sam.",
+            "thanks, man",
+            "Thanks, Pam.",
+            "",
+        ] {
+            assert!(sam.end_phrase_start(heard, normal).is_none(), "{heard:?}");
+        }
+        let peter = WakePhrase::from_name("Peter");
+        assert!(peter
+            .end_phrase_start("All done. Thanks, Peter.", normal)
+            .is_some());
+        assert!(peter
+            .end_phrase_start("All done. Thanks, Sam.", normal)
+            .is_none());
+    }
+
+    #[test]
+    fn the_end_phrase_is_cut_from_the_request() {
+        let sam = WakePhrase::from_name("Sam");
+        let normal = Sensitivity::Normal;
+        assert_eq!(
+            sam.strip_end_phrase("I'll be there at six. Thanks, Sam.", normal),
+            "I'll be there at six."
+        );
+        assert_eq!(
+            sam.strip_end_phrase("I'll be there at six, thanks Sam", normal),
+            "I'll be there at six"
+        );
+        assert_eq!(
+            sam.strip_end_phrase("我今晚唔返嚟食飯，多謝 Sam。", normal),
+            "我今晚唔返嚟食飯"
+        );
+        assert_eq!(sam.strip_end_phrase("Thanks, Sam.", normal), "");
+        assert_eq!(
+            sam.strip_end_phrase("Thanks Sam for the notes.", normal),
+            "Thanks Sam for the notes."
+        );
+    }
+
+    #[test]
+    fn a_lone_greeting_is_kept_for_the_next_stretch() {
+        let sam = WakePhrase::from_name("Sam");
+        assert!(sam.is_greeting_only(" Hey."));
+        assert!(sam.is_greeting_only("Hey?"));
+        assert!(sam.is_greeting_only("嘿"));
+        assert!(!sam.is_greeting_only("Hey there."));
+        assert!(!sam.is_greeting_only("Sam."));
+        assert!(!sam.is_greeting_only(""));
+        // The listener matches the next stretch with the greeting in front.
+        assert!(sam.matches("Hey. Sam.", Sensitivity::Normal).is_some());
     }
 
     #[test]

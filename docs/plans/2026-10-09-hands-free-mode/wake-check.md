@@ -12,6 +12,11 @@ How a voiced segment becomes "wake" or "not wake". Part of [hands-free-mode](ind
   stretch is not checked again;
 - dropped when it has less than 200 ms of voiced audio (the voice check's minimum).
 
+A quiet "Hey, … Sam" can reach the gate as two stretches: at a built-in microphone's level the
+end of "Hey" falls under the gate before the comma pause is over. A stretch heard as only a
+greeting ("Hey.") is therefore kept, and when the next one starts within 1 s the two are matched
+together (`WakeChecker::check_candidate`). Each candidate carries its sample positions for this.
+
 Continuous background talk therefore costs at most one check per stretch of speech between
 pauses. It is never one check per frame.
 
@@ -30,7 +35,12 @@ with:
   for a name in another script;
 - single segment, no timestamps, at most 12 tokens, greedy decoding with no temperature
   fallback, and a **fixed 512-frame encoder window** (10.24 s, a third of the full window);
-- segments with Whisper's no-speech probability above 0.6 are ignored.
+- segments with Whisper's no-speech probability above 0.6 are ignored;
+- **level:** the segment's loudest sample is raised to −3 dBFS (never lowered, at most +30 dB).
+  A built-in Mac microphone peaks around −25 dBFS for a voice at arm's length, about 20 dB under
+  the test clips, and at that level base heard "Hey, sir" and "Hey there" for "Hey Sam".
+
+The same model ends a request ("Thanks, Sam"); see [routing.md](routing.md).
 
 The transcript is only compared. It is never logged, stored or sent. The log line is
 `Hands-free: wake phrase heard (score 1.00, check 37 ms, voiced 640 ms)`.

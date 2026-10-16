@@ -587,14 +587,18 @@
       "low": "低",
       "normal": "標準",
       "high": "高",
-      "needsModel": "免提模式需要一個小型語音模型（{{size}} MB）。",
+      "needsModel": "免提模式用這部 Mac 上的一個小型語音模型（{{size}} MB）聽「Hey {{name}}」，所以喚醒前不會有任何聲音離開這部 Mac。",
       "download": "下載",
       "downloading": "正在下載喚醒模型… {{percent}}%",
       "downloadFailed": "下載失敗，請再試一次。",
       "cancel": "取消",
       "listening": "正在聆聽「Hey {{name}}」",
       "micError": "無法開啟麥克風。",
-      "requests": "說出「Hey {{name}}」後，可以提問、說「翻譯 …」，或說「打 …」把文字寫入 App。停頓時錄音會自動結束。"
+      "action": "說「Hey {{name}}」之後",
+      "actionDictate": "輸入我說的話",
+      "actionAsk": "隨便問",
+      "requestsDictate": "你說的話會輸入到 App。說「問下 …」改為提問，或說「翻譯 …」。說「多謝 {{name}}」結束，或停止說話 3 秒。",
+      "requestsAsk": "可以提問或說「翻譯 …」；說「打 …」把文字寫入 App。說「多謝 {{name}}」結束，或停止說話 3 秒。"
     }
   },
   "contextFamilies": {

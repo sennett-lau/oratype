@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Plan `hands-free-mode` (measurements.md): synthesises the wake-check test set with macOS `say`.
 # Writes 16 kHz mono 16-bit WAV files and a manifest (label<TAB>file<TAB>text) into $1.
-# Labels: wake (should wake), other (should not wake), talk (long background speech).
+# Labels: wake (should wake), other (should not wake), talk (long background speech), end (should
+# end a request: "Thanks, Sam"), notend (said during a request, should not end it).
 set -euo pipefail
 out="${1:?usage: make_fixtures.sh <output dir>}"
 mkdir -p "$out"
@@ -51,4 +52,15 @@ which has been broken for two weeks now. Hey, at least the snacks are good. Same
 add talk "Tingting" "昨天我们开了一个很长的会议，讨论了下个季度的计划。销售部门说北方地区的业绩增长了百分之十二，\
 市场部希望增加春季活动的预算，但是财务部门还没有同意。工程部的同事说新版本的进度正常，不过测试团队还需要一个星期。\
 然后我们讨论了招聘的问题，现在有三个职位空缺，面试从下星期一开始。"
+# The end phrase, said during a request (checked with the end check, not the wake check).
+for voice in "${en_voices[@]}"; do
+  add end "$voice" "Thanks, Sam."
+  add end "$voice" "See you at six. Thank you, Sam."
+  add notend "$voice" "Thanks for the notes, they were great."
+  add notend "$voice" "I'll ask Sam about it tomorrow."
+done
+add end "Sinji" "我今晚唔返嚟食飯。多謝 Sam。"
+add end "Tingting" "明天见。谢谢 Sam。"
+add notend "Sinji" "多謝晒你哋嘅幫忙。"
+add notend "Tingting" "谢谢大家，明天见。"
 echo "Wrote $n files to $out"
