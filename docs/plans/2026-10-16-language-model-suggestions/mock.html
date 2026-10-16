@@ -1,0 +1,452 @@
+<title>Language Model Suggestions</title>
+<style>
+  /* Layout: page header, a control bar, then the app window on a desk, then notes.
+     Page tokens follow the viewer's theme; app tokens copy the app (light Native Glass / dark Aurora). */
+  :root {
+    --page-bg: #f2f3f6; --page-ink: #1b1d22; --page-muted: #5d6270; --page-line: #dcdfe6; --page-card: #fff;
+    --page-accent: #0a84ff; --page-accent-ink: #fff;
+    --desk-a: #7fb2ff; --desk-b: #b49cf0; --desk-c: #f5b8a4;
+    --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { color-scheme: dark; --page-bg: #111317; --page-ink: #e8eaef; --page-muted: #9aa0ad; --page-line: #2a2e36; --page-card: #181b21; --page-accent: #3fd8c2; --page-accent-ink: #04241f; }
+  }
+  :root[data-theme="dark"] { color-scheme: dark; --page-bg: #111317; --page-ink: #e8eaef; --page-muted: #9aa0ad; --page-line: #2a2e36; --page-card: #181b21; --page-accent: #3fd8c2; --page-accent-ink: #04241f; }
+  * { box-sizing: border-box; }
+  body { background: var(--page-bg); color: var(--page-ink); font-family: var(--ui); font-size: 15px; line-height: 1.5; padding-inline: 20px; padding-block: 32px 64px; }
+  .wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--page-muted); }
+  h1 { margin: 4px 0 6px; font-size: clamp(24px, 3.6vw, 32px); line-height: 1.15; text-wrap: balance; }
+  .lead { margin: 0; color: var(--page-muted); max-width: 70ch; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+  .ctl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .label { font-family: var(--mono); font-size: 11px; color: var(--page-muted); letter-spacing: .06em; text-transform: uppercase; }
+  .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--page-line); border-radius: 9px; overflow: hidden; background: var(--page-card); }
+  .seg button { font: inherit; font-size: 13px; padding: 6px 12px; border: 0; background: transparent; color: var(--page-ink); cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--page-accent); color: var(--page-accent-ink); }
+  .seg button:focus-visible { outline: 2px solid var(--page-accent); outline-offset: -2px; }
+  .notes { background: var(--page-card); border: 1px solid var(--page-line); border-radius: 12px; padding: 14px 18px; font-size: 14px; color: var(--page-muted); }
+  .notes b { color: var(--page-ink); }
+  .notes ul { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 4px; }
+  .desk { border-radius: 16px; padding: 34px 24px; border: 1px solid var(--page-line); background: radial-gradient(90% 90% at 15% 10%, var(--desk-a) 0%, var(--desk-b) 45%, var(--desk-c) 100%); }
+  .desk.dk { --desk-a: #16304f; --desk-b: #241a3f; --desk-c: #33202a; }
+
+  /* App tokens */
+  .app {
+    --content: rgba(255,255,255,.78); --glass: rgba(246,246,248,.7); --card: #fff; --ink: #1d1d1f; --muted: #6e6e73; --faint: #8e8e93;
+    --line: rgba(0,0,0,.09); --hair: rgba(0,0,0,.06); --accent: #0a84ff; --accent-ink: #fff; --accent-soft: rgba(10,132,255,.12);
+    --ok: #248a3d; --ok-soft: rgba(52,199,89,.16); --warn: #b25000; --warn-soft: rgba(255,159,10,.18); --field: rgba(0,0,0,.045);
+    --tint-a: transparent; --tint-b: transparent; --lights-a: #ff5f57; --lights-b: #febc2e; --lights-c: #28c840;
+    color: var(--ink); font-family: var(--ui); font-size: 13px;
+  }
+  .app.dk {
+    color-scheme: dark;
+    --content: rgba(14,20,30,.62); --glass: rgba(18,24,34,.55); --card: rgba(36,44,60,.72); --ink: #f1f6ff; --muted: #a6b3c8; --faint: #6f7d94;
+    --line: rgba(255,255,255,.12); --hair: rgba(255,255,255,.08); --accent: #3fd8c2; --accent-ink: #04241f; --accent-soft: rgba(63,216,194,.18);
+    --ok: #5fe08a; --ok-soft: rgba(48,209,88,.18); --warn: #ffb648; --warn-soft: rgba(255,159,10,.2); --field: rgba(255,255,255,.06);
+    --tint-a: rgba(63,216,194,.24); --tint-b: rgba(175,82,222,.24);
+  }
+  .win { max-width: 780px; margin: 0 auto; border-radius: 12px; overflow: hidden; position: relative;
+    background: radial-gradient(60% 50% at 90% 0%, var(--tint-a), transparent 70%), radial-gradient(50% 45% at 10% 100%, var(--tint-b), transparent 70%), var(--content);
+    backdrop-filter: blur(30px) saturate(1.8); -webkit-backdrop-filter: blur(30px) saturate(1.8);
+    box-shadow: 0 30px 60px rgba(20,20,50,.28), 0 0 0 .5px rgba(0,0,0,.2); }
+  .lights { display: flex; gap: 8px; padding: 14px 16px 0; }
+  .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  .lights i:nth-child(1) { background: var(--lights-a); } .lights i:nth-child(2) { background: var(--lights-b); } .lights i:nth-child(3) { background: var(--lights-c); }
+
+  /* Shared pieces */
+  .card { background: var(--card); border-radius: 12px; box-shadow: 0 0 0 .5px var(--line); padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .tag { font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); letter-spacing: .02em; white-space: nowrap; }
+  .badge { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .badge.muted { background: var(--field); color: var(--muted); }
+  .btn { font: inherit; font-size: 13px; font-weight: 500; padding: 6px 14px; border-radius: 7px; border: 0; background: var(--accent); color: var(--accent-ink); cursor: pointer; white-space: nowrap; }
+  .btn.ghost { background: var(--field); color: var(--ink); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn:focus-visible, .link:focus-visible, .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .link { font: inherit; font-size: 12.5px; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; }
+  .link.muted { color: var(--muted); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font: inherit; font-size: 12.5px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--field); color: var(--ink); cursor: pointer; }
+  .chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  .chip small { font-weight: 400; color: var(--muted); margin-left: 4px; }
+  .chip[aria-pressed="true"] small { color: inherit; opacity: .8; }
+  .fit { font-size: 11px; padding: 1px 7px; border-radius: 6px; white-space: nowrap; background: var(--field); color: var(--muted); }
+  .fit.best { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+  .fit.good { background: var(--field); color: var(--ink); }
+  .fit.warn { background: var(--warn-soft); color: var(--warn); font-weight: 600; }
+  .hw { font-size: 11.5px; color: var(--muted); }
+  .track { height: 5px; border-radius: 3px; background: var(--hair); overflow: hidden; }
+  .track i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .2s linear; }
+  @media (prefers-reduced-motion: reduce) { .track i { transition: none; } }
+
+  /* Onboarding */
+  .ob { padding: 14px 36px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 6px; }
+  .dots span { width: 6px; height: 6px; border-radius: 3px; background: var(--hair); }
+  .dots span.done { background: var(--muted); opacity: .5; }
+  .dots span.now { width: 18px; background: var(--accent); }
+  .ob h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; }
+  .ob .sub { margin: 4px 0 0; color: var(--muted); }
+  .from-mac { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+  .rec-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .rec-head h3 { margin: 0; font-size: 14px; font-weight: 600; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .pick { border-radius: 10px; box-shadow: 0 0 0 1px var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .pick .role { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .pick b { font-size: 13.5px; }
+  .pick .why { font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .pick .size { font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .pick .track { margin-top: 6px; }
+  .pick .state { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .compare { border-radius: 10px; background: var(--field); padding: 10px 12px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 5px 12px; align-items: baseline; font-size: 12.5px; }
+  .compare .k { color: var(--muted); font-size: 11.5px; white-space: nowrap; }
+  .compare .zh { font-size: 13.5px; letter-spacing: .02em; }
+  .compare .dim { color: var(--muted); }
+  .rec-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .ob-foot { display: flex; justify-content: space-between; align-items: center; padding-top: 6px; }
+
+  /* Settings */
+  .set { display: grid; grid-template-columns: 170px minmax(0, 1fr); min-height: 520px; }
+  .side { background: var(--glass); padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--hair); }
+  .brand { font-weight: 600; font-size: 14px; padding: 10px 8px 12px; }
+  .nav { padding: 6px 9px; border-radius: 7px; font-size: 13px; color: var(--ink); }
+  .nav.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .main { padding: 26px 26px 26px; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+  .main h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--hair); padding-bottom: 10px; flex-wrap: wrap; }
+  .tabs span { padding: 4px 10px; border-radius: 6px; font-size: 12.5px; color: var(--muted); }
+  .tabs span.on { background: var(--field); color: var(--ink); font-weight: 600; }
+  .yours { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+  .yours b { color: var(--ink); font-weight: 600; }
+  .banner { border-radius: 10px; padding: 12px 14px; background: var(--accent-soft); display: flex; gap: 12px; align-items: flex-start; }
+  .banner .ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); flex: none; font-weight: 700; font-size: 14px; }
+  .banner .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .banner .txt b { font-size: 13px; }
+  .banner .txt span { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+  .banner .acts { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+  .list { display: flex; flex-direction: column; border-radius: 12px; box-shadow: 0 0 0 .5px var(--line); background: var(--card); overflow: hidden; }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; padding: 12px 14px; align-items: center; }
+  .row + .row { border-top: 1px solid var(--hair); }
+  .row.suggested { background: linear-gradient(90deg, var(--accent-soft), transparent 70%); }
+  .row .name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; font-size: 13.5px; }
+  .row .detail { font-size: 12px; color: var(--muted); }
+  .row .fits { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .row .fits .lang { font-size: 11px; color: var(--faint); margin-right: -2px; }
+  .row .act { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
+  .foot-note { font-size: 11.5px; color: var(--muted); }
+
+  @media (max-width: 640px) {
+    .desk { padding: 18px 10px; }
+    .ob { padding: 12px 16px 18px; }
+    .picks { grid-template-columns: minmax(0, 1fr); }
+    .set { grid-template-columns: minmax(0, 1fr); }
+    .side { display: none; }
+    .main { padding: 18px 14px; }
+    .compare { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+    .compare .r { margin-bottom: 6px; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Plan language-model-suggestions · UI mock</div>
+    <h1>Built-in models picked by the languages you speak</h1>
+    <p class="lead">Typelite asks which languages you speak and suggests built-in speech and AI models that handle them,
+      so a Cantonese speaker gets spoken Cantonese on the Mac without setting up a server. Click the languages to see the suggestion change.</p>
+  </header>
+
+  <div class="bar" role="group" aria-label="Mock controls">
+    <div class="ctl"><span class="label">Screen</span>
+      <div class="seg" id="viewSeg">
+        <button type="button" id="v-ob" data-view="ob" aria-pressed="true">Onboarding</button>
+        <button type="button" id="v-speech" data-view="speech" aria-pressed="false">Settings · Speech</button>
+        <button type="button" id="v-ai" data-view="ai" aria-pressed="false">Settings · AI polish</button>
+      </div></div>
+    <div class="ctl"><span class="label">This Mac</span>
+      <div class="seg" id="macSeg">
+        <button type="button" id="m-32" data-mem="32" aria-pressed="true">M1 Pro · 32 GB</button>
+        <button type="button" id="m-8" data-mem="8" aria-pressed="false">M2 · 8 GB</button>
+      </div></div>
+    <div class="ctl"><span class="label">App theme</span>
+      <div class="seg" id="themeSeg">
+        <button type="button" id="t-light" data-theme-app="light" aria-pressed="true">Light</button>
+        <button type="button" id="t-dark" data-theme-app="dark" aria-pressed="false">Dark</button>
+      </div></div>
+  </div>
+
+  <div class="desk" id="desk">
+    <div class="win app" id="app">
+      <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
+
+      <!-- Onboarding: the languages step, before speech and AI setup -->
+      <section class="ob" id="view-ob">
+        <div class="dots" aria-hidden="true"><span class="done"></span><span class="done"></span><span class="now"></span><span></span><span></span></div>
+        <div>
+          <h2>Which languages do you speak?</h2>
+          <p class="sub">Typelite suggests the built-in models that handle them best. You can change this later in Settings.</p>
+        </div>
+        <div>
+          <div class="chips" id="langChips"></div>
+          <div class="from-mac">Filled in from your Mac’s preferred languages.</div>
+        </div>
+
+        <div class="card" id="recCard">
+          <div class="rec-head">
+            <h3><span id="recTitle">Suggested for English and Cantonese</span> <span class="tag">Recommended</span></h3>
+            <button class="link muted" type="button" id="chooseSelf">Choose models myself</button>
+          </div>
+          <div class="picks">
+            <div class="pick" id="pickSpeech"></div>
+            <div class="pick" id="pickAi"></div>
+          </div>
+          <div class="compare" id="compare">
+            <span class="k">You say</span><span class="zh r">佢頭先話份報告聽日先可以俾我哋。</span><span></span>
+            <span class="k">Whisper</span><span class="zh dim r">他剛才說份報告明天才可以給我們。</span><span class="fit warn">Written Chinese</span>
+            <span class="k">Qwen3-ASR</span><span class="zh r">佢頭先話份報告聽日先可以俾我哋。</span><span class="fit best">Spoken Cantonese</span>
+          </div>
+          <div class="rec-foot">
+            <span class="hw" id="recHw"></span>
+            <button class="btn" type="button" id="installBoth">Download both</button>
+          </div>
+        </div>
+
+        <div class="ob-foot">
+          <button class="btn ghost" type="button">Back</button>
+          <button class="link muted" type="button">Set up later</button>
+        </div>
+      </section>
+
+      <!-- Settings: Speech or AI polish, built-in tab -->
+      <section class="set" id="view-set" hidden>
+        <nav class="side" aria-label="Settings sections">
+          <div class="brand">Typelite</div>
+          <div class="nav">Home</div>
+          <div class="nav" id="nav-speech">Speech</div>
+          <div class="nav" id="nav-ai">AI polish</div>
+          <div class="nav">Translate</div>
+          <div class="nav">Dictionary</div>
+          <div class="nav">General</div>
+          <div class="nav">System</div>
+        </nav>
+        <div class="main">
+          <h2 id="setTitle">Speech recognition</h2>
+          <div class="tabs"><span class="on">Built-in</span><span>Your own server or API key</span></div>
+          <div class="yours">Your languages: <b id="yoursList">English, 廣東話</b> <button class="link" type="button" id="changeLangs">Change</button></div>
+          <div class="banner" id="banner">
+            <div class="ic" aria-hidden="true">粵</div>
+            <div class="txt">
+              <b id="bannerTitle"></b>
+              <span id="bannerBody"></span>
+              <div class="acts"><button class="btn" type="button" id="bannerBtn"></button><button class="link muted" type="button" id="bannerLater">Not now</button></div>
+            </div>
+          </div>
+          <div class="list" id="modelList"></div>
+          <div class="foot-note" id="setFoot"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="notes">
+    <b>What the mock shows</b>
+    <ul>
+      <li>The model catalogue grows from two sizes per step to models picked by language. Qwen3-ASR 1.7B and Qwen 3.5 4B are the pair that runs on the PC today.</li>
+      <li>Fit labels per language come from the language evals. Only “Written Chinese” for Whisper on Cantonese is measured so far (about 44 % character error on the eval clips); the others are proposals.</li>
+      <li>Qwen3-ASR runs in a second copy of the built-in AI server, so it needs no new runtime. Memory limits pick the faster AI model on 8 GB Macs.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const LANGS = [
+  { id: 'en', label: 'English' },
+  { id: 'yue', label: '廣東話', note: 'Cantonese' },
+  { id: 'cmn', label: '普通话', note: 'Mandarin' },
+  { id: 'cmn-tw', label: '國語', note: 'Taiwan' },
+  { id: 'ja', label: '日本語' },
+  { id: 'es', label: 'Español' },
+  { id: 'fr', label: 'Français' },
+  { id: 'de', label: 'Deutsch' },
+]
+const NAME = { en: 'English', yue: 'Cantonese', cmn: 'Mandarin', 'cmn-tw': 'Mandarin (Taiwan)', ja: 'Japanese', es: 'Spanish', fr: 'French', de: 'German' }
+const SHORT = Object.fromEntries(LANGS.map((l) => [l.id, l.label]))
+const FIT_TEXT = { best: 'Recommended', good: 'Good', fair: 'Fair', warn: 'Written Chinese' }
+
+// Proposed catalogue. Sizes are the real download sizes.
+const SPEECH = [
+  { id: 'qwen3-asr', name: 'Qwen3-ASR 1.7B', gb: 2.5, detail: 'Spoken Cantonese, mixed Chinese and English · 2.5 GB',
+    fit: { en: 'good', yue: 'best', cmn: 'good', 'cmn-tw': 'good', ja: 'good', es: 'good', fr: 'good', de: 'good' } },
+  { id: 'turbo', name: 'Whisper large-v3 turbo', gb: 0.57, detail: 'Best accuracy for most languages · 0.57 GB', state: 'inuse',
+    fit: { en: 'best', yue: 'warn', cmn: 'good', 'cmn-tw': 'good', ja: 'best', es: 'best', fr: 'best', de: 'best' } },
+  { id: 'small', name: 'Whisper small', gb: 0.19, detail: 'Faster, less accurate · 0.19 GB', state: 'downloaded',
+    fit: { en: 'good', yue: 'warn', cmn: 'fair', 'cmn-tw': 'fair', ja: 'fair', es: 'good', fr: 'good', de: 'good' } },
+]
+const AI = [
+  { id: 'qwen35-4b', name: 'Qwen 3.5 4B', gb: 2.7, minMem: 16, detail: 'Keeps the Hong Kong style when polishing Cantonese · 2.7 GB',
+    fit: { en: 'good', yue: 'best', cmn: 'good', 'cmn-tw': 'good', ja: 'good', es: 'good', fr: 'good', de: 'good' } },
+  { id: 'qwen3-4b', name: 'Qwen3 4B Instruct', gb: 2.5, minMem: 16, detail: 'Best quality for most languages · 2.5 GB', state: 'inuse',
+    fit: { en: 'best', yue: 'good', cmn: 'best', 'cmn-tw': 'best', ja: 'best', es: 'best', fr: 'best', de: 'best' } },
+  { id: 'qwen3-1.7b', name: 'Qwen3 1.7B', gb: 1.1, minMem: 8, detail: 'Faster, for Macs with 8 GB · 1.1 GB',
+    fit: { en: 'good', yue: 'fair', cmn: 'good', 'cmn-tw': 'good', ja: 'fair', es: 'good', fr: 'good', de: 'good' } },
+]
+
+const state = { view: 'ob', mem: 32, langs: new Set(['en', 'yue']), installing: false, progress: {}, installed: new Set() }
+const $ = (id) => document.getElementById(id)
+
+function suggestion() {
+  const yue = state.langs.has('yue')
+  const speech = yue ? 'qwen3-asr' : state.mem < 8 ? 'small' : 'turbo'
+  const ai = state.mem < 16 ? 'qwen3-1.7b' : yue ? 'qwen35-4b' : 'qwen3-4b'
+  return { speech: SPEECH.find((m) => m.id === speech), ai: AI.find((m) => m.id === ai) }
+}
+
+function listNames(ids) {
+  const names = ids.map((id) => NAME[id])
+  if (names.length <= 1) return names.join('')
+  return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1]
+}
+
+function whySpeech(m) {
+  if (m.id === 'qwen3-asr') return 'Writes Cantonese the way you say it (口語) and keeps the English words you mix in.'
+  if (m.id === 'small') return 'Light enough for this Mac. Accurate for clear speech.'
+  return 'The most accurate Whisper model for ' + (state.langs.size ? listNames([...state.langs]) : 'most languages') + '.'
+}
+function whyAi(m) {
+  if (m.id === 'qwen35-4b') return 'Cleans up Cantonese without turning it into written Chinese.'
+  if (m.id === 'qwen3-1.7b') return 'The larger models need 16 GB of memory, so the faster one is suggested.'
+  return 'Best polish quality for ' + (state.langs.size ? listNames([...state.langs]) : 'most languages') + '.'
+}
+
+function pickHtml(role, m, why) {
+  const p = state.progress[m.id]
+  const done = state.installed.has(m.id)
+  const status = done ? '<span class="state">Ready</span>'
+    : p != null ? `<div class="track" role="progressbar" aria-label="${m.name} download" aria-valuenow="${Math.round(p)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${p}%"></i></div><span class="state">Downloading ${Math.round(p)}% · ${(m.gb * p / 100).toFixed(1)} of ${m.gb} GB</span>`
+    : `<span class="size">${m.gb} GB download</span>`
+  return `<span class="role">${role}</span><b>${m.name}</b><span class="why">${why}</span>${status}`
+}
+
+function renderChips() {
+  $('langChips').innerHTML = LANGS.map((l) =>
+    `<button type="button" class="chip" id="lang-${l.id}" data-lang="${l.id}" aria-pressed="${state.langs.has(l.id)}">${l.label}${l.note ? `<small>${l.note}</small>` : ''}</button>`).join('')
+}
+
+function renderOnboarding() {
+  const s = suggestion()
+  const langs = [...state.langs]
+  $('recTitle').textContent = langs.length ? 'Suggested for ' + listNames(langs) : 'Suggested for this Mac'
+  $('pickSpeech').innerHTML = pickHtml('Speech recognition', s.speech, whySpeech(s.speech))
+  $('pickAi').innerHTML = pickHtml('AI polish', s.ai, whyAi(s.ai))
+  $('compare').hidden = !state.langs.has('yue')
+  const total = s.speech.gb + s.ai.gb
+  $('recHw').textContent = state.mem >= 16
+    ? `This Mac: Apple M1 Pro, 32 GB memory. Both run together comfortably. ${total.toFixed(1)} GB to download.`
+    : `This Mac: Apple M2, 8 GB memory. ${total.toFixed(1)} GB to download.`
+  const allDone = state.installed.has(s.speech.id) && state.installed.has(s.ai.id)
+  const btn = $('installBoth')
+  btn.disabled = state.installing || allDone
+  btn.textContent = allDone ? 'Installed' : state.installing ? 'Downloading…' : `Download both · ${total.toFixed(1)} GB`
+}
+
+function rowHtml(m, suggestedId, kind) {
+  const langs = [...state.langs]
+  const fits = langs.map((id) => `<span class="lang">${SHORT[id]}</span><span class="fit ${m.fit[id]}">${FIT_TEXT[m.fit[id]]}</span>`).join('')
+  const tooBig = kind === 'ai' && state.mem < m.minMem
+  const inUse = m.state === 'inuse' && !state.installed.has(suggestedId)
+  const installed = state.installed.has(m.id) || m.state === 'downloaded' || m.state === 'inuse'
+  let act
+  if (tooBig) act = '<span class="badge muted">Needs 16 GB memory</span>'
+  else if (state.installed.has(m.id) && m.id === suggestedId) act = '<span class="badge">In use</span>'
+  else if (inUse) act = '<span class="badge">In use</span>'
+  else if (installed) act = '<button class="btn ghost" type="button">Use</button>'
+  else if (state.progress[m.id] != null) act = `<span class="badge muted">Downloading ${Math.round(state.progress[m.id])}%</span>`
+  else act = `<button class="btn${m.id === suggestedId ? '' : ' ghost'}" type="button" data-install="${m.id}">Download</button>`
+  return `<div class="row${m.id === suggestedId ? ' suggested' : ''}">
+    <div><div class="name">${m.name}${m.id === suggestedId ? ' <span class="tag">Suggested for you</span>' : ''}</div><div class="detail">${m.detail}</div></div>
+    <div class="act">${act}</div>
+    ${langs.length ? `<div class="fits">${fits}</div>` : ''}
+  </div>`
+}
+
+function renderSettings() {
+  const ai = state.view === 'ai'
+  const s = suggestion()
+  const models = ai ? AI : SPEECH
+  const sug = ai ? s.ai : s.speech
+  $('setTitle').textContent = ai ? 'AI polish' : 'Speech recognition'
+  $('nav-speech').className = 'nav' + (ai ? '' : ' on')
+  $('nav-ai').className = 'nav' + (ai ? ' on' : '')
+  $('yoursList').textContent = state.langs.size ? [...state.langs].map((id) => SHORT[id]).join(', ') : 'none chosen'
+  $('modelList').innerHTML = models.map((m) => rowHtml(m, sug.id, ai ? 'ai' : 'speech')).join('')
+
+  const current = ai ? 'qwen3-4b' : 'turbo'
+  const showBanner = state.langs.has('yue') && sug.id !== current && !state.installed.has(sug.id) && state.progress[sug.id] == null && !state.dismissed?.[state.view]
+  $('banner').hidden = !showBanner
+  if (showBanner) {
+    $('bannerTitle').textContent = ai ? 'You speak Cantonese. Qwen 3.5 4B keeps it spoken.' : 'You speak Cantonese. Whisper writes it as written Chinese.'
+    $('bannerBody').textContent = ai
+      ? 'It is the polish model that pairs with Qwen3-ASR, so 口語 words like 佢, 咗 and 俾 stay as you said them.'
+      : '“佢頭先話份報告聽日先俾我哋” comes out as “他剛才說份報告明天才給我們”. Qwen3-ASR keeps what you said.'
+    $('bannerBtn').textContent = `Download ${sug.name} · ${sug.gb} GB`
+    $('bannerBtn').dataset.install = sug.id
+  }
+  $('setFoot').textContent = ai
+    ? 'Built-in AI runs on this Mac in Typelite’s own AI server. Only one AI model is loaded at a time.'
+    : 'Qwen3-ASR runs in Typelite’s built-in AI server, next to the AI polish model. Whisper runs inside Typelite.'
+}
+
+function render() {
+  $('view-ob').hidden = state.view !== 'ob'
+  $('view-set').hidden = state.view === 'ob'
+  for (const b of $('viewSeg').children) b.setAttribute('aria-pressed', b.dataset.view === state.view)
+  for (const b of $('macSeg').children) b.setAttribute('aria-pressed', Number(b.dataset.mem) === state.mem)
+  if (state.view === 'ob') renderOnboarding(); else renderSettings()
+}
+
+function download(ids) {
+  ids = ids.filter((id) => !state.installed.has(id) && state.progress[id] == null)
+  if (!ids.length) return
+  state.installing = true
+  for (const id of ids) state.progress[id] = 0
+  const timer = setInterval(() => {
+    for (const id of ids) {
+      if (state.progress[id] == null) continue
+      state.progress[id] = Math.min(100, state.progress[id] + 3 + Math.random() * 5)
+      if (state.progress[id] >= 100) { delete state.progress[id]; state.installed.add(id) }
+    }
+    if (ids.every((id) => state.installed.has(id))) { clearInterval(timer); state.installing = false }
+    render()
+  }, 120)
+  render()
+}
+
+document.addEventListener('click', (e) => {
+  const chip = e.target.closest('[data-lang]')
+  if (chip) { const id = chip.dataset.lang; state.langs.has(id) ? state.langs.delete(id) : state.langs.add(id); renderChips(); render(); return }
+  const v = e.target.closest('[data-view]')
+  if (v) { state.view = v.dataset.view; render(); return }
+  const m = e.target.closest('[data-mem]')
+  if (m) { state.mem = Number(m.dataset.mem); render(); return }
+  const t = e.target.closest('[data-theme-app]')
+  if (t) { setAppTheme(t.dataset.themeApp === 'dark'); return }
+  const inst = e.target.closest('[data-install]')
+  if (inst) { download([inst.dataset.install]); return }
+  if (e.target.id === 'installBoth') { const s = suggestion(); download([s.speech.id, s.ai.id]); return }
+  if (e.target.id === 'chooseSelf') { state.view = 'speech'; render(); return }
+  if (e.target.id === 'changeLangs') { state.view = 'ob'; render(); return }
+  if (e.target.id === 'bannerLater') { state.dismissed = { ...(state.dismissed || {}), [state.view]: true }; render() }
+})
+
+function setAppTheme(dark) {
+  $('app').classList.toggle('dk', dark)
+  $('desk').classList.toggle('dk', dark)
+  $('t-light').setAttribute('aria-pressed', !dark)
+  $('t-dark').setAttribute('aria-pressed', dark)
+}
+
+const rootTheme = document.documentElement.getAttribute('data-theme')
+setAppTheme(rootTheme ? rootTheme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches)
+renderChips()
+render()
+</script>
