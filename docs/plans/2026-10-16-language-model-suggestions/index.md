@@ -36,6 +36,12 @@ Status: draft - 2026-10-16.
 - **Qwen3-ASR runs in a second built-in llama-server** on its own port. Reason: llama-server
   already ships with Typelite and serves `/v1/audio/transcriptions`, so the existing
   OpenAI-compatible speech client (with its `language X<asr_text>` handling) can use it.
+- **Home shows the suggestion until it is used or dismissed.** A "Suggested for your languages"
+  group, styled like Finish setup, appears while a model from the matching setup is not in use
+  (for example after skipping it in onboarding). "Set up" opens the Settings pane, as Finish
+  setup does, so nothing downloads from Home; "Don't show again" hides it on Home for good, and
+  the Settings tag stays. Reason: users who skipped onboarding still learn about the setup,
+  without a nag they cannot turn off.
 - **Memory rules stay.** The 4B AI models need 16 GB; below that the setup falls back to
   Qwen3 1.7B and says so. Reason: same limits as today.
 

@@ -181,6 +181,21 @@
   .row .act { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 10px; align-items: center; }
   .foot-note { font-size: 11.5px; color: var(--muted); }
 
+  /* Home (Group / Row, as in Finish setup) */
+  .home-head h2 { font-size: 26px; }
+  .home-head p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  .hrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 11px 14px; }
+  .hrow + .hrow { border-top: 1px solid var(--hair); }
+  .hrow .lbl { flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .hrow .lbl span:first-child { font-size: 13px; font-weight: 500; }
+  .hrow .help { font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .hrow .ctrls { display: flex; gap: 8px; align-items: center; flex: none; margin-left: auto; }
+  .kc { display: inline-flex; gap: 4px; }
+  .kc span { min-width: 26px; padding: 2px 7px; border-radius: 6px; background: var(--keycap); box-shadow: 0 0 0 1px var(--keycap-line), 0 1px 0 var(--keycap-line); font-size: 12px; font-weight: 600; text-align: center; }
+  .stats { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+  .stats b { color: var(--ink); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; margin-right: 4px; }
+  .toast { font-size: 12px; color: var(--muted); padding: 2px 4px; }
+
   @media (max-width: 640px) {
     .desk { padding: 16px 8px; }
     .ob-area { padding: 0 14px; }
@@ -205,6 +220,7 @@
     <div class="ctl"><span class="label">Screen</span>
       <div class="seg" id="viewSeg">
         <button type="button" id="v-ob" data-view="ob" aria-pressed="true">Onboarding</button>
+        <button type="button" id="v-home" data-view="home" aria-pressed="false">Home</button>
         <button type="button" id="v-speech" data-view="speech" aria-pressed="false">Settings · Speech</button>
         <button type="button" id="v-ai" data-view="ai" aria-pressed="false">Settings · AI polish</button>
       </div></div>
@@ -218,6 +234,7 @@
         <button type="button" id="t-light" data-theme-app="light" aria-pressed="true">Light</button>
         <button type="button" id="t-dark" data-theme-app="dark" aria-pressed="false">Dark</button>
       </div></div>
+    <div class="seg"><button type="button" id="resetMock">Reset mock</button></div>
   </div>
 
   <nav class="flow" id="flow" aria-label="Onboarding steps"></nav>
@@ -242,7 +259,7 @@
       <section class="set" id="view-set" hidden>
         <nav class="side" aria-label="Settings sections">
           <div class="brand">Typelite</div>
-          <div class="nav">Home</div>
+          <div class="nav" id="nav-home">Home</div>
           <div class="nav" id="nav-speech">Speech</div>
           <div class="nav" id="nav-ai">AI polish</div>
           <div class="nav">Translate</div>
@@ -261,6 +278,7 @@
       <li><b>New step, Your languages,</b> after Voice input. It only looks up whether a suggested setup exists for the combination. Today there is one: any combination with Cantonese gets Qwen3-ASR 1.7B and Qwen 3.5 4B. Other combinations keep the standard models.</li>
       <li><b>Speech recognition and AI polish</b> keep their Built-in card and per-step download. The list now has three models instead of two, and the suggested one is chosen and tagged “Suggested for your languages”.</li>
       <li><b>No quality labels per language.</b> Settings lists the models with size only; the suggestion tag appears only on the model from a suggested setup.</li>
+      <li><b>Home</b> shows a “Suggested for your languages” group, styled like Finish setup, while a model from the matching setup is not in use. “Set up” opens Settings (nothing downloads from Home); “Don’t show again” hides it on Home for good.</li>
       <li>Welcome, Voice input, Web search and the shortcut tour are unchanged.</li>
     </ul>
   </div>
@@ -310,7 +328,7 @@ const state = {
   view: 'ob', step: 2, mem: 32, langs: ['en', 'yue'], pop: false,
   choice: { speech: null, ai: null },            // null = follow the suggestion / default
   dl: {},                                         // id -> { p, phase: 'download'|'test' }
-  installed: new Set(), inUse: { speech: null, ai: null }, dismissed: {},
+  installed: new Set(), inUse: { speech: null, ai: null }, dismissed: {}, homeDismissed: false, homeJustDismissed: false,
 }
 const $ = (id) => document.getElementById(id)
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
@@ -434,6 +452,7 @@ function renderSettings() {
   const list = kind === 'ai' ? AI : SPEECH
   const sug = suggestedId(kind)
   const inUse = state.inUse[kind] || (kind === 'ai' ? 'qwen3-4b' : 'turbo')
+  $('nav-home').className = 'nav'
   $('nav-speech').className = 'nav' + (kind === 'speech' ? ' on' : '')
   $('nav-ai').className = 'nav' + (kind === 'ai' ? ' on' : '')
   const rows = list.map((m) => {
@@ -461,6 +480,49 @@ function renderSettings() {
     <div class="foot-note">${kind === 'ai' ? 'Built-in AI runs in Typelite’s own AI server on this Mac.' : 'Whisper runs inside Typelite. Qwen3-ASR runs in Typelite’s built-in AI server.'}</div>`
 }
 
+/* ---------- Home ---------- */
+// The models of the matching setup that are not in use yet.
+function missingFromSetup() {
+  const out = []
+  for (const kind of ['speech', 'ai']) {
+    const id = suggestedId(kind); if (!id) continue
+    const inUse = state.inUse[kind] || (kind === 'ai' ? 'qwen3-4b' : 'turbo')
+    if (id !== inUse) out.push({ kind, model: (kind === 'ai' ? AI : SPEECH).find((m) => m.id === id) })
+  }
+  return out
+}
+
+function renderHome() {
+  $('nav-home').className = 'nav on'
+  $('nav-speech').className = 'nav'
+  $('nav-ai').className = 'nav'
+  const missing = missingFromSetup()
+  const show = missing.length && !state.homeDismissed
+  const role = { speech: 'speech recognition', ai: 'AI polish' }
+  const what = missing.map((m) => `${m.model.detail.split(' · ')[0]} for ${role[m.kind]}`).join(' and ')
+  const gb = missing.reduce((s, m) => s + m.model.gb, 0).toFixed(1)
+  const suggestion = show ? `<section aria-label="Suggested setup">
+      <div class="group-label">Suggested for your languages</div>
+      <div class="list"><div class="hrow">
+        <div class="lbl"><span>Built-in models for ${esc(names(state.langs))}</span>
+          <span class="help">${esc(what)}. They run on this Mac, ${gb} GB to download.</span></div>
+        <div class="ctrls"><button class="btn ghost" type="button" id="homeDismiss">Don’t show again</button>
+          <button class="btn" type="button" data-view="speech">Set up</button></div>
+      </div></div></section>`
+    : state.homeJustDismissed ? `<div class="toast">Hidden. The suggestion stays in Settings → Speech recognition and AI polish.</div>` : ''
+  $('setMain').innerHTML = `
+    <div class="home-head"><h2>Just say it.</h2><p>Press a shortcut anywhere, speak, and clean text lands where you’re typing.</p></div>
+    ${suggestion}
+    <section aria-label="Shortcuts"><div class="group-label">Shortcuts</div>
+      <div class="list">
+        <div class="hrow"><div class="lbl"><span>Dictate</span><span class="help">Speak, and get clean text in any app.</span></div><div class="ctrls kc"><span>fn</span></div></div>
+        <div class="hrow"><div class="lbl"><span>Translate</span><span class="help">Speak and paste it in another language</span></div><div class="ctrls kc"><span>fn</span><span>⇧</span></div></div>
+        <div class="hrow"><div class="lbl"><span>Ask anything</span><span class="help">Ask a question, or change selected text by voice.</span></div><div class="ctrls kc"><span>fn</span><span>Space</span></div></div>
+      </div></section>
+    <section aria-label="Insights"><div class="group-label">Insights</div>
+      <div class="list"><div class="hrow"><div class="stats"><span><b>142</b>WPM speaking</span><span><b>48</b>WPM typing</span><span><b>3.0×</b>faster than typing</span></div></div></div></section>`
+}
+
 function renderFlow() {
   $('flow').innerHTML = STEPS.map((s, i) => `${i ? '<span class="arrow" aria-hidden="true">→</span>' : ''}<button type="button" data-step="${i}" ${state.view === 'ob' && i === state.step ? 'aria-current="step"' : ''}>
     <span class="n">${i + 1}</span>${esc(s.flow)}${s.mark ? `<span class="mark">${s.mark}</span>` : ''}</button>`).join('')
@@ -472,7 +534,7 @@ function render() {
   for (const b of $('viewSeg').children) b.setAttribute('aria-pressed', b.dataset.view === state.view)
   for (const b of $('macSeg').children) b.setAttribute('aria-pressed', Number(b.dataset.mem) === state.mem)
   renderFlow()
-  if (state.view === 'ob') renderOnboarding(); else renderSettings()
+  if (state.view === 'ob') renderOnboarding(); else if (state.view === 'home') renderHome(); else renderSettings()
 }
 
 /* ---------- Downloads (simulated) ---------- */
@@ -491,7 +553,9 @@ function download(kind, id) {
 document.addEventListener('click', (e) => {
   const el = (sel) => e.target.closest(sel)
   let x
-  if ((x = el('[data-view]'))) { state.view = x.dataset.view; state.pop = false; return render() }
+  if ((x = el('[data-view]'))) { state.view = x.dataset.view; state.pop = false; state.homeJustDismissed = false; return render() }
+  if (el('#homeDismiss')) { state.homeDismissed = true; state.homeJustDismissed = true; return render() }
+  if (el('#resetMock')) { Object.assign(state, { view: 'ob', step: 2, langs: ['en', 'yue'], pop: false, choice: { speech: null, ai: null }, installed: new Set(), inUse: { speech: null, ai: null }, dismissed: {}, homeDismissed: false, homeJustDismissed: false }); return render() }
   if ((x = el('[data-mem]'))) { state.mem = Number(x.dataset.mem); return render() }
   if ((x = el('[data-theme-app]'))) return setAppTheme(x.dataset.themeApp === 'dark')
   if ((x = el('[data-step]'))) { state.view = 'ob'; state.step = Number(x.dataset.step); state.pop = false; return render() }
