@@ -101,7 +101,30 @@ pub struct LaunchSpec {
     pub envs: Vec<(String, String)>,
 }
 
-/// The arguments of one server start (see the module comment).
+/// What a server runs: the AI polish model, or (plan `language-model-suggestions`) a speech model
+/// such as Qwen3-ASR with its audio projector. Each has its own [`ServerManager`], so both can run
+/// at once.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ServerRole {
+    Polish,
+    Speech,
+}
+
+impl ServerRole {
+    /// How the log names the server.
+    pub fn label(self) -> &'static str {
+        match self {
+            ServerRole::Polish => "Built-in AI server",
+            ServerRole::Speech => "Built-in speech server",
+        }
+    }
+}
+
+/// Context size of the speech server: the audio's tokens and the transcript. Qwen3-ASR's encoder
+/// gives about 13 tokens per second of audio, so this holds a dictation of about ten minutes.
+pub const SPEECH_CONTEXT_TOKENS: u32 = 8192;
+
+/// The arguments of one AI server start (see the module comment).
 pub fn launch_spec(
     binary: &Path,
     model_path: &Path,
@@ -109,7 +132,33 @@ pub fn launch_spec(
     port: u16,
     api_key: &str,
 ) -> LaunchSpec {
-    let args = [
+    launch_spec_for(
+        ServerRole::Polish,
+        binary,
+        model_path,
+        None,
+        model_alias,
+        port,
+        api_key,
+    )
+}
+
+/// The arguments of one server start for `role`. A speech server gets the audio projector and a
+/// larger context, and no `--reasoning` switch (a speech model has no thinking mode).
+pub fn launch_spec_for(
+    role: ServerRole,
+    binary: &Path,
+    model_path: &Path,
+    projector_path: Option<&Path>,
+    model_alias: &str,
+    port: u16,
+    api_key: &str,
+) -> LaunchSpec {
+    let context = match role {
+        ServerRole::Polish => CONTEXT_TOKENS,
+        ServerRole::Speech => SPEECH_CONTEXT_TOKENS,
+    };
+    let mut args: Vec<String> = [
         "--model",
         &model_path.to_string_lossy(),
         "--alias",
@@ -121,19 +170,21 @@ pub fn launch_spec(
         "--n-gpu-layers",
         "999",
         "--ctx-size",
-        &CONTEXT_TOKENS.to_string(),
+        &context.to_string(),
         "--parallel",
         "1",
-        "--reasoning",
-        "off",
-        "--no-webui",
-        "--offline",
-        "--cors-origins",
-        "localhost",
     ]
     .iter()
     .map(|arg| arg.to_string())
     .collect();
+    if let Some(projector) = projector_path {
+        args.push("--mmproj".to_string());
+        args.push(projector.to_string_lossy().to_string());
+    }
+    if role == ServerRole::Polish {
+        args.extend(["--reasoning", "off"].map(String::from));
+    }
+    args.extend(["--no-webui", "--offline", "--cors-origins", "localhost"].map(String::from));
     LaunchSpec {
         binary: binary.to_path_buf(),
         args,
@@ -162,11 +213,14 @@ pub trait Launcher: Send + Sync {
 struct Running {
     child: Box<dyn ServerChild>,
     model_path: PathBuf,
+    projector_path: Option<PathBuf>,
     endpoint: Endpoint,
 }
 
-/// Owns the one `llama-server` process.
+/// Owns one `llama-server` process: the AI server ([`server`]) or the speech server
+/// ([`speech_server`]).
 pub struct ServerManager {
+    role: ServerRole,
     launcher: Box<dyn Launcher>,
     /// One start at a time; a second caller waits and then reuses the started server.
     gate: tokio::sync::Mutex<()>,
@@ -182,7 +236,12 @@ pub struct ServerManager {
 
 impl ServerManager {
     pub fn new(launcher: Box<dyn Launcher>) -> Self {
+        Self::for_role(ServerRole::Polish, launcher)
+    }
+
+    pub fn for_role(role: ServerRole, launcher: Box<dyn Launcher>) -> Self {
         Self {
+            role,
             launcher,
             gate: tokio::sync::Mutex::new(()),
             running: Mutex::new(None),
@@ -229,6 +288,18 @@ impl ServerManager {
     /// Returns the address of a server running `model_file`, starting it (or starting it
     /// again) first when needed.
     pub async fn ensure(&self, model_file: &str, alias: &str) -> Result<Endpoint, ServerError> {
+        self.ensure_with(model_file, None, alias).await
+    }
+
+    /// Like [`ensure`](Self::ensure), with an audio projector file (`--mmproj`) from the same
+    /// models folder, for a speech model.
+    pub async fn ensure_with(
+        &self,
+        model_file: &str,
+        projector_file: Option<&str>,
+        alias: &str,
+    ) -> Result<Endpoint, ServerError> {
+        let label = self.role.label();
         let _gate = self.gate.lock().await;
         let dir = lock(&self.models_dir)
             .clone()
@@ -237,19 +308,26 @@ impl ServerManager {
         if model_file.trim().is_empty() || !model_path.is_file() {
             return Err(ServerError::ModelMissing);
         }
+        let projector_path = match projector_file {
+            Some(file) if file.trim().is_empty() || !dir.join(file).is_file() => {
+                return Err(ServerError::ModelMissing)
+            }
+            Some(file) => Some(dir.join(file)),
+            None => None,
+        };
 
         {
             let mut running = lock(&self.running);
             if let Some(current) = running.as_mut() {
                 match current.child.exit_status() {
-                    None if current.model_path == model_path => {
+                    None if current.model_path == model_path
+                        && current.projector_path == projector_path =>
+                    {
                         return Ok(current.endpoint.clone())
                     }
                     None => {}
                     Some(status) => {
-                        tracing::warn!(
-                            "Built-in AI server had stopped ({status}); starting it again"
-                        )
+                        tracing::warn!("{label} had stopped ({status}); starting it again")
                     }
                 }
             }
@@ -263,7 +341,15 @@ impl ServerManager {
             .ok_or(ServerError::BinaryMissing)?;
         let port = free_port().map_err(|error| ServerError::Spawn(error.to_string()))?;
         let api_key = uuid::Uuid::new_v4().simple().to_string();
-        let spec = launch_spec(&binary, &model_path, alias, port, &api_key);
+        let spec = launch_spec_for(
+            self.role,
+            &binary,
+            &model_path,
+            projector_path.as_deref(),
+            alias,
+            port,
+            &api_key,
+        );
         let started = Instant::now();
         let mut child = self
             .launcher
@@ -271,7 +357,7 @@ impl ServerManager {
             .map_err(|error| ServerError::Spawn(error.to_string()))?;
         self.write_pid(Some(child.pid()));
         tracing::info!(
-            "Built-in AI server starting: {} on port {port}",
+            "{label} starting: {} on port {port}",
             model_path
                 .file_name()
                 .map(|name| name.to_string_lossy().to_string())
@@ -285,13 +371,13 @@ impl ServerManager {
             }
             if let Some(status) = child.exit_status() {
                 self.write_pid(None);
-                tracing::warn!("Built-in AI server exited while starting: {status}");
+                tracing::warn!("{label} exited while starting: {status}");
                 return Err(ServerError::Exited(status));
             }
             if started.elapsed() >= self.startup_timeout {
                 child.kill();
                 self.write_pid(None);
-                tracing::warn!("Built-in AI server did not become ready; stopped it");
+                tracing::warn!("{label} did not become ready; stopped it");
                 return Err(ServerError::Timeout);
             }
             tokio::time::sleep(self.poll).await;
@@ -301,10 +387,7 @@ impl ServerManager {
             self.write_pid(None);
             return Err(ServerError::Stopped);
         }
-        tracing::info!(
-            "Built-in AI server ready in {:.1} s",
-            started.elapsed().as_secs_f64()
-        );
+        tracing::info!("{label} ready in {:.1} s", started.elapsed().as_secs_f64());
         let endpoint = Endpoint {
             base_url: format!("{origin}/v1"),
             api_key,
@@ -312,6 +395,7 @@ impl ServerManager {
         *lock(&self.running) = Some(Running {
             child,
             model_path,
+            projector_path,
             endpoint: endpoint.clone(),
         });
         Ok(endpoint)
@@ -325,7 +409,7 @@ impl ServerManager {
         if let Some(mut current) = previous {
             current.child.kill();
             self.write_pid(None);
-            tracing::info!("Built-in AI server stopped");
+            tracing::info!("{} stopped", self.role.label());
         }
     }
 
@@ -536,10 +620,20 @@ impl ServerChild for ProcessChild {
     }
 }
 
-/// The app's one server manager.
+/// The app's AI server manager.
 pub fn server() -> &'static ServerManager {
     static SERVER: std::sync::OnceLock<ServerManager> = std::sync::OnceLock::new();
     SERVER.get_or_init(|| ServerManager::new(Box::new(ProcessLauncher::new())))
+}
+
+/// Plan `language-model-suggestions`: the app's speech server manager, for built-in speech models
+/// that run in `llama-server` (Qwen3-ASR). Separate from the AI server, so both models stay
+/// loaded.
+pub fn speech_server() -> &'static ServerManager {
+    static SERVER: std::sync::OnceLock<ServerManager> = std::sync::OnceLock::new();
+    SERVER.get_or_init(|| {
+        ServerManager::for_role(ServerRole::Speech, Box::new(ProcessLauncher::new()))
+    })
 }
 
 /// The address and key to use for `preset`: its own for a server preset, the running built-in
@@ -774,6 +868,69 @@ mod tests {
             spec.envs,
             vec![("LLAMA_API_KEY".to_string(), "secret".to_string())]
         );
+    }
+
+    #[test]
+    fn a_speech_server_gets_the_projector_a_larger_context_and_no_reasoning_switch() {
+        let spec = launch_spec_for(
+            ServerRole::Speech,
+            Path::new("/app/llama-server"),
+            Path::new("/models/asr.gguf"),
+            Some(Path::new("/models/mmproj-asr.gguf")),
+            "qwen3-asr-1.7b",
+            5556,
+            "secret",
+        );
+        let args = spec.args.join(" ");
+        for part in [
+            "--model /models/asr.gguf",
+            "--mmproj /models/mmproj-asr.gguf",
+            "--ctx-size 8192",
+            "--alias qwen3-asr-1.7b",
+            "--no-webui",
+            "--offline",
+        ] {
+            assert!(args.contains(part), "missing {part} in {args}");
+        }
+        assert!(!args.contains("--reasoning"));
+        assert!(!args.contains("secret"));
+        // The AI server's arguments did not change.
+        let polish = launch_spec(
+            Path::new("/app/llama-server"),
+            Path::new("/models/m.gguf"),
+            "qwen3-4b",
+            5555,
+            "secret",
+        );
+        assert!(!polish.args.join(" ").contains("--mmproj"));
+    }
+
+    #[tokio::test]
+    async fn a_projector_must_exist_and_a_new_one_restarts_the_server() {
+        let s = setup("projector", true, 1, None);
+        assert_eq!(
+            s.manager
+                .ensure_with("a.gguf", Some("missing.gguf"), "m")
+                .await,
+            Err(ServerError::ModelMissing)
+        );
+        s.manager
+            .ensure_with("a.gguf", Some("b.gguf"), "m")
+            .await
+            .unwrap();
+        s.manager
+            .ensure_with("a.gguf", Some("b.gguf"), "m")
+            .await
+            .unwrap();
+        assert_eq!(lock(&s.spawned).len(), 1);
+        assert!(lock(&s.spawned)[0]
+            .args
+            .join(" ")
+            .contains(&format!("--mmproj {}", s.dir.join("b.gguf").display())));
+        // Without the projector it is another server.
+        s.manager.ensure("a.gguf", "m").await.unwrap();
+        assert_eq!(lock(&s.spawned).len(), 2);
+        assert!(lock(&s.children)[0].killed.load(Ordering::SeqCst));
     }
 
     #[tokio::test]

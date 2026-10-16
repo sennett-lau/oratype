@@ -1608,6 +1608,8 @@ pub fn run() {
                 // Plan `ai-polish-setup`: the built-in AI server is a separate program; stop it
                 // too.
                 llm::builtin::server().stop();
+                // Plan `language-model-suggestions`: and the built-in speech server.
+                llm::builtin::speech_server().stop();
                 // Plan `searxng-setup`: the Built-in search server runs only while Typelite runs.
                 search_server::server().stop();
             }

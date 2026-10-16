@@ -557,6 +557,8 @@ pub const LEGACY_OLLAMA_LOCAL_PRESET_ID: &str = "builtin-ai-ollama-local";
 /// Built-in preset; the old server and cloud templates are dropped unless the user edited or used
 /// them. 3: plan `ai-polish-setup`, the same for AI, which gets its own Built-in preset.
 pub const BUILTIN_PRESETS_VERSION: u32 = 3;
+/// Plan `language-model-suggestions`: the most spoken languages a config keeps.
+pub const MAX_SPOKEN_LANGUAGES: usize = 12;
 /// Speech preset language value that means "let the server detect the language".
 pub const SPEECH_LANGUAGE_AUTO: &str = "auto";
 /// Longest preset id; matches the limit of the credential account names in the Keychain.
@@ -1180,6 +1182,13 @@ pub struct AppConfig {
     /// Plan `auto-update`: check GitHub for a new version at start and every few hours, download
     /// it in the background and ask to restart. On by default; off means only Check for updates.
     pub auto_update: bool,
+    /// Plan `language-model-suggestions`: the languages the user speaks, as lower-case codes
+    /// (`en`, `yue`, `zh`). They decide which built-in models are suggested. `None` until the
+    /// user has chosen; the app then starts from the Mac's preferred languages.
+    pub spoken_languages: Option<Vec<String>>,
+    /// Plan `language-model-suggestions`: the suggested setup (its id, such as `cantonese`)
+    /// whose Home card the user hid with "Don't show again".
+    pub dismissed_language_setup: Option<String>,
 }
 
 impl Default for AppConfig {
@@ -1231,6 +1240,8 @@ impl Default for AppConfig {
             shortcut_tour_prompt_dismissed: false,
             measure_typing_speed: true,
             web_search: crate::web_search::WebSearchConfig::default(),
+            spoken_languages: None,
+            dismissed_language_setup: None,
         }
     }
 }
@@ -1762,6 +1773,36 @@ impl AppConfig {
         self.recompute_recording_limit_mirror();
         self.input_device = self.input_device.trim().to_string();
         self.web_search.normalize();
+        self.normalize_spoken_languages();
+    }
+
+    /// Plan `language-model-suggestions`: spoken languages are short lower-case codes, without
+    /// repeats, at most [`MAX_SPOKEN_LANGUAGES`]; a dismissed setup id is a short slug.
+    fn normalize_spoken_languages(&mut self) {
+        if let Some(languages) = self.spoken_languages.as_mut() {
+            let mut kept: Vec<String> = Vec::new();
+            for code in languages.iter() {
+                let code = code.trim().to_ascii_lowercase();
+                let valid =
+                    (2..=3).contains(&code.len()) && code.chars().all(|c| c.is_ascii_lowercase());
+                if valid && !kept.contains(&code) && kept.len() < MAX_SPOKEN_LANGUAGES {
+                    kept.push(code);
+                }
+            }
+            *languages = kept;
+        }
+        self.dismissed_language_setup = self
+            .dismissed_language_setup
+            .as_deref()
+            .map(str::trim)
+            .filter(|id| {
+                !id.is_empty()
+                    && id.len() <= 40
+                    && id
+                        .chars()
+                        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+            })
+            .map(str::to_string);
     }
 
     /// Plan `translation-language-presets` (2026-09-27): the "Always translate output" switch is
@@ -3908,6 +3949,56 @@ mod tests {
             }
         }))
         .unwrap()
+    }
+
+    #[test]
+    fn spoken_languages_are_unset_until_chosen_and_normalized() {
+        let config: AppConfig = serde_json::from_value(serde_json::json!({})).unwrap();
+        assert_eq!(config.spoken_languages, None);
+        assert_eq!(config.dismissed_language_setup, None);
+
+        let mut config = AppConfig {
+            spoken_languages: Some(vec![
+                " EN ".into(),
+                "yue".into(),
+                "en".into(),
+                "zh-Hant-HK".into(),
+                "".into(),
+                "x".into(),
+            ]),
+            dismissed_language_setup: Some(" cantonese ".into()),
+            ..AppConfig::default()
+        };
+        config.normalize_values();
+        assert_eq!(
+            config.spoken_languages,
+            Some(vec!["en".to_string(), "yue".to_string()])
+        );
+        assert_eq!(
+            config.dismissed_language_setup.as_deref(),
+            Some("cantonese")
+        );
+
+        // An empty choice stays a choice; a bad setup id is dropped.
+        let mut config = AppConfig {
+            spoken_languages: Some(Vec::new()),
+            dismissed_language_setup: Some("Not a slug!".into()),
+            ..AppConfig::default()
+        };
+        config.normalize_values();
+        assert_eq!(config.spoken_languages, Some(Vec::new()));
+        assert_eq!(config.dismissed_language_setup, None);
+
+        let mut config = AppConfig {
+            spoken_languages: Some(
+                (0..20)
+                    .map(|i| format!("a{}", (b'a' + i) as char))
+                    .collect(),
+            ),
+            ..AppConfig::default()
+        };
+        config.normalize_values();
+        assert_eq!(config.spoken_languages.unwrap().len(), MAX_SPOKEN_LANGUAGES);
     }
 
     #[test]
