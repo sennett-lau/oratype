@@ -83,6 +83,17 @@ impl ModelSetupState {
         model: &KnownModel,
         busy: &str,
     ) -> Result<tokio::sync::watch::Receiver<bool>, String> {
+        self.begin_sized(model.id, model.size_bytes, busy)
+    }
+
+    /// Like [`begin`](Self::begin) for a model of several files (plan
+    /// `language-model-suggestions`): `total_bytes` is all of them together.
+    pub fn begin_sized(
+        &self,
+        model_id: &str,
+        total_bytes: u64,
+        busy: &str,
+    ) -> Result<tokio::sync::watch::Receiver<bool>, String> {
         let mut inner = self.lock();
         if inner.status.running() {
             return Err(busy.to_string());
@@ -90,9 +101,9 @@ impl ModelSetupState {
         let (tx, rx) = tokio::sync::watch::channel(false);
         inner.cancel = Some(tx);
         inner.status = SetupStatus {
-            model_id: Some(model.id.to_string()),
+            model_id: Some(model_id.to_string()),
             phase: SetupPhase::Downloading,
-            total_bytes: model.size_bytes,
+            total_bytes,
             ..SetupStatus::default()
         };
         Ok(rx)
@@ -134,11 +145,34 @@ impl ModelSetupState {
 
     /// Moves to the Testing phase after the file is in place.
     pub fn testing(&self, model: &KnownModel) -> SetupStatus {
+        self.testing_sized(model.size_bytes)
+    }
+
+    /// Moves to the Testing phase after all `total_bytes` of a model's files are in place.
+    pub fn testing_sized(&self, total_bytes: u64) -> SetupStatus {
         self.update(|status| {
             status.phase = SetupPhase::Testing;
-            status.downloaded_bytes = model.size_bytes;
+            status.downloaded_bytes = total_bytes;
             status.bytes_per_second = 0;
         })
+    }
+}
+
+/// Where one file sits in a download of several (plan `language-model-suggestions`): the bytes of
+/// the files before it, and the size of them all. The progress shows the whole download.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ProgressSpan {
+    pub done_before: u64,
+    pub total: u64,
+}
+
+impl ProgressSpan {
+    /// A download of one file.
+    pub fn whole(model: &KnownModel) -> Self {
+        Self {
+            done_before: 0,
+            total: model.size_bytes,
+        }
     }
 }
 
@@ -152,6 +186,31 @@ pub async fn download_with_progress(
     model: KnownModel,
     url: String,
     cancel: tokio::sync::watch::Receiver<bool>,
+) -> Result<(), DownloadError> {
+    download_part_with_progress(
+        app,
+        state,
+        event,
+        dir,
+        model,
+        url,
+        cancel,
+        ProgressSpan::whole(&model),
+    )
+    .await
+}
+
+/// [`download_with_progress`] for one file of several; `span` places it in the whole download.
+#[allow(clippy::too_many_arguments)]
+pub async fn download_part_with_progress(
+    app: &tauri::AppHandle,
+    state: impl Fn(&tauri::AppHandle) -> &ModelSetupState + Send + Sync + Clone + 'static,
+    event: &'static str,
+    dir: &std::path::Path,
+    model: KnownModel,
+    url: String,
+    cancel: tokio::sync::watch::Receiver<bool>,
+    span: ProgressSpan,
 ) -> Result<(), DownloadError> {
     if models::installed_from(dir, &[model])
         .iter()
@@ -171,11 +230,14 @@ pub async fn download_with_progress(
     let progress_app = app.clone();
     let on_progress = move |progress: DownloadProgress| {
         let status = state(&progress_app).update(|status| {
-            status.downloaded_bytes = progress.downloaded_bytes;
-            status.total_bytes = progress.total_bytes;
+            status.downloaded_bytes = span.done_before + progress.downloaded_bytes;
+            status.total_bytes = span.total;
             status.bytes_per_second = progress.bytes_per_second;
+            // Verifying shows while the file is checked; the next file's progress follows.
             if progress.downloaded_bytes >= progress.total_bytes {
                 status.phase = SetupPhase::Verifying;
+            } else {
+                status.phase = SetupPhase::Downloading;
             }
         });
         let _ = progress_app.emit(event, &status);

@@ -9,15 +9,19 @@ Pick **Built-in** in the AI setup step, or in **Settings → AI**, choose a mode
 **Set up** (or **Download** in Settings). Typelite downloads the model, checks its SHA-256,
 starts the server and sends one test request.
 
-## The two models
+## The models
 
 | Model | File | Size | Offered on |
 |---|---|---|---|
 | Best quality | Qwen3 4B Instruct 2507, Q4_K_M | 2.5 GB | Apple Silicon with 16 GB of memory or more |
 | Faster | Qwen3 1.7B, Q4_K_M | 1.1 GB | Apple Silicon with 8 GB of memory or more |
+| Qwen 3.5 | Qwen 3.5 4B, Q4_K_M | 2.7 GB | Apple Silicon with 16 GB of memory or more |
 
 - The models come from Unsloth's Hugging Face repositories (Qwen does not publish Q4_K_M files
-  of these two) and are released by Qwen under the Apache-2.0 licence. They are stored in
+  of these) and are released by Qwen under the Apache-2.0 licence.
+- Qwen 3.5 4B is the AI half of the setup suggested for Cantonese (see **Your languages** in
+  onboarding or Settings). In the polish evaluations it does better than Qwen3 4B on Cantonese
+  and worse on English and Mandarin, so it is suggested only for combinations with Cantonese. They are stored in
   `~/Library/Application Support/dev.typelite.mac/models/`, next to the speech models.
 - Intel Macs, and Macs with less memory than the table says, get no Built-in option; use an
   [OpenAI-compatible](openai-compatible.md) server or service instead.

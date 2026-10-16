@@ -51,6 +51,12 @@ pub async fn init(app: &tauri::AppHandle) {
         return;
     };
     crate::stt::builtin::engine().set_models_dir(dir.clone());
+    // Plan `language-model-suggestions`: the built-in speech server for Qwen3-ASR.
+    let pid_file = dir
+        .parent()
+        .map(|data| data.join("llama-speech-server.pid"))
+        .unwrap_or_else(|| dir.join("llama-speech-server.pid"));
+    crate::llm::builtin::speech_server().set_paths(dir.clone(), pid_file);
     let installed = models::installed_pairs(&dir);
     let state = app.state::<storage::ConfigManager>();
     let Ok(mut config) = state.load().await else {
@@ -62,6 +68,7 @@ pub async fn init(app: &tauri::AppHandle) {
             tracing::warn!("Failed to save the built-in speech presets: {error}");
         }
     }
+    crate::stt::llama_asr::sync_with_config(&config);
 }
 
 #[tauri::command]
@@ -83,8 +90,8 @@ pub struct SpeechModelInfo {
 pub fn list_speech_models(app: tauri::AppHandle) -> Result<Vec<SpeechModelInfo>, String> {
     let dir = models_dir(&app)?;
     let installed = models::installed_models(&dir);
-    Ok(models::KNOWN_MODELS
-        .iter()
+    Ok(models::speech_catalog()
+        .into_iter()
         .map(|model| SpeechModelInfo {
             id: model.id.to_string(),
             file_name: model.file_name.to_string(),
@@ -107,7 +114,14 @@ pub async fn get_speech_hardware(
             .into_iter()
             .map(|model| model.id)
             .collect();
-        let offer = crate::stt::hardware::offer_models(&hardware, &installed);
+        let mut offer = crate::stt::hardware::offer_models(&hardware, &installed);
+        // Plan `language-model-suggestions`: Qwen3-ASR runs in llama-server; a copy of Typelite
+        // built without it cannot offer it.
+        if !crate::llm::builtin::speech_server().binary_available() {
+            offer
+                .models
+                .retain(|model| !models::runs_in_llama_server(&model.id));
+        }
         tracing::info!(
             "Speech hardware check: {:?} '{}', {} GB memory, {} MB free, offered {:?}",
             hardware.chip_kind,
@@ -135,21 +149,29 @@ pub async fn delete_speech_model(
     setup: tauri::State<'_, SpeechSetupState>,
     model_id: String,
 ) -> Result<(), String> {
-    let model = models::known_model(&model_id).ok_or("Unknown speech model")?;
     let status = setup.status();
-    if status.running() && status.model_id.as_deref() == Some(model.id) {
+    if status.running() && status.model_id.as_deref() == Some(model_id.as_str()) {
         return Err("This model is being set up right now".to_string());
     }
     let dir = models_dir(&app)?;
-    crate::stt::builtin::engine().unload_path(&dir.join(model.file_name));
-    models::delete_model(&dir, model).map_err(|error| error.to_string())?;
+    if let Some(asr) = models::asr_model(&model_id) {
+        // Plan `language-model-suggestions`: stop the speech server first, then delete both files.
+        crate::llm::builtin::speech_server().stop();
+        for file in [asr.file, asr.projector] {
+            models::delete_model(&dir, &file).map_err(|error| error.to_string())?;
+        }
+    } else {
+        let model = models::known_model(&model_id).ok_or("Unknown speech model")?;
+        crate::stt::builtin::engine().unload_path(&dir.join(model.file_name));
+        models::delete_model(&dir, model).map_err(|error| error.to_string())?;
+    }
 
     let mut config = state.load().await.map_err(|e| e.to_string())?;
     if config.reconcile_builtin_models(&models::installed_pairs(&dir)) {
         state.save(&config).await.map_err(|e| e.to_string())?;
         emit_speech_presets(&app, &config);
     }
-    if status.model_id.as_deref() == Some(model.id) && status.phase == SetupPhase::Ready {
+    if status.model_id.as_deref() == Some(model_id.as_str()) && status.phase == SetupPhase::Ready {
         let cleared = setup.update(|status| *status = SpeechSetupStatus::default());
         emit(&app, &cleared);
     }
@@ -177,18 +199,21 @@ pub fn start_speech_setup(
     let model_id = model_id
         .filter(|id| !id.trim().is_empty())
         .unwrap_or_else(|| models::DEFAULT_MODEL_ID.to_string());
-    let model = *models::known_model(&model_id).ok_or("Unknown speech model")?;
+    let model = match models::asr_model(&model_id) {
+        Some(asr) => SetupModel::LlamaServer(*asr),
+        None => SetupModel::Whisper(*models::known_model(&model_id).ok_or("Unknown speech model")?),
+    };
     let dir = models_dir(&app)?;
-    let cancel = setup.begin(&model, BUSY)?;
+    let cancel = setup.begin_sized(model.id(), model.size_bytes(), BUSY)?;
     emit(&app, &setup.status());
-    tracing::info!("Quick speech setup started for {}", model.id);
+    tracing::info!("Quick speech setup started for {}", model.id());
 
     tauri::async_runtime::spawn(async move {
         let result = run_setup(&app, &dir, model, cancel).await;
         let status = app.state::<SpeechSetupState>().finish(&result);
         match &result {
-            Ok(_) => tracing::info!("Quick speech setup finished: {} is ready", model.id),
-            Err(error) => tracing::warn!("Quick speech setup for {} stopped: {error}", model.id),
+            Ok(_) => tracing::info!("Quick speech setup finished: {} is ready", model.id()),
+            Err(error) => tracing::warn!("Quick speech setup for {} stopped: {error}", model.id()),
         }
         emit(&app, &status);
     });
@@ -200,24 +225,83 @@ pub fn cancel_speech_setup(setup: tauri::State<'_, SpeechSetupState>) -> bool {
     setup.cancel()
 }
 
+/// The model a setup installs: one Whisper file, or (plan `language-model-suggestions`) a
+/// `llama-server` model with its audio projector.
+#[derive(Debug, Clone, Copy)]
+enum SetupModel {
+    Whisper(KnownModel),
+    LlamaServer(models::AsrModel),
+}
+
+impl SetupModel {
+    fn id(&self) -> &'static str {
+        match self {
+            SetupModel::Whisper(model) => model.id,
+            SetupModel::LlamaServer(model) => model.file.id,
+        }
+    }
+
+    fn size_bytes(&self) -> u64 {
+        match self {
+            SetupModel::Whisper(model) => model.size_bytes,
+            SetupModel::LlamaServer(model) => model.size_bytes(),
+        }
+    }
+
+    /// The preset's `model_file`.
+    fn file_name(&self) -> &'static str {
+        match self {
+            SetupModel::Whisper(model) => model.file_name,
+            SetupModel::LlamaServer(model) => model.file.file_name,
+        }
+    }
+
+    /// Every file with its URL, in download order.
+    fn downloads(&self) -> Vec<(KnownModel, String)> {
+        match self {
+            SetupModel::Whisper(model) => vec![(
+                *model,
+                format!("{}/{}", models::MODEL_BASE_URL, model.file_name),
+            )],
+            SetupModel::LlamaServer(model) => model.downloads().to_vec(),
+        }
+    }
+}
+
 async fn run_setup(
     app: &tauri::AppHandle,
     dir: &std::path::Path,
-    model: KnownModel,
+    model: SetupModel,
     cancel: tokio::sync::watch::Receiver<bool>,
 ) -> Result<u32, DownloadError> {
-    model_setup::download_with_progress(
-        app,
-        |app| &app.state::<SpeechSetupState>().inner().0,
-        SPEECH_SETUP_EVENT,
-        dir,
-        model,
-        format!("{}/{}", models::MODEL_BASE_URL, model.file_name),
-        cancel,
-    )
-    .await?;
+    if matches!(model, SetupModel::LlamaServer(_))
+        && !crate::llm::builtin::speech_server().binary_available()
+    {
+        // Nothing could run the model; say so before a download of gigabytes.
+        return Err(DownloadError::ServerMissing);
+    }
+    let mut done_before = 0;
+    for (file, url) in model.downloads() {
+        model_setup::download_part_with_progress(
+            app,
+            |app| &app.state::<SpeechSetupState>().inner().0,
+            SPEECH_SETUP_EVENT,
+            dir,
+            file,
+            url,
+            cancel.clone(),
+            model_setup::ProgressSpan {
+                done_before,
+                total: model.size_bytes(),
+            },
+        )
+        .await?;
+        done_before += file.size_bytes;
+    }
 
-    let status = app.state::<SpeechSetupState>().testing(&model);
+    let status = app
+        .state::<SpeechSetupState>()
+        .testing_sized(model.size_bytes());
     emit(app, &status);
 
     // Create the preset, then test it; select it only when the test passes.
@@ -229,8 +313,14 @@ async fn run_setup(
             reason: error.to_string(),
         })?;
     let previous_active = config.active_speech_preset_id.clone();
-    let preset = config.install_builtin_whisper(model.id, model.file_name);
-    let test = crate::stt::builtin::self_test(&preset.model_file).await;
+    let preset = config.install_builtin_whisper(model.id(), model.file_name());
+    let test = match model {
+        SetupModel::Whisper(_) => crate::stt::builtin::self_test(&preset.model_file).await,
+        SetupModel::LlamaServer(_) => match crate::stt::llama_asr::config_for(&preset) {
+            Ok(asr) => crate::stt::llama_asr::self_test(&asr).await,
+            Err(error) => Err(error),
+        },
+    };
     match &test {
         Ok(ms) => {
             tracing::info!("Built-in speech preset passed its test in {ms} ms");
@@ -245,5 +335,6 @@ async fn run_setup(
             reason: error.to_string(),
         })?;
     emit_speech_presets(app, &config);
+    crate::stt::llama_asr::sync_with_config(&config);
     test.map_err(|reason| DownloadError::Load { reason })
 }

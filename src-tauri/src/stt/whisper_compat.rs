@@ -14,6 +14,10 @@ pub struct WhisperCompatConfig {
     /// Full `.../audio/transcriptions` URL.
     pub endpoint: String,
     pub model: String,
+    /// Ask for `verbose_json` (it carries the detected language) when auto-detecting. False for a
+    /// server known to refuse it: the built-in speech server (plan `language-model-suggestions`)
+    /// answers only plain JSON, and Qwen3-ASR's own language tag gives the language anyway.
+    pub verbose_json: bool,
 }
 
 /// Plan `language-prompt-library`: endpoints that refused `response_format=verbose_json` in this
@@ -180,8 +184,9 @@ impl SttProvider for WhisperCompatProvider {
 
         // Plan `language-prompt-library`: with auto-detect, ask for `verbose_json`, which
         // carries the detected language; a server that refuses it gets plain JSON again.
-        let verbose =
-            config.language.is_none() && !verbose_json_refused(&self.provider_config.endpoint);
+        let verbose = self.provider_config.verbose_json
+            && config.language.is_none()
+            && !verbose_json_refused(&self.provider_config.endpoint);
         let retry_copy = verbose.then(|| wav_data.clone());
         let mut result = self.upload_wav(&config, wav_data, verbose).await;
         if let Some(wav_data) = retry_copy {
@@ -394,6 +399,7 @@ mod tests {
             provider_name: "local-whisper".to_string(),
             endpoint: "http://localhost:8000/v1/audio/transcriptions".to_string(),
             model: "test-model".to_string(),
+            verbose_json: true,
         });
 
         let result = provider
@@ -414,6 +420,7 @@ mod tests {
             // Port 9 on localhost refuses the connection at once, so no retry wait.
             endpoint: "http://127.0.0.1:9/v1/audio/transcriptions".to_string(),
             model: "test-model".to_string(),
+            verbose_json: true,
         });
         let probe = crate::timing::UploadProbe::default();
         provider.set_upload_probe(probe.clone());
@@ -440,6 +447,7 @@ mod tests {
             provider_name: "test-whisper".to_string(),
             endpoint: "http://127.0.0.1:9/v1/audio/transcriptions".to_string(),
             model: "test-model".to_string(),
+            verbose_json: true,
         });
         let probe = crate::timing::UploadProbe::default();
         provider.set_upload_probe(probe.clone());
@@ -455,6 +463,7 @@ mod tests {
             provider_name: "test-whisper".to_string(),
             endpoint: "http://127.0.0.1:9/v1/audio/transcriptions".to_string(),
             model: "test-model".to_string(),
+            verbose_json: true,
         });
         let probe = crate::timing::UploadProbe::default();
         provider.set_upload_probe(probe.clone());
@@ -536,6 +545,7 @@ mod tests {
             provider_name: "test-whisper".to_string(),
             endpoint: endpoint.to_string(),
             model: "test-model".to_string(),
+            verbose_json: true,
         });
         provider
             .connect(&SttConfig {
@@ -619,6 +629,7 @@ mod tests {
             provider_name: "test-whisper".to_string(),
             endpoint: "https://example.test/transcriptions".to_string(),
             model: "test-model".to_string(),
+            verbose_json: true,
         });
 
         let result = tokio::time::timeout(

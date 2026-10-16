@@ -310,7 +310,9 @@
       "ask": "Pregunta lo que sea",
       "askSub": "Haz una pregunta o cambia el texto seleccionado con la voz.",
       "webSearch": "Búsqueda web",
-      "webSearchSub": "Opcional: permite a Pregunta lo que sea buscar noticias, resultados y horarios."
+      "webSearchSub": "Opcional: permite a Pregunta lo que sea buscar noticias, resultados y horarios.",
+      "languages": "Tus idiomas",
+      "languagesSub": "Typelite comprueba si hay una configuración adecuada para los idiomas que hablas."
     },
     "layout": {
       "back": "Atrás",
@@ -1023,14 +1025,15 @@
     },
     "builtinTitle": "Integrado",
     "recommended": "Recomendado",
-    "builtinBody": "Ejecuta Whisper dentro de Typelite en este ordenador. No necesitas otro software.",
+    "builtinBody": "Ejecuta un modelo de voz dentro de Typelite en este ordenador. No necesitas otro software.",
     "changeModel": "Cambiar modelo",
     "download": "Descargar",
     "use": "Usar",
     "model": "Modelo",
     "models": {
       "large-v3-turbo": "Máxima precisión",
-      "small": "Más rápido"
+      "small": "Más rápido",
+      "qwen3Asr": "Qwen3-ASR"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "Comprobando este ordenador…",
@@ -1058,6 +1061,9 @@
         "needs_memory": "El modelo más grande necesita 8 GB de memoria.",
         "needs_disk_space": "No hay espacio libre suficiente para el modelo más grande."
       }
+    },
+    "modelDetails": {
+      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
     }
   },
   "speech": {
@@ -1097,7 +1103,7 @@
     "engines": {
       "builtin": {
         "title": "Integrado",
-        "detail": "Ejecuta Whisper dentro de Typelite en este ordenador"
+        "detail": "Ejecuta un modelo de voz dentro de Typelite en este ordenador"
       },
       "server": {
         "title": "Tu servidor o clave de API",
@@ -1132,11 +1138,13 @@
     "testing": "Iniciando el modelo y haciendo una prueba…",
     "models": {
       "best": "Mejor calidad",
-      "faster": "Más rápido"
+      "faster": "Más rápido",
+      "qwen35": "Qwen 3.5"
     },
     "modelDetail": {
       "best": "Qwen3 4B Instruct · {{size}}",
-      "faster": "Qwen3 1.7B · {{size}}"
+      "faster": "Qwen3 1.7B · {{size}}",
+      "qwen35": "Qwen 3.5 4B · {{size}}"
     },
     "errors": {
       "load": "{{reason}}",
@@ -1234,5 +1242,34 @@
     "restart": "Reiniciar para actualizar",
     "failed": "La actualización no funcionó: {{message}}",
     "disabled": "La versión de desarrollo no se actualiza sola."
+  },
+  "languageSetup": {
+    "yourLanguages": "Tus idiomas",
+    "add": "+ Añadir idioma",
+    "addLabel": "Añadir un idioma que hablas",
+    "remove": "Quitar {{language}}",
+    "hints": {
+      "yue": "Cantonés",
+      "zh": "Mandarín"
+    },
+    "fromMac": "Tomados de los idiomas preferidos de tu Mac.",
+    "list": "{{items}} y {{last}}",
+    "listSeparator": ", ",
+    "suggestedTitle": "Configuración sugerida para {{languages}}",
+    "noneTitle": "No hay configuración sugerida para {{languages}}",
+    "noneBody": "Los siguientes pasos empiezan con los modelos integrados estándar. Allí puedes elegir cualquier modelo.",
+    "empty": "Añade los idiomas que hablas. También puedes saltar este paso; se usan los modelos integrados estándar.",
+    "nextSteps": "Los dos pasos siguientes empiezan con estos modelos elegidos. Allí descargas cada uno, o eliges otro.",
+    "aiFallback": "El modelo de IA más grande necesita 16 GB de memoria, así que el pulido con IA empieza con el más rápido.",
+    "suggestedTag": "Sugerido para tus idiomas",
+    "bannerSpeech": "Reconocimiento de voz: {{model}}.",
+    "bannerAi": "Pulido con IA: {{model}}.",
+    "notNow": "Ahora no",
+    "homeGroup": "Sugerido para tus idiomas",
+    "homeTitle": "Modelos integrados para {{languages}}",
+    "homeBodyBoth": "{{speech}} para el reconocimiento de voz y {{ai}} para el pulido con IA. Se ejecutan en este Mac; {{size}} de descarga.",
+    "homeBodySpeech": "{{speech}} para el reconocimiento de voz. Se ejecuta en este Mac; {{size}} de descarga.",
+    "homeBodyAi": "{{ai}} para el pulido con IA. Se ejecuta en este Mac; {{size}} de descarga.",
+    "dontShowAgain": "No volver a mostrar"
   }
 }

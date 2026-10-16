@@ -107,7 +107,7 @@ pub fn offer_models(hardware: &Hardware, installed_ids: &[String]) -> ModelOffer
     ) else {
         return offer_by_rules(hardware, &[], installed_ids);
     };
-    let rules = [
+    let mut rules = vec![
         ModelRule {
             model: *best,
             needs_apple_silicon: true,
@@ -119,6 +119,13 @@ pub fn offer_models(hardware: &Hardware, installed_ids: &[String]) -> ModelOffer
             min_memory_bytes: 0,
         },
     ];
+    // Plan `language-model-suggestions`: the `llama-server` models come last, so the Whisper
+    // models keep their places (and the recommendation) and `left_out` still explains Whisper.
+    rules.extend(models::ASR_MODELS.iter().map(|model| ModelRule {
+        model: model.as_known_model(),
+        needs_apple_silicon: true,
+        min_memory_bytes: model.min_memory_bytes,
+    }));
     offer_by_rules(hardware, &rules, installed_ids)
 }
 
@@ -326,14 +333,31 @@ mod tests {
     #[test]
     fn apple_silicon_with_memory_and_disk_gets_both_best_first() {
         let offer = offer_models(&mac(ChipKind::AppleSilicon, 32, 55_000 * MB), &[]);
-        assert_eq!(ids(&offer), ["large-v3-turbo", "small"]);
+        assert_eq!(ids(&offer), ["large-v3-turbo", "small", "qwen3-asr-1.7b"]);
         assert!(offer.models[0].recommended);
         assert!(!offer.models[1].recommended);
+        assert!(!offer.models[2].recommended);
         assert_eq!(offer.left_out, None);
         assert_eq!(offer.needed_bytes, None);
         // Exactly 8 GB is enough.
         let offer = offer_models(&mac(ChipKind::AppleSilicon, 8, 20_000 * MB), &[]);
+        assert_eq!(ids(&offer), ["large-v3-turbo", "small", "qwen3-asr-1.7b"]);
+    }
+
+    #[test]
+    fn qwen3_asr_needs_apple_silicon_and_room_for_both_files() {
+        let qwen = models::asr_model(models::QWEN3_ASR_MODEL_ID).unwrap();
+        let offer = offer_models(&mac(ChipKind::Intel, 64, 90_000 * MB), &[]);
+        assert!(!ids(&offer).contains(&"qwen3-asr-1.7b"));
+        let short = models::needed_free_bytes(qwen.size_bytes(), 0) - 1;
+        let offer = offer_models(&mac(ChipKind::AppleSilicon, 32, short), &[]);
         assert_eq!(ids(&offer), ["large-v3-turbo", "small"]);
+        let offer = offer_models(
+            &mac(ChipKind::AppleSilicon, 32, 0),
+            &["qwen3-asr-1.7b".to_string()],
+        );
+        assert_eq!(ids(&offer), ["qwen3-asr-1.7b"]);
+        assert_eq!(offer.models[0].size_bytes, qwen.size_bytes());
     }
 
     #[test]

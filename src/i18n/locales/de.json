@@ -310,7 +310,9 @@
       "ask": "Frag alles",
       "askSub": "Stell eine Frage oder ändere ausgewählten Text per Stimme.",
       "webSearch": "Websuche",
-      "webSearchSub": "Optional: Frag alles kann Nachrichten, Ergebnisse und Termine nachschlagen."
+      "webSearchSub": "Optional: Frag alles kann Nachrichten, Ergebnisse und Termine nachschlagen.",
+      "languages": "Deine Sprachen",
+      "languagesSub": "Typelite prüft, ob es eine passende Einrichtung für die Sprachen gibt, die du sprichst."
     },
     "layout": {
       "back": "Zurück",
@@ -1023,14 +1025,15 @@
     },
     "builtinTitle": "Integriert",
     "recommended": "Empfohlen",
-    "builtinBody": "Führt Whisper in Typelite auf diesem Computer aus. Keine weitere Software nötig.",
+    "builtinBody": "Führt ein Sprachmodell in Typelite auf diesem Computer aus. Keine weitere Software nötig.",
     "changeModel": "Modell ändern",
     "download": "Laden",
     "use": "Verwenden",
     "model": "Modell",
     "models": {
       "large-v3-turbo": "Höchste Genauigkeit",
-      "small": "Schneller"
+      "small": "Schneller",
+      "qwen3Asr": "Qwen3-ASR"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "Dieser Computer wird geprüft…",
@@ -1058,6 +1061,9 @@
         "needs_memory": "Das größere Modell braucht 8 GB Arbeitsspeicher.",
         "needs_disk_space": "Nicht genug freier Speicher für das größere Modell."
       }
+    },
+    "modelDetails": {
+      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
     }
   },
   "speech": {
@@ -1097,7 +1103,7 @@
     "engines": {
       "builtin": {
         "title": "Integriert",
-        "detail": "Führt Whisper in Typelite auf diesem Computer aus"
+        "detail": "Führt ein Sprachmodell in Typelite auf diesem Computer aus"
       },
       "server": {
         "title": "Dein Server oder API-Schlüssel",
@@ -1132,11 +1138,13 @@
     "testing": "Modell wird gestartet und getestet…",
     "models": {
       "best": "Beste Qualität",
-      "faster": "Schneller"
+      "faster": "Schneller",
+      "qwen35": "Qwen 3.5"
     },
     "modelDetail": {
       "best": "Qwen3 4B Instruct · {{size}}",
-      "faster": "Qwen3 1.7B · {{size}}"
+      "faster": "Qwen3 1.7B · {{size}}",
+      "qwen35": "Qwen 3.5 4B · {{size}}"
     },
     "errors": {
       "load": "{{reason}}",
@@ -1234,5 +1242,34 @@
     "restart": "Neu starten zum Aktualisieren",
     "failed": "Das Update hat nicht funktioniert: {{message}}",
     "disabled": "Der Entwicklungs-Build aktualisiert sich nicht selbst."
+  },
+  "languageSetup": {
+    "yourLanguages": "Deine Sprachen",
+    "add": "+ Sprache hinzufügen",
+    "addLabel": "Eine Sprache hinzufügen, die du sprichst",
+    "remove": "{{language}} entfernen",
+    "hints": {
+      "yue": "Kantonesisch",
+      "zh": "Mandarin"
+    },
+    "fromMac": "Aus den bevorzugten Sprachen deines Macs übernommen.",
+    "list": "{{items}} und {{last}}",
+    "listSeparator": ", ",
+    "suggestedTitle": "Vorgeschlagene Einrichtung für {{languages}}",
+    "noneTitle": "Keine vorgeschlagene Einrichtung für {{languages}}",
+    "noneBody": "Die nächsten Schritte beginnen mit den integrierten Standardmodellen. Dort kannst du trotzdem jedes Modell wählen.",
+    "empty": "Füge die Sprachen hinzu, die du sprichst. Du kannst den Schritt auch überspringen; dann werden die integrierten Standardmodelle verwendet.",
+    "nextSteps": "Die nächsten beiden Schritte beginnen mit diesen Modellen. Dort lädst du jedes einzeln, oder wählst ein anderes.",
+    "aiFallback": "Das größere KI-Modell braucht 16 GB Arbeitsspeicher, daher beginnt die KI-Überarbeitung mit dem schnelleren.",
+    "suggestedTag": "Vorgeschlagen für deine Sprachen",
+    "bannerSpeech": "Spracherkennung: {{model}}.",
+    "bannerAi": "KI-Überarbeitung: {{model}}.",
+    "notNow": "Jetzt nicht",
+    "homeGroup": "Vorgeschlagen für deine Sprachen",
+    "homeTitle": "Integrierte Modelle für {{languages}}",
+    "homeBodyBoth": "{{speech}} für die Spracherkennung und {{ai}} für die KI-Überarbeitung. Sie laufen auf diesem Mac; {{size}} zum Laden.",
+    "homeBodySpeech": "{{speech}} für die Spracherkennung. Es läuft auf diesem Mac; {{size}} zum Laden.",
+    "homeBodyAi": "{{ai}} für die KI-Überarbeitung. Es läuft auf diesem Mac; {{size}} zum Laden.",
+    "dontShowAgain": "Nicht mehr anzeigen"
   }
 }

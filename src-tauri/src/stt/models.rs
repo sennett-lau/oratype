@@ -1,5 +1,6 @@
 //! Plan `quick-speech-setup`: the Whisper model files that Quick setup downloads for the built-in
-//! speech provider.
+//! speech provider. Plan `language-model-suggestions` adds Qwen3-ASR ([`ASR_MODELS`]), which runs
+//! in a second built-in `llama-server` and needs a second file.
 //!
 //! Models come from the official whisper.cpp repository on Hugging Face and are checked
 //! against a SHA-256 written into this file. They live in `<app data>/models/` (on macOS
@@ -60,6 +61,105 @@ pub fn known_model_by_file(file_name: &str) -> Option<&'static KnownModel> {
         .find(|model| model.file_name == file_name)
 }
 
+/// Plan `language-model-suggestions`: id of Qwen3-ASR 1.7B, which writes spoken Cantonese the way
+/// it was said (Whisper writes it as standard written Chinese).
+pub const QWEN3_ASR_MODEL_ID: &str = "qwen3-asr-1.7b";
+
+const GIB: u64 = 1024 * 1024 * 1024;
+
+/// Plan `language-model-suggestions`: a built-in speech model that runs in a second `llama-server`
+/// (see `stt::llama_asr`) instead of whisper.cpp. It needs two files: the model, which the
+/// preset's `model_file` names, and its audio projector (`--mmproj`). Both are downloaded and
+/// checked like a Whisper file; the model counts as installed only when both are in place.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AsrModel {
+    /// The model file; its `id` is the model's id.
+    pub file: KnownModel,
+    /// The audio projector, downloaded with the model.
+    pub projector: KnownModel,
+    /// Where both files come from: `{base_url}/{file_name}`.
+    pub base_url: &'static str,
+    /// Installed memory it needs. It shares the Mac with the AI polish model.
+    pub min_memory_bytes: u64,
+}
+
+/// The `llama-server` speech models. Files from ggml-org's Hugging Face repository, pinned to one
+/// commit; sizes and SHA-256 values are the files' LFS size and object id.
+pub const ASR_MODELS: &[AsrModel] = &[AsrModel {
+    file: KnownModel {
+        id: QWEN3_ASR_MODEL_ID,
+        file_name: "Qwen3-ASR-1.7B-Q8_0.gguf",
+        size_bytes: 2_165_034_944,
+        sha256: "58e22d0532d4eacaf034cfac17a6fed159f37c41390c710186783be439d1fc57",
+    },
+    projector: KnownModel {
+        id: QWEN3_ASR_MODEL_ID,
+        file_name: "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf",
+        size_bytes: 355_709_344,
+        sha256: "46c1d533af3f354ceb37ce855dbceff7da7fa7cf1e6a523df3b13440bd164c0d",
+    },
+    base_url: "https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/36a678687ba7d07a74ca70ccb0e36902e005fb80",
+    min_memory_bytes: 8 * GIB,
+}];
+
+impl AsrModel {
+    /// Both files together.
+    pub fn size_bytes(&self) -> u64 {
+        self.file.size_bytes + self.projector.size_bytes
+    }
+
+    /// The two files with their download URLs, model first.
+    pub fn downloads(&self) -> [(KnownModel, String); 2] {
+        [self.file, self.projector]
+            .map(|file| (file, format!("{}/{}", self.base_url, file.file_name)))
+    }
+
+    /// True when both files are fully in place.
+    pub fn installed(&self, dir: &Path) -> bool {
+        installed_from(dir, &[self.file, self.projector]).len() == 2
+    }
+
+    /// One entry with the total size, for the hardware rules and the setup status.
+    pub fn as_known_model(&self) -> KnownModel {
+        KnownModel {
+            size_bytes: self.size_bytes(),
+            ..self.file
+        }
+    }
+}
+
+pub fn asr_model(id: &str) -> Option<&'static AsrModel> {
+    ASR_MODELS.iter().find(|model| model.file.id == id)
+}
+
+/// True when the speech model `model_id` runs in `llama-server` rather than in whisper.cpp.
+pub fn runs_in_llama_server(model_id: &str) -> bool {
+    asr_model(model_id).is_some()
+}
+
+/// One built-in speech model as setup and Settings list it: id, the file a preset names, and the
+/// whole download. Whisper models first, then the `llama-server` ones.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SpeechCatalogEntry {
+    pub id: &'static str,
+    pub file_name: &'static str,
+    pub size_bytes: u64,
+}
+
+pub fn speech_catalog() -> Vec<SpeechCatalogEntry> {
+    let whisper = KNOWN_MODELS.iter().map(|model| SpeechCatalogEntry {
+        id: model.id,
+        file_name: model.file_name,
+        size_bytes: model.size_bytes,
+    });
+    let asr = ASR_MODELS.iter().map(|model| SpeechCatalogEntry {
+        id: model.file.id,
+        file_name: model.file.file_name,
+        size_bytes: model.size_bytes(),
+    });
+    whisper.chain(asr).collect()
+}
+
 /// The `models` folder inside the app data folder.
 pub fn models_dir_in(app_data_dir: &Path) -> PathBuf {
     app_data_dir.join("models")
@@ -78,9 +178,21 @@ pub struct InstalledModel {
     pub size_bytes: u64,
 }
 
-/// The known speech models whose file is fully in place (see [`installed_from`]).
+/// The known speech models whose files are fully in place (see [`installed_from`]). A
+/// `llama-server` model needs both of its files and is listed with its model file and total size.
 pub fn installed_models(dir: &Path) -> Vec<InstalledModel> {
-    installed_from(dir, KNOWN_MODELS)
+    let mut installed = installed_from(dir, KNOWN_MODELS);
+    installed.extend(
+        ASR_MODELS
+            .iter()
+            .filter(|model| model.installed(dir))
+            .map(|model| InstalledModel {
+                id: model.file.id.to_string(),
+                file_name: model.file.file_name.to_string(),
+                size_bytes: model.size_bytes(),
+            }),
+    );
+    installed
 }
 
 /// The models of `table` whose file is fully in place (a `.part` file does not count). The file
@@ -482,6 +594,71 @@ mod tests {
         let small = known_model("small").unwrap();
         assert!(small.size_bytes < 200_000_000 && small.size_bytes > 180_000_000);
         assert!(known_model("tiny").is_none());
+    }
+
+    #[test]
+    fn the_llama_server_speech_models_are_well_formed() {
+        let qwen = asr_model(QWEN3_ASR_MODEL_ID).unwrap();
+        for file in [qwen.file, qwen.projector] {
+            assert_eq!(file.id, QWEN3_ASR_MODEL_ID);
+            assert_eq!(file.sha256.len(), 64);
+            assert!(file.file_name.ends_with(".gguf"));
+            assert!(known_model_by_file(file.file_name).is_none());
+        }
+        assert_eq!(qwen.size_bytes(), 2_520_744_288);
+        assert_eq!(qwen.as_known_model().size_bytes, qwen.size_bytes());
+        assert_eq!(qwen.as_known_model().file_name, "Qwen3-ASR-1.7B-Q8_0.gguf");
+        let [(model, model_url), (projector, projector_url)] = qwen.downloads();
+        assert_eq!(model, qwen.file);
+        assert_eq!(projector, qwen.projector);
+        assert!(
+            model_url.starts_with("https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/")
+        );
+        assert!(model_url.ends_with("/Qwen3-ASR-1.7B-Q8_0.gguf"));
+        assert!(projector_url.ends_with("/mmproj-Qwen3-ASR-1.7B-Q8_0.gguf"));
+        assert!(runs_in_llama_server(QWEN3_ASR_MODEL_ID));
+        assert!(!runs_in_llama_server("large-v3-turbo"));
+        assert!(known_model(QWEN3_ASR_MODEL_ID).is_none());
+        assert_eq!(
+            speech_catalog()
+                .iter()
+                .map(|entry| entry.id)
+                .collect::<Vec<_>>(),
+            ["large-v3-turbo", "small", QWEN3_ASR_MODEL_ID]
+        );
+    }
+
+    #[test]
+    fn a_llama_server_speech_model_is_installed_only_with_both_files() {
+        let dir = temp_dir("asr-installed");
+        let qwen = asr_model(QWEN3_ASR_MODEL_ID).unwrap();
+        std::fs::File::create(dir.join(qwen.file.file_name))
+            .unwrap()
+            .set_len(qwen.file.size_bytes)
+            .unwrap();
+        assert!(installed_models(&dir).is_empty());
+        std::fs::File::create(dir.join(qwen.projector.file_name))
+            .unwrap()
+            .set_len(qwen.projector.size_bytes)
+            .unwrap();
+        assert_eq!(
+            installed_models(&dir),
+            vec![InstalledModel {
+                id: QWEN3_ASR_MODEL_ID.into(),
+                file_name: qwen.file.file_name.into(),
+                size_bytes: qwen.size_bytes(),
+            }]
+        );
+        assert_eq!(
+            installed_pairs(&dir),
+            vec![(
+                QWEN3_ASR_MODEL_ID.to_string(),
+                qwen.file.file_name.to_string()
+            )]
+        );
+        delete_model(&dir, &qwen.file).unwrap();
+        delete_model(&dir, &qwen.projector).unwrap();
+        assert!(std::fs::read_dir(&dir).unwrap().next().is_none());
     }
 
     #[test]

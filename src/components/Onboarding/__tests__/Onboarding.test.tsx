@@ -92,6 +92,7 @@ vi.mock('../WelcomeStep', () => ({
   ),
 }))
 vi.mock('../MicrophoneStep', () => ({ MicrophoneStep: () => <div>Microphone step</div> }))
+vi.mock('../LanguagesStep', () => ({ LanguagesStep: () => <div>Languages step</div> }))
 vi.mock('../SttSetupStep', () => ({
   SttSetupStep: ({ onSkip }: { onSkip: () => void }) => (
     <div>
@@ -138,15 +139,15 @@ vi.mock('../ExercisePage', () => ({
 
 /** Step index of each shortcut page (plan `tutorial-one-page`). */
 const PAGE = {
-  dictateSetup: 5,
-  correction: 6,
-  fillers: 7,
-  translateSetup: 8,
-  speakTranslate: 9,
-  selectionTranslate: 10,
-  askSetup: 11,
-  question: 12,
-  edit: 13,
+  dictateSetup: 6,
+  correction: 7,
+  fillers: 8,
+  translateSetup: 9,
+  speakTranslate: 10,
+  selectionTranslate: 11,
+  askSetup: 12,
+  question: 13,
+  edit: 14,
 }
 
 function layout() {
@@ -185,14 +186,15 @@ beforeEach(() => {
 afterEach(() => cleanup())
 
 describe('Onboarding flow', () => {
-  it('has the five setup steps (web search optional), then a setup page and two exercise pages per shortcut', () => {
-    expect(TOTAL_STEPS).toBe(14)
+  it('has the six setup steps (web search optional), then a setup page and two exercise pages per shortcut', () => {
+    expect(TOTAL_STEPS).toBe(15)
     render(<Onboarding />)
-    expect(layout()).toHaveAttribute('data-total-steps', '14')
+    expect(layout()).toHaveAttribute('data-total-steps', '15')
 
     const expected = [
       ['Welcome', 'Welcome step'],
       ['Voice input', 'Microphone step'],
+      ['Your languages', 'Languages step'],
       ['Speech recognition', 'Speech step'],
       ['AI polish', 'AI step'],
       ['Web search', 'Web search step'],
@@ -254,43 +256,50 @@ describe('Onboarding flow', () => {
     expect(layout()).toHaveAttribute('data-can-next', 'true')
   })
 
-  it('unlocks Next on the service steps once the active preset passed a test', () => {
+  it('never blocks the languages step (plan `language-model-suggestions`)', () => {
     useAppStore.setState({ onboardingStep: 2 })
+    render(<Onboarding />)
+    expect(screen.getByText('Languages step')).toBeInTheDocument()
+    expect(layout()).toHaveAttribute('data-can-next', 'true')
+  })
+
+  it('unlocks Next on the service steps once the active preset passed a test', () => {
+    useAppStore.setState({ onboardingStep: 3 })
     render(<Onboarding />)
     expect(layout()).toHaveAttribute('data-can-next', 'false')
     act(() => setReady(true, false))
     expect(layout()).toHaveAttribute('data-can-next', 'true')
 
-    goToStep(3)
+    goToStep(4)
     expect(layout()).toHaveAttribute('data-can-next', 'false')
     act(() => setReady(true, true))
     expect(layout()).toHaveAttribute('data-can-next', 'true')
   })
 
   it('"Skip for now" on the speech step moves on to the AI step', async () => {
-    useAppStore.setState({ onboardingStep: 2 })
+    useAppStore.setState({ onboardingStep: 3 })
     render(<Onboarding />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Skip speech' }))
 
-    await waitFor(() => expect(useAppStore.getState().onboardingStep).toBe(3))
+    await waitFor(() => expect(useAppStore.getState().onboardingStep).toBe(4))
     expect(useAppStore.getState().onboardingCompleted).toBe(false)
   })
 
   it('skipping the AI step opens the optional web search step (plan `ask-web-search`)', async () => {
-    useAppStore.setState({ onboardingStep: 3 })
+    useAppStore.setState({ onboardingStep: 4 })
     render(<Onboarding />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Skip AI' }))
 
-    await waitFor(() => expect(useAppStore.getState().onboardingStep).toBe(4))
+    await waitFor(() => expect(useAppStore.getState().onboardingStep).toBe(5))
     expect(screen.getByText('Web search step')).toBeInTheDocument()
     expect(layout()).toHaveAttribute('data-can-next', 'true')
     expect(useAppStore.getState().onboardingCompleted).toBe(false)
   })
 
   it('skipping the web search step finishes onboarding and opens Home when AI is not set', async () => {
-    useAppStore.setState({ onboardingStep: 4 })
+    useAppStore.setState({ onboardingStep: 5 })
     render(<Onboarding />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Skip web search' }))
@@ -305,20 +314,20 @@ describe('Onboarding flow', () => {
 
   it('after the web search step, finishes when speech is not ready even though AI is', async () => {
     act(() => setReady(false, true))
-    useAppStore.setState({ onboardingStep: 3 })
+    useAppStore.setState({ onboardingStep: 4 })
     render(<Onboarding />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
-    await waitFor(() => expect(useAppStore.getState().onboardingStep).toBe(4))
+    await waitFor(() => expect(useAppStore.getState().onboardingStep).toBe(5))
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
 
     await waitFor(() => expect(useAppStore.getState().onboardingCompleted).toBe(true))
-    expect(useAppStore.getState().onboardingStep).toBe(4)
+    expect(useAppStore.getState().onboardingStep).toBe(5)
   })
 
   it('after the web search step, continues to the shortcut steps when both are ready', async () => {
     act(() => setReady(true, true))
-    useAppStore.setState({ onboardingStep: 4 })
+    useAppStore.setState({ onboardingStep: 5 })
     render(<Onboarding />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }))
@@ -442,10 +451,10 @@ describe('Onboarding shortcut gate (plan onboarding-shortcut-gate)', () => {
     vi.mocked(tauri.setShortcutGate).mockResolvedValue(undefined)
   })
 
-  it('allows no shortcut on the welcome, microphone, speech and AI steps', async () => {
+  it('allows no shortcut on the welcome, microphone, languages, speech and AI steps', async () => {
     render(<Onboarding />)
     await waitFor(() => expect(tauri.setShortcutGate).toHaveBeenCalledWith([]))
-    for (const step of [1, 2, 3]) {
+    for (const step of [1, 2, 3, 4]) {
       goToStep(step)
       expect(lastGate()).toEqual([])
     }
@@ -494,7 +503,7 @@ describe('Onboarding shortcut gate (plan onboarding-shortcut-gate)', () => {
   })
 
   it('opens every shortcut when the AI step is skipped and onboarding ends early', async () => {
-    useAppStore.setState({ onboardingStep: 4 })
+    useAppStore.setState({ onboardingStep: 5 })
     render(<Onboarding />)
     fireEvent.click(screen.getByRole('button', { name: 'Skip web search' }))
 
@@ -530,7 +539,7 @@ describe('Onboarding shortcut gate (plan onboarding-shortcut-gate)', () => {
   it('still finishes when the gate call fails', async () => {
     vi.mocked(tauri.setShortcutGate).mockRejectedValue('no backend')
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
-    useAppStore.setState({ onboardingStep: 4 })
+    useAppStore.setState({ onboardingStep: 5 })
     render(<Onboarding />)
     fireEvent.click(screen.getByRole('button', { name: 'Skip web search' }))
 

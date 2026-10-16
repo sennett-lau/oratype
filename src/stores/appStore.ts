@@ -468,6 +468,13 @@ export interface AppConfig {
    * section (Settings -> AI polish), not the Save bar.
    */
   web_search: WebSearchConfig
+  /**
+   * Plan `language-model-suggestions`: the languages the user speaks (`en`, `yue`, `zh`); null
+   * until chosen (the Mac's languages are used meanwhile). Saved by its own controls.
+   */
+  spoken_languages: string[] | null
+  /** Plan `language-model-suggestions`: the suggested setup whose Home card was hidden. */
+  dismissed_language_setup: string | null
 }
 
 /** A Settings pane a setup message can open. */
@@ -1239,7 +1246,7 @@ function syncHotkeyConfig(previous: AppConfig, partial: Partial<AppConfig>): App
 }
 
 /** Onboarding step index of the Dictate tutorial, the first step of the shortcut tour. */
-export const SHORTCUT_TOUR_FIRST_STEP = 5
+export const SHORTCUT_TOUR_FIRST_STEP = 6
 
 const defaultConfig: AppConfig = {
   speech_presets: BUILTIN_SPEECH_PRESETS.map((preset) => ({ ...preset })),
@@ -1308,6 +1315,8 @@ const defaultConfig: AppConfig = {
   shortcut_tour_prompt_dismissed: false,
   measure_typing_speed: true,
   web_search: { provider: 'none', base_url: '' },
+  spoken_languages: null,
+  dismissed_language_setup: null,
 }
 
 export const useAppStore = create<AppState>((set) => ({

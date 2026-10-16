@@ -63,7 +63,7 @@ repeat an entry unless its "Reopen when" conditions are met.
 ## Architecture
 
 ```
-Typelite ──audio──> speech recognition (built-in whisper.cpp, or an OpenAI-compatible server)
+Typelite ──audio──> speech recognition (built-in whisper.cpp or Qwen3-ASR, or an OpenAI-compatible server)
          ──text───> AI polish (built-in llama-server, or an OpenAI-compatible chat server)
          <─polished text── paste into the focused app
 ```
@@ -160,6 +160,11 @@ MIT. Keep the required copyright and permission notices in `LICENSE` and
   macOS caches the result per binary. Tauri's build script fails when a listed `externalBin` is
   missing, so llama-server is listed only in `src-tauri/tauri.bundle.conf.json`
   (`npm run build:app`).
+- Built-in Qwen3-ASR (plan `language-model-suggestions`) runs in a second `llama-server` with
+  `--mmproj`. Its `/v1/audio/transcriptions` refuses `response_format=verbose_json` (HTTP 400) and
+  ignores `language`; the language comes from Qwen3-ASR's `language X<asr_text>` tag. Audio costs
+  about 13 tokens per second, plus the transcript's tokens, so a ten-minute dictation needs
+  `--ctx-size 12288`.
 - Only Command Line Tools are installed on this Mac. `xcodebuild` needs full Xcode.
 - The global Rust default is pinned to 1.85.0 on purpose. Use `rustup override set stable` per
   project instead of changing the default.

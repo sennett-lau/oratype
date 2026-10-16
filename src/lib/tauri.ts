@@ -740,6 +740,16 @@ export async function getWebSearchStatus(): Promise<WebSearchStatus> {
 }
 
 /** `apiKey`: undefined keeps the stored key, '' removes it, anything else replaces it. */
+/** Plan `language-model-suggestions`: saves the languages the user speaks; returns them as stored. */
+export async function setSpokenLanguages(languages: string[]): Promise<string[]> {
+  return invoke('set_spoken_languages', { languages })
+}
+
+/** Plan `language-model-suggestions`: "Don't show again" on the Home card of a suggested setup. */
+export async function dismissLanguageSetup(setupId: string): Promise<void> {
+  return invoke('dismiss_language_setup', { setupId })
+}
+
 export async function saveWebSearch(
   provider: SearchProviderKind,
   baseUrl: string,

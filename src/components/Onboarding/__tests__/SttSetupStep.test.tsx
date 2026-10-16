@@ -82,7 +82,7 @@ describe('SttSetupStep', () => {
       expect(within(card()).getAllByText('Recommended').length).toBeGreaterThan(0)
       expect(
         within(card()).getByText(
-          'Runs Whisper inside Typelite on this computer. No other software needed.',
+          'Runs a speech model inside Typelite on this computer. No other software needed.',
         ),
       ).toBeInTheDocument()
       const models = within(card()).getByRole('radiogroup', { name: 'Model' })
@@ -104,6 +104,39 @@ describe('SttSetupStep', () => {
       fireEvent.click(within(models).getByRole('radio', { name: /Faster/ }))
       fireEvent.click(within(card()).getByRole('button', { name: 'Set up' }))
       expect(tauri.startSpeechSetup).toHaveBeenCalledWith('small')
+    })
+
+    it('picks and tags Qwen3-ASR for a Cantonese speaker (plan `language-model-suggestions`)', async () => {
+      vi.mocked(tauri.getSpeechHardware).mockResolvedValue(
+        hardwareCheck(['large-v3-turbo', 'small', 'qwen3-asr-1.7b']),
+      )
+      useAppStore.getState().setConfig({ ...config(), spoken_languages: ['en', 'yue'] })
+      await renderStep()
+
+      const models = within(card()).getByRole('radiogroup', { name: 'Model' })
+      const qwen = within(models).getByRole('radio', { name: /Qwen3-ASR/ })
+      expect(qwen).toHaveAttribute('aria-checked', 'true')
+      expect(within(qwen).getByText('Suggested for your languages')).toBeInTheDocument()
+      expect(within(models).queryByText('Recommended')).not.toBeInTheDocument()
+      expect(within(qwen).getByText('Qwen3-ASR 1.7B · 2.5 GB')).toBeInTheDocument()
+
+      fireEvent.click(within(card()).getByRole('button', { name: 'Set up' }))
+      expect(tauri.startSpeechSetup).toHaveBeenCalledWith('qwen3-asr-1.7b')
+    })
+
+    it('keeps the standard pick and no tag without a suggested setup', async () => {
+      vi.mocked(tauri.getSpeechHardware).mockResolvedValue(
+        hardwareCheck(['large-v3-turbo', 'small', 'qwen3-asr-1.7b']),
+      )
+      useAppStore.getState().setConfig({ ...config(), spoken_languages: ['en', 'ja'] })
+      await renderStep()
+
+      const models = within(card()).getByRole('radiogroup', { name: 'Model' })
+      expect(within(models).getByRole('radio', { name: /Best accuracy/ })).toHaveAttribute(
+        'aria-checked',
+        'true',
+      )
+      expect(within(models).queryByText('Suggested for your languages')).not.toBeInTheDocument()
     })
 
     it('below the card: the server link on the left and Skip for now on the right', async () => {

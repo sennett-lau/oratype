@@ -310,7 +310,9 @@
       "ask": "Ask Anything",
       "askSub": "提一个问题，或用语音修改选中的文字。",
       "webSearch": "网络搜索",
-      "webSearchSub": "可选：让问答查询新闻、比分和赛程。"
+      "webSearchSub": "可选：让问答查询新闻、比分和赛程。",
+      "languages": "你的语言",
+      "languagesSub": "Typelite 会看看有没有适合你所说语言的建议配置。"
     },
     "layout": {
       "back": "返回",
@@ -1023,14 +1025,15 @@
     },
     "builtinTitle": "内置",
     "recommended": "推荐",
-    "builtinBody": "在这台电脑 上的 Typelite 里直接运行 Whisper。无需安装其他软件。",
+    "builtinBody": "在这台电脑上的 Typelite 里运行语音模型。无需安装其他软件。",
     "changeModel": "更换模型",
     "download": "下载",
     "use": "使用",
     "model": "模型",
     "models": {
       "large-v3-turbo": "最准确",
-      "small": "更快"
+      "small": "更快",
+      "qwen3Asr": "Qwen3-ASR"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "正在检查这台电脑…",
@@ -1058,6 +1061,9 @@
         "needs_memory": "较大的模型需要 8 GB 内存。",
         "needs_disk_space": "可用空间不足，无法使用较大的模型。"
       }
+    },
+    "modelDetails": {
+      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
     }
   },
   "speech": {
@@ -1097,7 +1103,7 @@
     "engines": {
       "builtin": {
         "title": "内置",
-        "detail": "在这台电脑 上的 Typelite 里运行 Whisper"
+        "detail": "在这台电脑上的 Typelite 里运行语音模型"
       },
       "server": {
         "title": "你的服务器或 API 密钥",
@@ -1132,11 +1138,13 @@
     "testing": "正在启动模型并测试…",
     "models": {
       "best": "质量最好",
-      "faster": "更快"
+      "faster": "更快",
+      "qwen35": "Qwen 3.5"
     },
     "modelDetail": {
       "best": "Qwen3 4B Instruct · {{size}}",
-      "faster": "Qwen3 1.7B · {{size}}"
+      "faster": "Qwen3 1.7B · {{size}}",
+      "qwen35": "Qwen 3.5 4B · {{size}}"
     },
     "errors": {
       "load": "{{reason}}",
@@ -1234,5 +1242,34 @@
     "restart": "重新启动以更新",
     "failed": "更新没有完成：{{message}}",
     "disabled": "开发版本不会自行更新。"
+  },
+  "languageSetup": {
+    "yourLanguages": "你的语言",
+    "add": "+ 添加语言",
+    "addLabel": "添加你会说的语言",
+    "remove": "移除{{language}}",
+    "hints": {
+      "yue": "粤语",
+      "zh": "普通话"
+    },
+    "fromMac": "已按 Mac 的首选语言填写。",
+    "list": "{{items}}和{{last}}",
+    "listSeparator": "、",
+    "suggestedTitle": "适合{{languages}}的建议配置",
+    "noneTitle": "暂无适合{{languages}}的建议配置",
+    "noneBody": "接下来的步骤会使用标准的内置模型。你仍可以在那里选择任何模型。",
+    "empty": "添加你会说的语言。也可以跳过，届时使用标准的内置模型。",
+    "nextSteps": "接下来两步会预先选好这些模型。你在那里逐个下载，或改选其他模型。",
+    "aiFallback": "较大的 AI 模型需要 16 GB 内存，因此 AI 润色先使用较快的模型。",
+    "suggestedTag": "适合你的语言",
+    "bannerSpeech": "语音识别：{{model}}。",
+    "bannerAi": "AI 润色：{{model}}。",
+    "notNow": "以后再说",
+    "homeGroup": "适合你的语言",
+    "homeTitle": "适合{{languages}}的内置模型",
+    "homeBodyBoth": "{{speech}} 用于语音识别，{{ai}} 用于 AI 润色。它们在这台 Mac 上运行，需下载 {{size}}。",
+    "homeBodySpeech": "{{speech}} 用于语音识别。它在这台 Mac 上运行，需下载 {{size}}。",
+    "homeBodyAi": "{{ai}} 用于 AI 润色。它在这台 Mac 上运行，需下载 {{size}}。",
+    "dontShowAgain": "不再显示"
   }
 }
