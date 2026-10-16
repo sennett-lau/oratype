@@ -941,6 +941,13 @@
     "failed": "No se pudo empezar a grabar el atajo: {{error}}"
   },
   "whatsNew": {
+    "languageModels": "Tus idiomas: dile a Typelite qué idiomas hablas (en la configuración inicial o en Ajustes → Voz). Para el cantonés sugiere dos modelos integrados para descargar: Qwen3-ASR, que escribe el cantonés tal como lo dices, y Qwen 3.5 4B para el pulido.",
+    "clipboardSafe": "Typelite ya no toca tu portapapeles: un resultado que no puede escribir espera en la cápsula Copiar, tras pegar vuelve todo lo que habías copiado (también imágenes y archivos) y los gestores de portapapeles ya no guardan los dictados.",
+    "typeAfterSwitch": "Si haces clic en una app y dictas enseguida, ahora el texto se escribe en lugar de copiarse.",
+    "askReadsPages": "Con la búsqueda web, Preguntar lee las primeras páginas de resultados, así que las preguntas sobre noticias, marcadores y próximos partidos obtienen respuesta. Las fechas que no puede confirmar se señalan.",
+    "translateHighlight": "Selecciona texto, pulsa Preguntar y di «traduce esto al inglés»: la traducción se abre en el panel de Preguntar con Copiar y Reemplazar.",
+    "askSelectText": "El texto del panel de Preguntar se puede seleccionar, y ⌘C copia la selección.",
+    "polishFillers": "El pulido quita muletillas y titubeos (um, 嗯, 呃) en todos los idiomas, conserva solo tu corrección cuando cambias de idea y ya no une frases con guiones.",
     "fasterSpeech": "El reconocimiento de voz integrado es casi el doble de rápido en dictados cortos: ya no procesa 30 segundos de silencio tras cada clip.",
     "fasterPaste": "El resultado se pega medio segundo antes: comprobar que tu app sigue al frente ya no usa AppleScript.",
     "fasterMic": "Con un micrófono elegido en Ajustes, la grabación empieza unos 0,3 segundos antes y no se pierden tus primeras palabras.",

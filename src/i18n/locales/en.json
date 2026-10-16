@@ -941,6 +941,13 @@
     "failed": "Could not start recording the shortcut: {{error}}"
   },
   "whatsNew": {
+    "languageModels": "Your languages: tell Typelite which languages you speak (in onboarding or Settings → Speech). For Cantonese it suggests two built-in models to download: Qwen3-ASR, which writes Cantonese the way you say it, and Qwen 3.5 4B for polish.",
+    "clipboardSafe": "Typelite leaves your clipboard alone: a result it cannot type waits in the Copy pill, a paste brings back everything you had copied (images and files too), and clipboard managers no longer record dictations.",
+    "typeAfterSwitch": "Clicking into an app and dictating right away now types the text instead of copying it.",
+    "askReadsPages": "Ask anything with web search reads the top result pages, so questions about news, scores and upcoming games get an answer. A date it cannot confirm is flagged.",
+    "translateHighlight": "Highlight text, press Ask and say “translate this into English”: the translation opens in the Ask panel with Copy and Replace.",
+    "askSelectText": "Text in the Ask panel can be selected, and ⌘C copies the selection.",
+    "polishFillers": "Polish removes fillers and hesitations (um, 嗯, 呃) in every language, keeps only your correction when you change your mind, and no longer joins sentences with dashes.",
     "fasterSpeech": "Built-in speech is about twice as fast for short dictations: it no longer processes 30 seconds of silence after every clip.",
     "fasterPaste": "Results paste about half a second sooner: checking that your app is still in front no longer runs AppleScript.",
     "fasterMic": "With a microphone chosen in Settings, recording starts about 0.3 seconds sooner, so your first words are not cut off.",
