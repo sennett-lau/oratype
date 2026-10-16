@@ -1,44 +1,58 @@
 # Built-in models suggested by language
 
-Typelite asks which languages the user speaks and suggests built-in speech and AI models that
-handle them, instead of offering only a larger and a smaller model per step. A Cantonese speaker
-gets spoken Cantonese on the Mac with one download: Qwen3-ASR 1.7B for speech and Qwen 3.5 4B
-for polish, the pair that already works well on a llama.cpp server. No server setup is needed.
+Typelite asks which languages the user speaks and checks whether it has a suggested setup for
+that combination. If it has, the speech and AI steps start with those built-in models chosen;
+otherwise the standard ones are used. The built-in lists also grow beyond a larger and a smaller
+model, so a Cantonese speaker can install Qwen3-ASR 1.7B and Qwen 3.5 4B on the Mac, the pair
+that already works well on a llama.cpp server, without setting up a server.
 
 Status: draft - 2026-10-16.
 
 ## Goals and non-goals
 
-- Offer more built-in models per step, each labelled with how well it handles each language.
-- Ask for the user's languages once (onboarding, changeable in Settings) and suggest one speech
-  and one AI model from them and from the Mac's memory and free disk space.
+- Offer more built-in models per step than "Best" and "Faster".
+- A "Your languages" onboarding step (also in Settings) that looks up a suggested setup for the
+  chosen language combination.
 - Run Qwen3-ASR built in, so spoken Cantonese no longer needs a self-hosted server.
-- Not a goal: a new runtime, cloud models, or changing the default for users who speak only
-  languages Whisper already handles well.
+- Not a goal: rating every model for every language. Typelite cannot benchmark every language,
+  so it shows no per-language quality labels.
+- Not a goal: a new runtime, cloud models, or a different default for combinations without a
+  suggested setup.
 
 ## Key decisions
 
-- **Qwen3-ASR runs in a second built-in llama-server**, on its own port, next to the polish
-  server. Reason: llama-server already ships with Typelite and serves Qwen3-ASR through
-  `/v1/audio/transcriptions`, so the existing OpenAI-compatible speech client (with its
-  `language X<asr_text>` handling) can talk to it.
-- **Suggestions come from a static table** of model × language fit, kept in code and checked by
-  the language evals. Reason: predictable, offline, and testable; the evals give each label its
-  evidence.
-- **Cantonese drives the first rule.** If the user speaks Cantonese, suggest Qwen3-ASR and Qwen
-  3.5 4B. Reason: Whisper writes Cantonese speech as standard written Chinese (about 44 %
-  character error on the eval clips), which polish cannot undo.
-- **Memory rules stay as they are.** The larger AI models need 16 GB; below that, the faster
-  model is suggested. Reason: same limits the current setup uses.
-- **The user confirms every download.** Suggestions never download on their own. Reason:
-  downloads are 2–3 GB each.
+- **Suggestions are per language combination, not per language.** A short table lists the
+  combinations Typelite has a setup for; each entry needs eval results behind it. Reason: we can
+  test a few combinations well, not every language.
+- **No quality labels.** Model lists show name and size only; the one tag is "Suggested for
+  your languages", on the model from a matching setup. Reason: labels would claim results we
+  have not measured.
+- **The languages step only preselects.** Speech recognition and AI polish keep their Built-in
+  card and per-step download; the suggested model is chosen and tagged there, and the user can
+  pick another. Reason: one way to install models, and the user confirms each 2–3 GB download.
+- **First setup: any combination with Cantonese** gets Qwen3-ASR 1.7B and Qwen 3.5 4B. Reason:
+  Whisper writes Cantonese speech as standard written Chinese (about 44 % character error on the
+  eval clips), which polish cannot undo.
+- **Qwen3-ASR runs in a second built-in llama-server** on its own port. Reason: llama-server
+  already ships with Typelite and serves `/v1/audio/transcriptions`, so the existing
+  OpenAI-compatible speech client (with its `language X<asr_text>` handling) can use it.
+- **Memory rules stay.** The 4B AI models need 16 GB; below that the setup falls back to
+  Qwen3 1.7B and says so. Reason: same limits as today.
+
+## Onboarding flow
+
+```
+Welcome → Voice input → Your languages (new) → Speech recognition → AI polish → Web search → shortcut tour
+                              │ suggested setup?        ▲ chosen + tagged      ▲ chosen + tagged
+                              └─────────────────────────┴──────────────────────┘
+```
 
 ## Parts
 
 | File | What it covers |
 |---|---|
-| [catalogue.md](catalogue.md) | The proposed models, sizes, language fit and the suggestion rules |
-| [mock.html](mock.html) | UI mock: onboarding languages step and the Settings model lists |
+| [catalogue.md](catalogue.md) | The proposed models, sizes and suggested setups |
+| [mock.html](mock.html) | UI mock: the whole onboarding flow and the Settings model lists |
 
 ## Open questions
 
@@ -48,7 +62,6 @@ Status: draft - 2026-10-16.
   default to suggest; the evals should compare them on Cantonese polish.
 - Speed and memory of Qwen3-ASR on Apple Silicon with both servers loaded, measured with
   `scripts/benchmark.mjs`.
-- Is Qwen3-ASR better than Whisper for Mandarin and mixed Mandarin–English too? The speech evals
-  decide whether the rule widens beyond Cantonese.
-- Where "languages you speak" lives: a new setting, or derived from the spoken-language and
-  translation settings that exist today.
+- Which other combinations deserve a setup (Mandarin with English, for example)? Each needs eval
+  results first.
+- Should the languages step also fill the Translate languages later in the tour?

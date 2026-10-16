@@ -1,31 +1,41 @@
 <title>Language Model Suggestions</title>
 <style>
-  /* Layout: page header, a control bar, then the app window on a desk, then notes.
+  /* Layout: header, flow strip and controls, the app window on a desk, notes.
      Page tokens follow the viewer's theme; app tokens copy the app (light Native Glass / dark Aurora). */
   :root {
     --page-bg: #f2f3f6; --page-ink: #1b1d22; --page-muted: #5d6270; --page-line: #dcdfe6; --page-card: #fff;
-    --page-accent: #0a84ff; --page-accent-ink: #fff;
+    --page-accent: #0a84ff; --page-accent-ink: #fff; --page-new: #0a7d5a; --page-new-soft: rgba(10,125,90,.12);
     --desk-a: #7fb2ff; --desk-b: #b49cf0; --desk-c: #f5b8a4;
     --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, monospace;
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) { color-scheme: dark; --page-bg: #111317; --page-ink: #e8eaef; --page-muted: #9aa0ad; --page-line: #2a2e36; --page-card: #181b21; --page-accent: #3fd8c2; --page-accent-ink: #04241f; }
+    :root:not([data-theme="light"]) { color-scheme: dark; --page-bg: #111317; --page-ink: #e8eaef; --page-muted: #9aa0ad; --page-line: #2a2e36; --page-card: #181b21; --page-accent: #3fd8c2; --page-accent-ink: #04241f; --page-new: #5fe0b4; --page-new-soft: rgba(95,224,180,.14); }
   }
-  :root[data-theme="dark"] { color-scheme: dark; --page-bg: #111317; --page-ink: #e8eaef; --page-muted: #9aa0ad; --page-line: #2a2e36; --page-card: #181b21; --page-accent: #3fd8c2; --page-accent-ink: #04241f; }
+  :root[data-theme="dark"] { color-scheme: dark; --page-bg: #111317; --page-ink: #e8eaef; --page-muted: #9aa0ad; --page-line: #2a2e36; --page-card: #181b21; --page-accent: #3fd8c2; --page-accent-ink: #04241f; --page-new: #5fe0b4; --page-new-soft: rgba(95,224,180,.14); }
   * { box-sizing: border-box; }
   body { background: var(--page-bg); color: var(--page-ink); font-family: var(--ui); font-size: 15px; line-height: 1.5; padding-inline: 20px; padding-block: 32px 64px; }
-  .wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
   .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--page-muted); }
   h1 { margin: 4px 0 6px; font-size: clamp(24px, 3.6vw, 32px); line-height: 1.15; text-wrap: balance; }
-  .lead { margin: 0; color: var(--page-muted); max-width: 70ch; }
+  .lead { margin: 0; color: var(--page-muted); max-width: 72ch; }
   .bar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
   .ctl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   .label { font-family: var(--mono); font-size: 11px; color: var(--page-muted); letter-spacing: .06em; text-transform: uppercase; }
   .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--page-line); border-radius: 9px; overflow: hidden; background: var(--page-card); }
   .seg button { font: inherit; font-size: 13px; padding: 6px 12px; border: 0; background: transparent; color: var(--page-ink); cursor: pointer; }
   .seg button[aria-pressed="true"] { background: var(--page-accent); color: var(--page-accent-ink); }
-  .seg button:focus-visible { outline: 2px solid var(--page-accent); outline-offset: -2px; }
+  .seg button:focus-visible, .flow button:focus-visible { outline: 2px solid var(--page-accent); outline-offset: -2px; }
+
+  /* Flow strip: the onboarding steps in order; clicking one jumps there. */
+  .flow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .flow button { font: inherit; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; border: 1px solid var(--page-line); background: var(--page-card); color: var(--page-ink); cursor: pointer; }
+  .flow button[aria-current="step"] { border-color: var(--page-accent); box-shadow: 0 0 0 1px var(--page-accent); }
+  .flow .n { font-family: var(--mono); font-size: 11px; color: var(--page-muted); font-variant-numeric: tabular-nums; }
+  .flow .mark { font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 0 6px; border-radius: 999px; background: var(--page-new-soft); color: var(--page-new); }
+  .flow .mark.same { background: transparent; color: var(--page-muted); font-weight: 500; padding: 0; }
+  .flow .arrow { color: var(--page-muted); font-size: 12px; }
+
   .notes { background: var(--page-card); border: 1px solid var(--page-line); border-radius: 12px; padding: 14px 18px; font-size: 14px; color: var(--page-muted); }
   .notes b { color: var(--page-ink); }
   .notes ul { margin: 6px 0 0; padding-left: 20px; display: grid; gap: 4px; }
@@ -34,9 +44,9 @@
 
   /* App tokens */
   .app {
-    --content: rgba(255,255,255,.78); --glass: rgba(246,246,248,.7); --card: #fff; --ink: #1d1d1f; --muted: #6e6e73; --faint: #8e8e93;
+    --content: rgba(255,255,255,.8); --glass: rgba(246,246,248,.7); --card: #fff; --ink: #1d1d1f; --muted: #6e6e73; --faint: #8e8e93;
     --line: rgba(0,0,0,.09); --hair: rgba(0,0,0,.06); --accent: #0a84ff; --accent-ink: #fff; --accent-soft: rgba(10,132,255,.12);
-    --ok: #248a3d; --ok-soft: rgba(52,199,89,.16); --warn: #b25000; --warn-soft: rgba(255,159,10,.18); --field: rgba(0,0,0,.045);
+    --ok: #30d158; --field: rgba(0,0,0,.045); --pop: #fff; --keycap: #fff; --keycap-line: #d2d2d7;
     --tint-a: transparent; --tint-b: transparent; --lights-a: #ff5f57; --lights-b: #febc2e; --lights-c: #28c840;
     color: var(--ink); font-family: var(--ui); font-size: 13px;
   }
@@ -44,116 +54,151 @@
     color-scheme: dark;
     --content: rgba(14,20,30,.62); --glass: rgba(18,24,34,.55); --card: rgba(36,44,60,.72); --ink: #f1f6ff; --muted: #a6b3c8; --faint: #6f7d94;
     --line: rgba(255,255,255,.12); --hair: rgba(255,255,255,.08); --accent: #3fd8c2; --accent-ink: #04241f; --accent-soft: rgba(63,216,194,.18);
-    --ok: #5fe08a; --ok-soft: rgba(48,209,88,.18); --warn: #ffb648; --warn-soft: rgba(255,159,10,.2); --field: rgba(255,255,255,.06);
+    --field: rgba(255,255,255,.06); --pop: #1f2735; --keycap: #2c3646; --keycap-line: #445066;
     --tint-a: rgba(63,216,194,.24); --tint-b: rgba(175,82,222,.24);
   }
-  .win { max-width: 780px; margin: 0 auto; border-radius: 12px; overflow: hidden; position: relative;
+  .win { max-width: 760px; margin: 0 auto; border-radius: 12px; overflow: hidden; position: relative;
     background: radial-gradient(60% 50% at 90% 0%, var(--tint-a), transparent 70%), radial-gradient(50% 45% at 10% 100%, var(--tint-b), transparent 70%), var(--content);
     backdrop-filter: blur(30px) saturate(1.8); -webkit-backdrop-filter: blur(30px) saturate(1.8);
     box-shadow: 0 30px 60px rgba(20,20,50,.28), 0 0 0 .5px rgba(0,0,0,.2); }
-  .lights { display: flex; gap: 8px; padding: 14px 16px 0; }
+  .lights { display: flex; gap: 8px; padding: 14px 16px 0; align-items: center; }
   .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
   .lights i:nth-child(1) { background: var(--lights-a); } .lights i:nth-child(2) { background: var(--lights-b); } .lights i:nth-child(3) { background: var(--lights-c); }
 
-  /* Shared pieces */
+  /* Shared app pieces */
   .card { background: var(--card); border-radius: 12px; box-shadow: 0 0 0 .5px var(--line); padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+  .card-head { display: flex; gap: 12px; align-items: flex-start; }
+  .ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); flex: none; }
+  .ic svg { width: 17px; height: 17px; }
+  .card h3 { margin: 0; font-size: 14px; font-weight: 600; }
+  .card p { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
   .tag { font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); letter-spacing: .02em; white-space: nowrap; }
-  .badge { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .badge { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
   .badge.muted { background: var(--field); color: var(--muted); }
   .btn { font: inherit; font-size: 13px; font-weight: 500; padding: 6px 14px; border-radius: 7px; border: 0; background: var(--accent); color: var(--accent-ink); cursor: pointer; white-space: nowrap; }
   .btn.ghost { background: var(--field); color: var(--ink); }
-  .btn:disabled { opacity: .55; cursor: default; }
-  .btn:focus-visible, .link:focus-visible, .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .btn.invisible { visibility: hidden; }
+  .btn:focus-visible, .link:focus-visible, .opt:focus-visible, .tok button:focus-visible, .addbtn:focus-visible, .pop button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .link { font: inherit; font-size: 12.5px; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; }
   .link.muted { color: var(--muted); }
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
-  .chip { font: inherit; font-size: 12.5px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--field); color: var(--ink); cursor: pointer; }
-  .chip[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 600; }
-  .chip small { font-weight: 400; color: var(--muted); margin-left: 4px; }
-  .chip[aria-pressed="true"] small { color: inherit; opacity: .8; }
-  .fit { font-size: 11px; padding: 1px 7px; border-radius: 6px; white-space: nowrap; background: var(--field); color: var(--muted); }
-  .fit.best { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
-  .fit.good { background: var(--field); color: var(--ink); }
-  .fit.warn { background: var(--warn-soft); color: var(--warn); font-weight: 600; }
   .hw { font-size: 11.5px; color: var(--muted); }
-  .track { height: 5px; border-radius: 3px; background: var(--hair); overflow: hidden; }
-  .track i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .2s linear; }
+  .track { height: 6px; border-radius: 3px; background: var(--hair); overflow: hidden; }
+  .track i { display: block; height: 100%; width: 0; background: var(--accent); border-radius: 3px; transition: width .15s linear; }
   @media (prefers-reduced-motion: reduce) { .track i { transition: none; } }
+  .progress-row { display: flex; justify-content: space-between; gap: 12px; font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+  .ready { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  .check { width: 18px; height: 18px; border-radius: 50%; background: var(--ok); display: grid; place-items: center; flex: none; }
+  .check::after { content: ""; width: 7px; height: 4px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: translateY(-1px) rotate(-45deg); }
 
-  /* Onboarding */
-  .ob { padding: 14px 36px 24px; display: flex; flex-direction: column; gap: 16px; }
-  .dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 6px; }
+  /* Onboarding window (OnboardingLayout) */
+  .ob { min-height: 560px; display: flex; flex-direction: column; }
+  .ob-top { height: 8px; }
+  .close { position: absolute; top: 10px; right: 12px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: var(--muted); background: var(--field); font-size: 12px; }
+  .dots { display: flex; gap: 6px; justify-content: center; padding-top: 6px; }
   .dots span { width: 6px; height: 6px; border-radius: 3px; background: var(--hair); }
   .dots span.done { background: var(--muted); opacity: .5; }
   .dots span.now { width: 18px; background: var(--accent); }
-  .ob h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; }
-  .ob .sub { margin: 4px 0 0; color: var(--muted); }
-  .from-mac { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
-  .rec-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-  .rec-head h3 { margin: 0; font-size: 14px; font-weight: 600; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-  .pick { border-radius: 10px; box-shadow: 0 0 0 1px var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-  .pick .role { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
-  .pick b { font-size: 13.5px; }
-  .pick .why { font-size: 12px; color: var(--muted); line-height: 1.45; }
-  .pick .size { font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
-  .pick .track { margin-top: 6px; }
-  .pick .state { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .compare { border-radius: 10px; background: var(--field); padding: 10px 12px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 5px 12px; align-items: baseline; font-size: 12.5px; }
-  .compare .k { color: var(--muted); font-size: 11.5px; white-space: nowrap; }
-  .compare .zh { font-size: 13.5px; letter-spacing: .02em; }
-  .compare .dim { color: var(--muted); }
-  .rec-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-  .ob-foot { display: flex; justify-content: space-between; align-items: center; padding-top: 6px; }
+  .ob-area { flex: 1; display: flex; flex-direction: column; padding: 0 32px; }
+  .ob-block { margin: auto 0; padding: 14px 0 16px; }
+  .ob-title { text-align: center; padding-bottom: 20px; }
+  .ob-title h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; }
+  .ob-title p { margin: 4px auto 0; color: var(--muted); max-width: 46ch; }
+  .ob-content { margin: 0 auto; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 12px; }
+  .ob-content.wide { max-width: 480px; }
+  .ob-foot { display: flex; align-items: center; gap: 8px; padding: 14px 32px 16px; }
+  .ob-foot .grow { flex: 1; }
+  .intro { margin: 0; color: var(--muted); font-size: 12.5px; text-align: center; }
+
+  /* Welcome permissions */
+  .perm { display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
+  .perm + .perm { border-top: 1px solid var(--hair); }
+  .perm div { flex: 1; min-width: 0; }
+  .perm b { font-size: 13px; display: block; }
+  .perm span { font-size: 12px; color: var(--muted); }
+  .list { display: flex; flex-direction: column; border-radius: 12px; box-shadow: 0 0 0 .5px var(--line); background: var(--card); overflow: hidden; }
+
+  /* Microphone */
+  .select { font: inherit; font-size: 13px; padding: 7px 10px; border-radius: 7px; background: var(--field); color: var(--ink); display: flex; justify-content: space-between; }
+  .meter { display: flex; gap: 3px; height: 26px; align-items: flex-end; }
+  .meter i { flex: 1; border-radius: 2px; background: var(--accent); opacity: .85; }
+
+  /* Languages picker (like Translate into) */
+  .langs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; position: relative; }
+  .tok { display: inline-flex; align-items: center; gap: 4px; padding: 4px 4px 4px 11px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 12.5px; font-weight: 600; }
+  .tok small { font-weight: 400; opacity: .8; }
+  .tok button { all: unset; cursor: pointer; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; }
+  .tok button:hover { background: var(--accent-soft); }
+  .addbtn { font: inherit; font-size: 12.5px; padding: 4px 11px; border-radius: 999px; border: 1px dashed var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  .pop { position: absolute; top: calc(100% + 6px); left: 0; z-index: 5; width: min(260px, 100%); max-height: 240px; overflow-y: auto; background: var(--pop); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,.25), 0 0 0 .5px var(--line); padding: 4px; display: flex; flex-direction: column; }
+  .pop button { all: unset; cursor: pointer; padding: 6px 10px; border-radius: 6px; font-size: 12.5px; display: flex; justify-content: space-between; gap: 10px; }
+  .pop button:hover { background: var(--accent-soft); }
+  .pop button small { color: var(--muted); }
+  .from-mac { font-size: 11.5px; color: var(--muted); }
+  .sugg { border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; background: var(--card); box-shadow: 0 0 0 .5px var(--line); }
+  .sugg h3 { margin: 0; font-size: 13.5px; font-weight: 600; }
+  .sugg .rows { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px 12px; align-items: baseline; font-size: 12.5px; }
+  .sugg .rows .k { color: var(--muted); }
+  .sugg .rows .s { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .sugg .note { font-size: 12px; color: var(--muted); }
+  .sugg.none { background: var(--field); box-shadow: none; }
+
+  /* Built-in card model options */
+  .opts { display: flex; flex-direction: column; gap: 6px; }
+  .opt { all: unset; box-sizing: border-box; border-radius: 9px; padding: 9px 11px; box-shadow: 0 0 0 1px var(--line); cursor: pointer; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1px 10px; align-items: center; }
+  .opt b { font-size: 12.5px; font-weight: 600; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .opt span.d { font-size: 11.5px; color: var(--muted); grid-column: 1; }
+  .opt .st { grid-row: 1 / span 2; grid-column: 2; font-size: 11px; color: var(--muted); }
+  .opt[aria-checked="true"] { box-shadow: 0 0 0 2px var(--accent); background: var(--accent-soft); }
+  .opt[aria-disabled="true"] { opacity: .5; cursor: default; }
+  .card-foot { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
+  .below { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
+
+  /* Shortcut tour */
+  .keys { display: flex; justify-content: center; gap: 8px; padding: 10px 0; }
+  .keycap { min-width: 54px; padding: 10px 14px; border-radius: 9px; background: var(--keycap); box-shadow: 0 0 0 1px var(--keycap-line), 0 2px 0 var(--keycap-line); font-weight: 600; text-align: center; font-size: 14px; }
+  .center { text-align: center; color: var(--muted); font-size: 12.5px; margin: 0; }
 
   /* Settings */
-  .set { display: grid; grid-template-columns: 170px minmax(0, 1fr); min-height: 520px; }
+  .set { display: grid; grid-template-columns: 170px minmax(0, 1fr); min-height: 540px; }
   .side { background: var(--glass); padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--hair); }
   .brand { font-weight: 600; font-size: 14px; padding: 10px 8px 12px; }
   .nav { padding: 6px 9px; border-radius: 7px; font-size: 13px; color: var(--ink); }
   .nav.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-  .main { padding: 26px 26px 26px; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+  .main { padding: 26px; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
   .main h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
   .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--hair); padding-bottom: 10px; flex-wrap: wrap; }
   .tabs span { padding: 4px 10px; border-radius: 6px; font-size: 12.5px; color: var(--muted); }
   .tabs span.on { background: var(--field); color: var(--ink); font-weight: 600; }
-  .yours { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
-  .yours b { color: var(--ink); font-weight: 600; }
-  .banner { border-radius: 10px; padding: 12px 14px; background: var(--accent-soft); display: flex; gap: 12px; align-items: flex-start; }
-  .banner .ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); flex: none; font-weight: 700; font-size: 14px; }
-  .banner .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-  .banner .txt b { font-size: 13px; }
-  .banner .txt span { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
-  .banner .acts { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
-  .list { display: flex; flex-direction: column; border-radius: 12px; box-shadow: 0 0 0 .5px var(--line); background: var(--card); overflow: hidden; }
-  .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 14px; padding: 12px 14px; align-items: center; }
+  .group-label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .banner { border-radius: 10px; padding: 12px 14px; background: var(--accent-soft); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .banner .txt { flex: 1; min-width: 200px; font-size: 12.5px; }
+  .banner .txt b { display: block; font-size: 13px; }
+  .row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; padding: 11px 14px; align-items: center; }
   .row + .row { border-top: 1px solid var(--hair); }
-  .row.suggested { background: linear-gradient(90deg, var(--accent-soft), transparent 70%); }
   .row .name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; font-size: 13.5px; }
   .row .detail { font-size: 12px; color: var(--muted); }
-  .row .fits { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-  .row .fits .lang { font-size: 11px; color: var(--faint); margin-right: -2px; }
-  .row .act { display: flex; gap: 10px; align-items: center; justify-content: flex-end; }
+  .row .act { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 10px; align-items: center; }
   .foot-note { font-size: 11.5px; color: var(--muted); }
 
   @media (max-width: 640px) {
-    .desk { padding: 18px 10px; }
-    .ob { padding: 12px 16px 18px; }
-    .picks { grid-template-columns: minmax(0, 1fr); }
+    .desk { padding: 16px 8px; }
+    .ob-area { padding: 0 14px; }
+    .ob-foot { padding: 12px 14px 14px; }
     .set { grid-template-columns: minmax(0, 1fr); }
     .side { display: none; }
     .main { padding: 18px 14px; }
-    .compare { grid-template-columns: minmax(0, 1fr); gap: 2px; }
-    .compare .r { margin-bottom: 6px; }
+    .flow .arrow { display: none; }
   }
 </style>
 
 <div class="wrap">
   <header>
     <div class="eyebrow">Plan language-model-suggestions · UI mock</div>
-    <h1>Built-in models picked by the languages you speak</h1>
-    <p class="lead">Typelite asks which languages you speak and suggests built-in speech and AI models that handle them,
-      so a Cantonese speaker gets spoken Cantonese on the Mac without setting up a server. Click the languages to see the suggestion change.</p>
+    <h1>Onboarding with a languages step</h1>
+    <p class="lead">A new “Your languages” step checks whether Typelite has a suggested setup for the languages you speak.
+      If it does, the Speech recognition and AI polish steps start with those models chosen; the rest of onboarding is unchanged.
+      Click through with Next, or jump to a step below.</p>
   </header>
 
   <div class="bar" role="group" aria-label="Mock controls">
@@ -175,49 +220,25 @@
       </div></div>
   </div>
 
+  <nav class="flow" id="flow" aria-label="Onboarding steps"></nav>
+
   <div class="desk" id="desk">
     <div class="win app" id="app">
       <div class="lights" aria-hidden="true"><i></i><i></i><i></i></div>
-
-      <!-- Onboarding: the languages step, before speech and AI setup -->
       <section class="ob" id="view-ob">
-        <div class="dots" aria-hidden="true"><span class="done"></span><span class="done"></span><span class="now"></span><span></span><span></span></div>
-        <div>
-          <h2>Which languages do you speak?</h2>
-          <p class="sub">Typelite suggests the built-in models that handle them best. You can change this later in Settings.</p>
-        </div>
-        <div>
-          <div class="chips" id="langChips"></div>
-          <div class="from-mac">Filled in from your Mac’s preferred languages.</div>
-        </div>
-
-        <div class="card" id="recCard">
-          <div class="rec-head">
-            <h3><span id="recTitle">Suggested for English and Cantonese</span> <span class="tag">Recommended</span></h3>
-            <button class="link muted" type="button" id="chooseSelf">Choose models myself</button>
-          </div>
-          <div class="picks">
-            <div class="pick" id="pickSpeech"></div>
-            <div class="pick" id="pickAi"></div>
-          </div>
-          <div class="compare" id="compare">
-            <span class="k">You say</span><span class="zh r">佢頭先話份報告聽日先可以俾我哋。</span><span></span>
-            <span class="k">Whisper</span><span class="zh dim r">他剛才說份報告明天才可以給我們。</span><span class="fit warn">Written Chinese</span>
-            <span class="k">Qwen3-ASR</span><span class="zh r">佢頭先話份報告聽日先可以俾我哋。</span><span class="fit best">Spoken Cantonese</span>
-          </div>
-          <div class="rec-foot">
-            <span class="hw" id="recHw"></span>
-            <button class="btn" type="button" id="installBoth">Download both</button>
-          </div>
-        </div>
-
+        <span class="close" aria-hidden="true">✕</span>
+        <div class="dots" id="dots" aria-hidden="true"></div>
+        <div class="ob-area"><div class="ob-block">
+          <div class="ob-title"><h2 id="obTitle"></h2><p id="obSub"></p></div>
+          <div class="ob-content" id="obContent"></div>
+        </div></div>
         <div class="ob-foot">
-          <button class="btn ghost" type="button">Back</button>
-          <button class="link muted" type="button">Set up later</button>
+          <button class="btn ghost" type="button" id="obBack">Back</button>
+          <span class="grow"></span>
+          <button class="btn" type="button" id="obNext">Next</button>
         </div>
       </section>
 
-      <!-- Settings: Speech or AI polish, built-in tab -->
       <section class="set" id="view-set" hidden>
         <nav class="side" aria-label="Settings sections">
           <div class="brand">Typelite</div>
@@ -229,171 +250,220 @@
           <div class="nav">General</div>
           <div class="nav">System</div>
         </nav>
-        <div class="main">
-          <h2 id="setTitle">Speech recognition</h2>
-          <div class="tabs"><span class="on">Built-in</span><span>Your own server or API key</span></div>
-          <div class="yours">Your languages: <b id="yoursList">English, 廣東話</b> <button class="link" type="button" id="changeLangs">Change</button></div>
-          <div class="banner" id="banner">
-            <div class="ic" aria-hidden="true">粵</div>
-            <div class="txt">
-              <b id="bannerTitle"></b>
-              <span id="bannerBody"></span>
-              <div class="acts"><button class="btn" type="button" id="bannerBtn"></button><button class="link muted" type="button" id="bannerLater">Not now</button></div>
-            </div>
-          </div>
-          <div class="list" id="modelList"></div>
-          <div class="foot-note" id="setFoot"></div>
-        </div>
+        <div class="main" id="setMain"></div>
       </section>
     </div>
   </div>
 
   <div class="notes">
-    <b>What the mock shows</b>
+    <b>What changes</b>
     <ul>
-      <li>The model catalogue grows from two sizes per step to models picked by language. Qwen3-ASR 1.7B and Qwen 3.5 4B are the pair that runs on the PC today.</li>
-      <li>Fit labels per language come from the language evals. Only “Written Chinese” for Whisper on Cantonese is measured so far (about 44 % character error on the eval clips); the others are proposals.</li>
-      <li>Qwen3-ASR runs in a second copy of the built-in AI server, so it needs no new runtime. Memory limits pick the faster AI model on 8 GB Macs.</li>
+      <li><b>New step, Your languages,</b> after Voice input. It only looks up whether a suggested setup exists for the combination. Today there is one: any combination with Cantonese gets Qwen3-ASR 1.7B and Qwen 3.5 4B. Other combinations keep the standard models.</li>
+      <li><b>Speech recognition and AI polish</b> keep their Built-in card and per-step download. The list now has three models instead of two, and the suggested one is chosen and tagged “Suggested for your languages”.</li>
+      <li><b>No quality labels per language.</b> Settings lists the models with size only; the suggestion tag appears only on the model from a suggested setup.</li>
+      <li>Welcome, Voice input, Web search and the shortcut tour are unchanged.</li>
     </ul>
   </div>
 </div>
 
 <script>
 const LANGS = [
-  { id: 'en', label: 'English' },
-  { id: 'yue', label: '廣東話', note: 'Cantonese' },
-  { id: 'cmn', label: '普通话', note: 'Mandarin' },
-  { id: 'cmn-tw', label: '國語', note: 'Taiwan' },
-  { id: 'ja', label: '日本語' },
-  { id: 'es', label: 'Español' },
-  { id: 'fr', label: 'Français' },
-  { id: 'de', label: 'Deutsch' },
+  { id: 'en', label: 'English', name: 'English' },
+  { id: 'yue', label: '廣東話', note: 'Cantonese', name: 'Cantonese' },
+  { id: 'cmn', label: '普通话', note: 'Mandarin', name: 'Mandarin' },
+  { id: 'cmn-tw', label: '國語', note: 'Mandarin, Taiwan', name: 'Mandarin (Taiwan)' },
+  { id: 'ja', label: '日本語', note: 'Japanese', name: 'Japanese' },
+  { id: 'ko', label: '한국어', note: 'Korean', name: 'Korean' },
+  { id: 'es', label: 'Español', note: 'Spanish', name: 'Spanish' },
+  { id: 'fr', label: 'Français', note: 'French', name: 'French' },
+  { id: 'de', label: 'Deutsch', note: 'German', name: 'German' },
 ]
-const NAME = { en: 'English', yue: 'Cantonese', cmn: 'Mandarin', 'cmn-tw': 'Mandarin (Taiwan)', ja: 'Japanese', es: 'Spanish', fr: 'French', de: 'German' }
-const SHORT = Object.fromEntries(LANGS.map((l) => [l.id, l.label]))
-const FIT_TEXT = { best: 'Recommended', good: 'Good', fair: 'Fair', warn: 'Written Chinese' }
+const BY_ID = Object.fromEntries(LANGS.map((l) => [l.id, l]))
 
-// Proposed catalogue. Sizes are the real download sizes.
+// Download sizes are the real ones.
 const SPEECH = [
-  { id: 'qwen3-asr', name: 'Qwen3-ASR 1.7B', gb: 2.5, detail: 'Spoken Cantonese, mixed Chinese and English · 2.5 GB',
-    fit: { en: 'good', yue: 'best', cmn: 'good', 'cmn-tw': 'good', ja: 'good', es: 'good', fr: 'good', de: 'good' } },
-  { id: 'turbo', name: 'Whisper large-v3 turbo', gb: 0.57, detail: 'Best accuracy for most languages · 0.57 GB', state: 'inuse',
-    fit: { en: 'best', yue: 'warn', cmn: 'good', 'cmn-tw': 'good', ja: 'best', es: 'best', fr: 'best', de: 'best' } },
-  { id: 'small', name: 'Whisper small', gb: 0.19, detail: 'Faster, less accurate · 0.19 GB', state: 'downloaded',
-    fit: { en: 'good', yue: 'warn', cmn: 'fair', 'cmn-tw': 'fair', ja: 'fair', es: 'good', fr: 'good', de: 'good' } },
+  { id: 'qwen3-asr', name: 'Qwen3-ASR 1.7B', gb: 2.5, detail: 'Qwen3-ASR 1.7B · 2.5 GB' },
+  { id: 'turbo', name: 'Best accuracy', gb: 0.57, detail: 'Whisper large-v3-turbo · 574 MB' },
+  { id: 'small', name: 'Faster', gb: 0.19, detail: 'Whisper small · 190 MB' },
 ]
 const AI = [
-  { id: 'qwen35-4b', name: 'Qwen 3.5 4B', gb: 2.7, minMem: 16, detail: 'Keeps the Hong Kong style when polishing Cantonese · 2.7 GB',
-    fit: { en: 'good', yue: 'best', cmn: 'good', 'cmn-tw': 'good', ja: 'good', es: 'good', fr: 'good', de: 'good' } },
-  { id: 'qwen3-4b', name: 'Qwen3 4B Instruct', gb: 2.5, minMem: 16, detail: 'Best quality for most languages · 2.5 GB', state: 'inuse',
-    fit: { en: 'best', yue: 'good', cmn: 'best', 'cmn-tw': 'best', ja: 'best', es: 'best', fr: 'best', de: 'best' } },
-  { id: 'qwen3-1.7b', name: 'Qwen3 1.7B', gb: 1.1, minMem: 8, detail: 'Faster, for Macs with 8 GB · 1.1 GB',
-    fit: { en: 'good', yue: 'fair', cmn: 'good', 'cmn-tw': 'good', ja: 'fair', es: 'good', fr: 'good', de: 'good' } },
+  { id: 'qwen35-4b', name: 'Qwen 3.5 4B', gb: 2.7, minMem: 16, detail: 'Qwen 3.5 4B · 2.7 GB' },
+  { id: 'qwen3-4b', name: 'Best quality', gb: 2.5, minMem: 16, detail: 'Qwen3 4B Instruct · 2.5 GB' },
+  { id: 'qwen3-1.7b', name: 'Faster', gb: 1.1, minMem: 8, detail: 'Qwen3 1.7B · 1.1 GB' },
+]
+// Suggested setups, keyed by language combination. Only combinations listed here get a suggestion.
+const SETUPS = [
+  { when: (langs) => langs.includes('yue'), speech: 'qwen3-asr', ai: 'qwen35-4b' },
 ]
 
-const state = { view: 'ob', mem: 32, langs: new Set(['en', 'yue']), installing: false, progress: {}, installed: new Set() }
+const STEPS = [
+  { id: 'welcome', flow: 'Welcome', title: 'Welcome', sub: 'Allow microphone, shortcuts and paste' },
+  { id: 'mic', flow: 'Voice input', title: 'Voice input', sub: 'Choose your microphone' },
+  { id: 'langs', flow: 'Your languages', mark: 'New', title: 'Your languages', sub: 'Typelite checks for a setup that suits the languages you speak.' },
+  { id: 'speech', flow: 'Speech recognition', mark: 'Changed', title: 'Speech recognition', sub: 'Turns your voice into text. It runs on this computer.', wide: true },
+  { id: 'ai', flow: 'AI polish', mark: 'Changed', title: 'AI polish', sub: 'Cleans up what you said: fillers out, corrections applied, punctuation in.', wide: true },
+  { id: 'web', flow: 'Web search', title: 'Web search', sub: 'Optional: lets Ask anything look up news, scores and schedules.' },
+  { id: 'tour', flow: 'Shortcut tour', title: 'Dictate', sub: 'Speak, and get clean text in any app.' },
+]
+
+const state = {
+  view: 'ob', step: 2, mem: 32, langs: ['en', 'yue'], pop: false,
+  choice: { speech: null, ai: null },            // null = follow the suggestion / default
+  dl: {},                                         // id -> { p, phase: 'download'|'test' }
+  installed: new Set(), inUse: { speech: null, ai: null }, dismissed: {},
+}
 const $ = (id) => document.getElementById(id)
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 
-function suggestion() {
-  const yue = state.langs.has('yue')
-  const speech = yue ? 'qwen3-asr' : state.mem < 8 ? 'small' : 'turbo'
-  const ai = state.mem < 16 ? 'qwen3-1.7b' : yue ? 'qwen35-4b' : 'qwen3-4b'
-  return { speech: SPEECH.find((m) => m.id === speech), ai: AI.find((m) => m.id === ai) }
+function names(ids) {
+  const n = ids.map((id) => BY_ID[id].name)
+  return n.length <= 1 ? n.join('') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1]
+}
+function setup() { return SETUPS.find((s) => s.when(state.langs)) || null }
+function fits(kind, m) { return kind !== 'ai' || state.mem >= m.minMem }
+function defaults() {
+  const s = setup()
+  const speech = s ? s.speech : 'turbo'
+  let ai = s ? s.ai : 'qwen3-4b'
+  if (!fits('ai', AI.find((m) => m.id === ai))) ai = 'qwen3-1.7b'
+  return { speech, ai }
+}
+function chosen(kind) {
+  const c = state.choice[kind]
+  const list = kind === 'ai' ? AI : SPEECH
+  if (c && fits(kind, list.find((m) => m.id === c))) return c
+  return defaults()[kind]
+}
+function suggestedId(kind) {
+  const s = setup(); if (!s) return null
+  const id = s[kind]; const list = kind === 'ai' ? AI : SPEECH
+  return fits(kind, list.find((m) => m.id === id)) ? id : null
 }
 
-function listNames(ids) {
-  const names = ids.map((id) => NAME[id])
-  if (names.length <= 1) return names.join('')
-  return names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1]
+/* ---------- Onboarding steps ---------- */
+function langPicker() {
+  const toks = state.langs.map((id) => {
+    const l = BY_ID[id]
+    return `<span class="tok">${esc(l.label)}${l.note && l.label !== l.note ? ` <small>${esc(l.note)}</small>` : ''}<button type="button" data-remove="${id}" aria-label="Remove ${esc(l.name)}">✕</button></span>`
+  }).join('')
+  const rest = LANGS.filter((l) => !state.langs.includes(l.id))
+  const pop = state.pop && rest.length ? `<div class="pop" role="listbox" aria-label="Languages">${rest.map((l) =>
+    `<button type="button" role="option" data-add="${l.id}">${esc(l.label)}<small>${esc(l.note || '')}</small></button>`).join('')}</div>` : ''
+  return `<div class="langs">${toks}${rest.length ? `<button type="button" class="addbtn" id="addLang" aria-expanded="${state.pop}">+ Add language</button>` : ''}${pop}</div>`
 }
 
-function whySpeech(m) {
-  if (m.id === 'qwen3-asr') return 'Writes Cantonese the way you say it (口語) and keeps the English words you mix in.'
-  if (m.id === 'small') return 'Light enough for this Mac. Accurate for clear speech.'
-  return 'The most accurate Whisper model for ' + (state.langs.size ? listNames([...state.langs]) : 'most languages') + '.'
-}
-function whyAi(m) {
-  if (m.id === 'qwen35-4b') return 'Cleans up Cantonese without turning it into written Chinese.'
-  if (m.id === 'qwen3-1.7b') return 'The larger models need 16 GB of memory, so the faster one is suggested.'
-  return 'Best polish quality for ' + (state.langs.size ? listNames([...state.langs]) : 'most languages') + '.'
-}
-
-function pickHtml(role, m, why) {
-  const p = state.progress[m.id]
-  const done = state.installed.has(m.id)
-  const status = done ? '<span class="state">Ready</span>'
-    : p != null ? `<div class="track" role="progressbar" aria-label="${m.name} download" aria-valuenow="${Math.round(p)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${p}%"></i></div><span class="state">Downloading ${Math.round(p)}% · ${(m.gb * p / 100).toFixed(1)} of ${m.gb} GB</span>`
-    : `<span class="size">${m.gb} GB download</span>`
-  return `<span class="role">${role}</span><b>${m.name}</b><span class="why">${why}</span>${status}`
+function suggestionBox() {
+  if (!state.langs.length) return `<div class="sugg none"><span class="note">Add the languages you speak. You can also skip this; the standard built-in models are used.</span></div>`
+  const s = setup()
+  if (!s) return `<div class="sugg none"><h3>No suggested setup for ${esc(names(state.langs))}</h3>
+    <span class="note">The next steps start with the standard built-in models. You can still choose any model there.</span></div>`
+  const sp = SPEECH.find((m) => m.id === s.speech)
+  let ai = AI.find((m) => m.id === s.ai), aiNote = ''
+  if (!fits('ai', ai)) { aiNote = `<span class="note">This Mac has 8 GB of memory, so AI polish starts with Qwen3 1.7B instead of ${esc(ai.name)}.</span>`; ai = AI.find((m) => m.id === 'qwen3-1.7b') }
+  return `<div class="sugg"><h3>Suggested setup for ${esc(names(state.langs))}</h3>
+    <div class="rows">
+      <span class="k">Speech recognition</span><span>${esc(sp.detail.split(' · ')[0])}</span><span class="s">${sp.gb} GB</span>
+      <span class="k">AI polish</span><span>${esc(ai.detail.split(' · ')[0])}</span><span class="s">${ai.gb} GB</span>
+    </div>
+    ${aiNote}
+    <span class="note">The next two steps start with these models chosen. You download each one there, or pick another.</span></div>`
 }
 
-function renderChips() {
-  $('langChips').innerHTML = LANGS.map((l) =>
-    `<button type="button" class="chip" id="lang-${l.id}" data-lang="${l.id}" aria-pressed="${state.langs.has(l.id)}">${l.label}${l.note ? `<small>${l.note}</small>` : ''}</button>`).join('')
+function builtinCard(kind) {
+  const list = kind === 'ai' ? AI : SPEECH
+  const pick = chosen(kind), sug = suggestedId(kind)
+  const m = list.find((x) => x.id === pick)
+  const icon = kind === 'ai'
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M19 15l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>'
+  const opts = list.map((x) => {
+    const ok = fits(kind, x)
+    const st = state.installed.has(x.id) ? (state.inUse[kind] === x.id ? 'In use' : 'Downloaded') : state.dl[x.id] ? `${Math.round(state.dl[x.id].p)}%` : ok ? '' : 'Needs 16 GB'
+    return `<button type="button" class="opt" role="radio" data-pick="${kind}:${x.id}" aria-checked="${x.id === pick}" ${ok ? '' : 'aria-disabled="true"'}>
+      <b>${esc(x.name)}${x.id === sug ? ' <span class="tag">Suggested for your languages</span>' : ''}</b>
+      <span class="d">${esc(x.detail)}</span><span class="st">${st}</span></button>`
+  }).join('')
+  const d = state.dl[pick]
+  let status
+  if (state.installed.has(pick)) status = `<div class="ready"><span class="check"></span>Ready · tested on this computer in ${kind === 'ai' ? '0.6' : '0.9'} s</div>`
+  else if (d && d.phase === 'test') status = `<div class="progress-row"><span>${kind === 'ai' ? 'Starting the model and running a test…' : 'Loading the model and running a test…'}</span></div>`
+  else if (d) status = `<div class="track" role="progressbar" aria-label="Model download" aria-valuenow="${Math.round(d.p)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${d.p}%"></i></div>
+      <div class="progress-row"><span>${(m.gb * d.p / 100).toFixed(2)} of ${m.gb} GB</span><span>about ${Math.max(1, Math.round((100 - d.p) / 9))} s left</span></div>`
+  else status = `<div class="card-foot"><span class="hw" style="margin-right:auto">${state.mem >= 16 ? 'Apple M1 Pro · 32 GB' : 'Apple M2 · 8 GB'}</span><button class="btn" type="button" data-download="${kind}:${pick}">Download · ${m.gb} GB</button></div>`
+  const body = kind === 'ai' ? 'Runs a small open model inside Typelite on this computer. No other software needed.' : 'Runs inside Typelite on this computer. No other software needed.'
+  return `<div class="card">
+      <div class="card-head"><span class="ic">${icon}</span><div><h3>Built-in</h3><p>${body}</p></div></div>
+      <div class="opts" role="radiogroup" aria-label="Model">${opts}</div>
+      ${status}
+    </div>
+    <div class="below"><button class="link" type="button">Use your own server or API key…</button><button class="link muted" type="button" data-skip>Skip for now</button></div>`
+}
+
+function stepContent(step) {
+  switch (step.id) {
+    case 'welcome': return `<p class="intro">Welcome to Typelite. Press a shortcut, speak, and polished text lands wherever you type. First, allow the three things Typelite needs.</p>
+      <div class="list">${[['Microphone', 'Hear your voice while you hold or tap a shortcut.'], ['Accessibility', 'Global shortcuts and typing into other apps.'], ['Automation', 'Control System Events to paste and to see which app is in front.']]
+        .map(([a, b]) => `<div class="perm"><div><b>${a}</b><span>${b}</span></div><span class="badge">Granted</span></div>`).join('')}</div>`
+    case 'mic': return `<p class="intro">Pick the microphone Typelite should use. Speak and watch the meter move.</p>
+      <div class="select"><span>MacBook Pro Microphone</span><span aria-hidden="true">⌄</span></div>
+      <div class="meter" aria-hidden="true">${[30, 55, 80, 60, 95, 70, 45, 85, 65, 40, 75, 50, 30, 20, 12, 8].map((h) => `<i style="height:${h}%"></i>`).join('')}</div>`
+    case 'langs': return `${langPicker()}<span class="from-mac">Filled in from your Mac’s preferred languages.</span>${suggestionBox()}`
+    case 'speech': return builtinCard('speech')
+    case 'ai': return builtinCard('ai')
+    case 'web': return `<div class="card"><div class="card-head"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span>
+      <div><h3>Web search</h3><p>Ask anything can look things up on the web. Off until you set it up.</p></div></div>
+      <div class="card-foot"><button class="btn ghost" type="button">Set up</button></div></div>`
+    case 'tour': return `<div class="keys"><span class="keycap">fn</span></div><p class="center">Press to start, press again to stop.</p><p class="center">Click the keys to choose different ones.</p><p class="center">Next: 2 short exercises to try it.</p>`
+  }
 }
 
 function renderOnboarding() {
-  const s = suggestion()
-  const langs = [...state.langs]
-  $('recTitle').textContent = langs.length ? 'Suggested for ' + listNames(langs) : 'Suggested for this Mac'
-  $('pickSpeech').innerHTML = pickHtml('Speech recognition', s.speech, whySpeech(s.speech))
-  $('pickAi').innerHTML = pickHtml('AI polish', s.ai, whyAi(s.ai))
-  $('compare').hidden = !state.langs.has('yue')
-  const total = s.speech.gb + s.ai.gb
-  $('recHw').textContent = state.mem >= 16
-    ? `This Mac: Apple M1 Pro, 32 GB memory. Both run together comfortably. ${total.toFixed(1)} GB to download.`
-    : `This Mac: Apple M2, 8 GB memory. ${total.toFixed(1)} GB to download.`
-  const allDone = state.installed.has(s.speech.id) && state.installed.has(s.ai.id)
-  const btn = $('installBoth')
-  btn.disabled = state.installing || allDone
-  btn.textContent = allDone ? 'Installed' : state.installing ? 'Downloading…' : `Download both · ${total.toFixed(1)} GB`
+  const step = STEPS[state.step]
+  $('dots').innerHTML = STEPS.map((_, i) => `<span class="${i < state.step ? 'done' : i === state.step ? 'now' : ''}"></span>`).join('')
+  $('obTitle').textContent = step.title
+  $('obSub').textContent = step.sub
+  $('obContent').className = 'ob-content' + (step.wide ? ' wide' : '')
+  $('obContent').innerHTML = stepContent(step)
+  $('obBack').classList.toggle('invisible', state.step === 0)
+  $('obNext').textContent = step.id === 'tour' ? 'Try it' : 'Next'
 }
 
-function rowHtml(m, suggestedId, kind) {
-  const langs = [...state.langs]
-  const fits = langs.map((id) => `<span class="lang">${SHORT[id]}</span><span class="fit ${m.fit[id]}">${FIT_TEXT[m.fit[id]]}</span>`).join('')
-  const tooBig = kind === 'ai' && state.mem < m.minMem
-  const inUse = m.state === 'inuse' && !state.installed.has(suggestedId)
-  const installed = state.installed.has(m.id) || m.state === 'downloaded' || m.state === 'inuse'
-  let act
-  if (tooBig) act = '<span class="badge muted">Needs 16 GB memory</span>'
-  else if (state.installed.has(m.id) && m.id === suggestedId) act = '<span class="badge">In use</span>'
-  else if (inUse) act = '<span class="badge">In use</span>'
-  else if (installed) act = '<button class="btn ghost" type="button">Use</button>'
-  else if (state.progress[m.id] != null) act = `<span class="badge muted">Downloading ${Math.round(state.progress[m.id])}%</span>`
-  else act = `<button class="btn${m.id === suggestedId ? '' : ' ghost'}" type="button" data-install="${m.id}">Download</button>`
-  return `<div class="row${m.id === suggestedId ? ' suggested' : ''}">
-    <div><div class="name">${m.name}${m.id === suggestedId ? ' <span class="tag">Suggested for you</span>' : ''}</div><div class="detail">${m.detail}</div></div>
-    <div class="act">${act}</div>
-    ${langs.length ? `<div class="fits">${fits}</div>` : ''}
-  </div>`
-}
-
+/* ---------- Settings ---------- */
 function renderSettings() {
-  const ai = state.view === 'ai'
-  const s = suggestion()
-  const models = ai ? AI : SPEECH
-  const sug = ai ? s.ai : s.speech
-  $('setTitle').textContent = ai ? 'AI polish' : 'Speech recognition'
-  $('nav-speech').className = 'nav' + (ai ? '' : ' on')
-  $('nav-ai').className = 'nav' + (ai ? ' on' : '')
-  $('yoursList').textContent = state.langs.size ? [...state.langs].map((id) => SHORT[id]).join(', ') : 'none chosen'
-  $('modelList').innerHTML = models.map((m) => rowHtml(m, sug.id, ai ? 'ai' : 'speech')).join('')
+  const kind = state.view === 'ai' ? 'ai' : 'speech'
+  const list = kind === 'ai' ? AI : SPEECH
+  const sug = suggestedId(kind)
+  const inUse = state.inUse[kind] || (kind === 'ai' ? 'qwen3-4b' : 'turbo')
+  $('nav-speech').className = 'nav' + (kind === 'speech' ? ' on' : '')
+  $('nav-ai').className = 'nav' + (kind === 'ai' ? ' on' : '')
+  const rows = list.map((m) => {
+    const ok = fits(kind, m)
+    const installed = state.installed.has(m.id) || m.id === inUse
+    let act
+    if (m.id === inUse) act = '<span class="badge">In use</span>'
+    else if (!ok) act = '<span class="badge muted">Needs 16 GB memory</span>'
+    else if (state.dl[m.id]) act = `<span class="badge muted">Downloading ${Math.round(state.dl[m.id].p)}%</span>`
+    else if (installed) act = `<button class="btn ghost" type="button" data-use="${kind}:${m.id}">Use</button>`
+    else act = `<button class="btn ghost" type="button" data-download="${kind}:${m.id}">Download</button>`
+    return `<div class="row"><div class="name">${esc(m.name)}${m.id === sug ? ' <span class="tag">Suggested for your languages</span>' : ''}</div><div class="act">${act}</div><div class="detail">${esc(m.detail)}</div></div>`
+  }).join('')
+  const showBanner = sug && sug !== inUse && !state.installed.has(sug) && !state.dl[sug] && !state.dismissed[kind]
+  const sm = list.find((m) => m.id === sug)
+  $('setMain').innerHTML = `
+    <h2>${kind === 'ai' ? 'AI polish' : 'Speech recognition'}</h2>
+    <div class="tabs"><span class="on">Built-in</span><span>Your own server or API key</span></div>
+    <div class="group-label">Your languages</div>
+    ${langPicker()}
+    ${showBanner ? `<div class="banner"><div class="txt"><b>Suggested setup for ${esc(names(state.langs))}</b>${kind === 'ai' ? 'AI polish' : 'Speech recognition'}: ${esc(sm.detail.split(' · ')[0])}.</div>
+      <button class="btn" type="button" data-download="${kind}:${sug}">Download · ${sm.gb} GB</button><button class="link muted" type="button" data-dismiss="${kind}">Not now</button></div>` : ''}
+    <div class="group-label">Built-in models</div>
+    <div class="list">${rows}</div>
+    <div class="foot-note">${kind === 'ai' ? 'Built-in AI runs in Typelite’s own AI server on this Mac.' : 'Whisper runs inside Typelite. Qwen3-ASR runs in Typelite’s built-in AI server.'}</div>`
+}
 
-  const current = ai ? 'qwen3-4b' : 'turbo'
-  const showBanner = state.langs.has('yue') && sug.id !== current && !state.installed.has(sug.id) && state.progress[sug.id] == null && !state.dismissed?.[state.view]
-  $('banner').hidden = !showBanner
-  if (showBanner) {
-    $('bannerTitle').textContent = ai ? 'You speak Cantonese. Qwen 3.5 4B keeps it spoken.' : 'You speak Cantonese. Whisper writes it as written Chinese.'
-    $('bannerBody').textContent = ai
-      ? 'It is the polish model that pairs with Qwen3-ASR, so 口語 words like 佢, 咗 and 俾 stay as you said them.'
-      : '“佢頭先話份報告聽日先俾我哋” comes out as “他剛才說份報告明天才給我們”. Qwen3-ASR keeps what you said.'
-    $('bannerBtn').textContent = `Download ${sug.name} · ${sug.gb} GB`
-    $('bannerBtn').dataset.install = sug.id
-  }
-  $('setFoot').textContent = ai
-    ? 'Built-in AI runs on this Mac in Typelite’s own AI server. Only one AI model is loaded at a time.'
-    : 'Qwen3-ASR runs in Typelite’s built-in AI server, next to the AI polish model. Whisper runs inside Typelite.'
+function renderFlow() {
+  $('flow').innerHTML = STEPS.map((s, i) => `${i ? '<span class="arrow" aria-hidden="true">→</span>' : ''}<button type="button" data-step="${i}" ${state.view === 'ob' && i === state.step ? 'aria-current="step"' : ''}>
+    <span class="n">${i + 1}</span>${esc(s.flow)}${s.mark ? `<span class="mark">${s.mark}</span>` : ''}</button>`).join('')
 }
 
 function render() {
@@ -401,41 +471,40 @@ function render() {
   $('view-set').hidden = state.view === 'ob'
   for (const b of $('viewSeg').children) b.setAttribute('aria-pressed', b.dataset.view === state.view)
   for (const b of $('macSeg').children) b.setAttribute('aria-pressed', Number(b.dataset.mem) === state.mem)
+  renderFlow()
   if (state.view === 'ob') renderOnboarding(); else renderSettings()
 }
 
-function download(ids) {
-  ids = ids.filter((id) => !state.installed.has(id) && state.progress[id] == null)
-  if (!ids.length) return
-  state.installing = true
-  for (const id of ids) state.progress[id] = 0
-  const timer = setInterval(() => {
-    for (const id of ids) {
-      if (state.progress[id] == null) continue
-      state.progress[id] = Math.min(100, state.progress[id] + 3 + Math.random() * 5)
-      if (state.progress[id] >= 100) { delete state.progress[id]; state.installed.add(id) }
-    }
-    if (ids.every((id) => state.installed.has(id))) { clearInterval(timer); state.installing = false }
+/* ---------- Downloads (simulated) ---------- */
+function download(kind, id) {
+  if (state.installed.has(id) || state.dl[id]) return
+  state.dl[id] = { p: 0, phase: 'download' }
+  const t = setInterval(() => {
+    const d = state.dl[id]
+    if (d.phase === 'download') { d.p = Math.min(100, d.p + 4 + Math.random() * 6); if (d.p >= 100) { d.phase = 'test'; d.wait = 8 } }
+    else if (--d.wait <= 0) { clearInterval(t); delete state.dl[id]; state.installed.add(id); state.inUse[kind] = id }
     render()
-  }, 120)
+  }, 110)
   render()
 }
 
 document.addEventListener('click', (e) => {
-  const chip = e.target.closest('[data-lang]')
-  if (chip) { const id = chip.dataset.lang; state.langs.has(id) ? state.langs.delete(id) : state.langs.add(id); renderChips(); render(); return }
-  const v = e.target.closest('[data-view]')
-  if (v) { state.view = v.dataset.view; render(); return }
-  const m = e.target.closest('[data-mem]')
-  if (m) { state.mem = Number(m.dataset.mem); render(); return }
-  const t = e.target.closest('[data-theme-app]')
-  if (t) { setAppTheme(t.dataset.themeApp === 'dark'); return }
-  const inst = e.target.closest('[data-install]')
-  if (inst) { download([inst.dataset.install]); return }
-  if (e.target.id === 'installBoth') { const s = suggestion(); download([s.speech.id, s.ai.id]); return }
-  if (e.target.id === 'chooseSelf') { state.view = 'speech'; render(); return }
-  if (e.target.id === 'changeLangs') { state.view = 'ob'; render(); return }
-  if (e.target.id === 'bannerLater') { state.dismissed = { ...(state.dismissed || {}), [state.view]: true }; render() }
+  const el = (sel) => e.target.closest(sel)
+  let x
+  if ((x = el('[data-view]'))) { state.view = x.dataset.view; state.pop = false; return render() }
+  if ((x = el('[data-mem]'))) { state.mem = Number(x.dataset.mem); return render() }
+  if ((x = el('[data-theme-app]'))) return setAppTheme(x.dataset.themeApp === 'dark')
+  if ((x = el('[data-step]'))) { state.view = 'ob'; state.step = Number(x.dataset.step); state.pop = false; return render() }
+  if ((x = el('[data-remove]'))) { state.langs = state.langs.filter((id) => id !== x.dataset.remove); state.choice = { speech: null, ai: null }; return render() }
+  if ((x = el('[data-add]'))) { state.langs = [...state.langs, x.dataset.add]; state.pop = false; state.choice = { speech: null, ai: null }; return render() }
+  if (el('#addLang')) { state.pop = !state.pop; return render() }
+  if ((x = el('[data-pick]'))) { if (x.getAttribute('aria-disabled') === 'true') return; const [k, id] = x.dataset.pick.split(':'); state.choice[k] = id; return render() }
+  if ((x = el('[data-download]'))) { const [k, id] = x.dataset.download.split(':'); return download(k, id) }
+  if ((x = el('[data-use]'))) { const [k, id] = x.dataset.use.split(':'); state.inUse[k] = id; return render() }
+  if ((x = el('[data-dismiss]'))) { state.dismissed[x.dataset.dismiss] = true; return render() }
+  if (el('[data-skip]') || el('#obNext')) { if (state.step < STEPS.length - 1) state.step++; state.pop = false; return render() }
+  if (el('#obBack')) { if (state.step > 0) state.step--; state.pop = false; return render() }
+  if (state.pop && !el('.pop')) { state.pop = false; render() }
 })
 
 function setAppTheme(dark) {
@@ -444,9 +513,7 @@ function setAppTheme(dark) {
   $('t-light').setAttribute('aria-pressed', !dark)
   $('t-dark').setAttribute('aria-pressed', dark)
 }
-
 const rootTheme = document.documentElement.getAttribute('data-theme')
 setAppTheme(rootTheme ? rootTheme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches)
-renderChips()
 render()
 </script>
