@@ -465,6 +465,14 @@ mod tests {
                 Some(true),
                 "{label}"
             );
+            // These windows show and place themselves from their own page
+            // (`useCapsuleResize`). WebKit suspends a page that has been hidden for about
+            // eight minutes; then the next run did its work without a pill.
+            assert_eq!(
+                window["backgroundThrottling"].as_str(),
+                Some("disabled"),
+                "{label}"
+            );
         }
     }
 
