@@ -33,6 +33,10 @@ pub const ASK_NO_SPEECH_ERROR: &str = "ask_no_speech";
 /// Plan `ask-panel-above-pill`: event with the start of the highlighted text (or `null`) that
 /// the Ask pill shows as a chip while it listens.
 pub const ASK_SELECTION_PREVIEW_EVENT: &str = "ask:selection_preview";
+/// Plan `hands-free-mode`: sent as an Ask run starts. `null` for a shortcut run; for a run the
+/// wake phrase started, what it does by default ("dictate" or "ask"), so the pill can show the
+/// Dictate pill for a request that will be typed.
+pub const ASK_HANDS_FREE_EVENT: &str = "ask:hands_free";
 /// Plan `searxng-setup`: after each real web search, whether it worked (the sidebar's dot).
 pub const SEARCH_RESULT_EVENT: &str = "search:result";
 
@@ -147,6 +151,11 @@ impl AskDictationState {
     /// Plan `hands-free-mode`: marks the run just reserved as started by the wake phrase.
     pub(crate) fn mark_hands_free(&self) {
         self.0.lock().unwrap_or_else(|e| e.into_inner()).hands_free = true;
+    }
+
+    /// The current run was started by the wake phrase.
+    fn is_hands_free(&self) -> bool {
+        self.0.lock().unwrap_or_else(|e| e.into_inner()).hands_free
     }
 
     fn clear_starting(&self) {
@@ -1572,10 +1581,15 @@ pub(crate) async fn start_reserved_ask_dictation(
             return Ok(start_result);
         }
 
-        // Before the state, so the pill opens with the chip (or without a stale one).
+        // Before the state, so the pill opens with the chip (or without a stale one), and as
+        // the Dictate pill when a hands-free request will be typed.
         let _ = app.emit(
             ASK_SELECTION_PREVIEW_EVENT,
             start_result.selected_text_preview.clone(),
+        );
+        let _ = app.emit(
+            ASK_HANDS_FREE_EVENT,
+            state.is_hands_free().then_some(config.hands_free.action),
         );
         emit_capsule_state(&app, PipelineState::AskRecording);
         let _ = app.emit("recording:deadline", recording_deadline.event);

@@ -475,7 +475,10 @@ export function useCapsuleResize(doneFlash = false, fadeTarget?: RefObject<HTMLE
   const translateDots = translatePill.dots
   const copyOffer = useAppStore((s) => s.copyOffer)
   // The highlight chip needs the wider pill.
-  const askWithSelection = useAppStore((s) => s.askSelectionPreview !== null)
+  const askWithSelection = useAppStore(
+    // A hands-free request that will be typed shows the Dictate pill, without the chip.
+    (s) => s.askSelectionPreview !== null && s.askHandsFreeAction !== 'dictate',
+  )
   // Only for the size: Ask's thinking state while it searches the web has the wider pill.
   const askSearching = useAppStore((s) => s.askSearched)
   const sizeState =

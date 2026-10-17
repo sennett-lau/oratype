@@ -30,6 +30,7 @@ import {
 import { useSpeechSetupStore } from '../stores/speechSetupStore'
 import { useAiSetupStore } from '../stores/aiSetupStore'
 import {
+  ASK_HANDS_FREE_EVENT,
   ASK_SELECTION_PREVIEW_EVENT,
   ASK_STAGE_EVENT,
   type AskStage,
@@ -122,8 +123,10 @@ export function useTauriEvents() {
         setRecordingDeadline(null)
       }
       if (state === 'preparing' || state === 'recording') {
-        // A dictation or translation run includes no highlight (plan `ask-panel-above-pill`).
+        // A dictation or translation run includes no highlight (plan `ask-panel-above-pill`),
+        // and is no hands-free request.
         useAppStore.getState().setAskSelectionPreview(null)
+        useAppStore.getState().setAskHandsFreeAction(null)
       }
       if (state === 'preparing' || state === 'recording' || state === 'ask_recording') {
         // Clear any previous error, or the calm fade, when starting a new pipeline run
@@ -163,6 +166,9 @@ export function useTauriEvents() {
     addListener<VoiceMode | null>('pipeline:voice_mode', setActiveVoiceMode)
     addListener<string | null>(ASK_SELECTION_PREVIEW_EVENT, (preview) =>
       useAppStore.getState().setAskSelectionPreview(preview ?? null),
+    )
+    addListener<'dictate' | 'ask' | null>(ASK_HANDS_FREE_EVENT, (action) =>
+      useAppStore.getState().setAskHandsFreeAction(action ?? null),
     )
     // Plan `ask-web-search`: "Searching the web…" while Ask searches.
     addListener<AskStage>(ASK_STAGE_EVENT, (stage) =>

@@ -6,8 +6,13 @@ What happens after the wake phrase. Part of [hands-free-mode](index.md).
 
 On a match, the listener starts Ask exactly as the Ask shortcut does
 (`hotkey::start_ask_hands_free`). The only difference is a `hands_free` flag on the Ask state.
-The pill shows the normal recording state. The onboarding shortcut gate applies, so nothing
-starts before onboarding is finished.
+The onboarding shortcut gate applies, so nothing starts before onboarding is finished.
+
+The pill shows the default action. As the run starts, `ask:hands_free` tells it what that is
+(`null` for a shortcut run). With typing as the default it draws the Dictate pill: the red dot
+and waveform while recording (✕ cancels the hands-free run, and there is no "About …" chip),
+"Transcribing" while the request is read, then Dictate's own Polishing and Pasting. With Ask as
+the default it is the Ask pill, as for the Ask shortcut.
 
 While Ask records, the listener feeds the same microphone audio to `AutoStop`
 (`hands_free/segment.rs`), with the same voice gate and a 3 s hangover:
@@ -19,7 +24,9 @@ While Ask records, the listener feeds the same microphone audio to `AutoStop`
   notes" goes on. A Latin name is decoded as English and, when that misses, once more as
   Chinese, so a request in Cantonese can end with 多謝 Sam. The phrase is cut from the
   transcript before routing (`strip_end_phrase`); a request that was only the phrase is no
-  request;
+  request. Speech recognition can still write the phrase in a way the matcher misses, so a
+  typed request's polish prompt also asks the model to leave a closing thank-you to the wake
+  name out (`with_hands_free_hint` in `pipeline.rs`, before the user's own preferences);
 - **end of speech:** 3 s quiet after speech → stop. Long enough for a thinking pause while
   dictating; the end phrase is the quick way;
 - **no speech:** nothing said within 5 s → stop. The usual voice check then ends the run with

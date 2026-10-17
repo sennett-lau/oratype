@@ -1,20 +1,28 @@
 import { useTranslation } from 'react-i18next'
 import { motion, useReducedMotion } from 'framer-motion'
 import { X } from 'lucide-react'
-import { abortRecording } from '../../lib/tauri'
+import { abortAskDictation, abortRecording } from '../../lib/tauri'
 import { Waveform } from './Waveform'
 import { useAppStore } from '../../stores/appStore'
 import { TranslatePillLanguage } from './TranslatePillLanguage'
 
-export function CapsuleRecording() {
+interface CapsuleRecordingProps {
+  /**
+   * Plan `hands-free-mode`: a hands-free request that will be typed shows this pill too. It is
+   * an Ask run underneath, so ✕ cancels that, and it never shows a Translate language.
+   */
+  handsFree?: boolean
+}
+
+export function CapsuleRecording({ handsFree = false }: CapsuleRecordingProps) {
   const { t } = useTranslation()
   const reduced = useReducedMotion()
-  const translating = useAppStore((state) => state.activeVoiceMode === 'translate')
+  const translating = useAppStore((state) => !handsFree && state.activeVoiceMode === 'translate')
 
   const handleCancel = async (e: React.MouseEvent) => {
     e.stopPropagation()
     try {
-      await abortRecording()
+      await (handsFree ? abortAskDictation() : abortRecording())
     } catch (err) {
       console.error('Failed to abort recording:', err)
     }

@@ -703,6 +703,11 @@ export interface AskDictationStartResult {
  * as a chip while it listens.
  */
 export const ASK_SELECTION_PREVIEW_EVENT = 'ask:selection_preview'
+/**
+ * Plan `hands-free-mode`: sent as an Ask run starts; for a run the wake phrase started, what it
+ * does by default ("dictate" or "ask"), else null.
+ */
+export const ASK_HANDS_FREE_EVENT = 'ask:hands_free'
 
 export type PendingAskMessage =
   | { kind: 'result'; payload: AskDictationResult }

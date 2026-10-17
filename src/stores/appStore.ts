@@ -525,6 +525,12 @@ interface AppState {
    */
   askSelectionPreview: string | null
   setAskSelectionPreview: (preview: string | null) => void
+  /**
+   * Plan `hands-free-mode`: for an Ask run the wake phrase started, what it does by default; null
+   * for a shortcut run. A request that will be typed shows the Dictate pill.
+   */
+  askHandsFreeAction: 'dictate' | 'ask' | null
+  setAskHandsFreeAction: (action: 'dictate' | 'ask' | null) => void
   /** Plan `ask-web-search`: what the Ask thinking pill says (searching the web, or thinking). */
   askStage: 'searching' | 'thinking'
   /**
@@ -1339,6 +1345,8 @@ export const useAppStore = create<AppState>((set) => ({
   setActiveVoiceMode: (activeVoiceMode) => set({ activeVoiceMode }),
   askSelectionPreview: null,
   setAskSelectionPreview: (askSelectionPreview) => set({ askSelectionPreview }),
+  askHandsFreeAction: null,
+  setAskHandsFreeAction: (askHandsFreeAction) => set({ askHandsFreeAction }),
   askStage: 'thinking',
   askSearched: false,
   setAskStage: (askStage) =>

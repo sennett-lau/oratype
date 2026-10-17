@@ -200,7 +200,10 @@ export function Capsule() {
   const typingNudge = useAppStore((s) => s.typingNudge)
   const setTypingNudge = useAppStore((s) => s.setTypingNudge)
   const quietFade = useAppStore((s) => s.quietFade)
-  const askSelectionPreview = useAppStore((s) => s.askSelectionPreview)
+  // Plan `hands-free-mode`: a hands-free request that will be typed looks like Dictate (no Ask
+  // icon, no "About …" chip).
+  const handsFreeTyping = useAppStore((s) => s.askHandsFreeAction === 'dictate')
+  const askSelectionPreview = useAppStore((s) => (handsFreeTyping ? null : s.askSelectionPreview))
   const lastInsertStatus = useAppStore((s) => s.lastInsertResult?.status ?? null)
   const { stopRecording, isRecording } = useRecording()
   const reducedMotion = useReducedMotion()
@@ -434,10 +437,18 @@ export function Capsule() {
             {capsuleState === 'polishing' && <CapsulePolishing />}
             {capsuleState === 'outputting' && <CapsulePasting />}
             {capsuleState === 'done' && <CapsuleDone replaced={replacedSelection} />}
-            {capsuleState === 'ask_recording' && (
-              <CapsuleAskRecording selectionPreview={askSelectionPreview} />
-            )}
-            {capsuleState === 'ask_thinking' && <CapsuleAskThinking searching={askSearchingNow} />}
+            {capsuleState === 'ask_recording' &&
+              (handsFreeTyping ? (
+                <CapsuleRecording handsFree />
+              ) : (
+                <CapsuleAskRecording selectionPreview={askSelectionPreview} />
+              ))}
+            {capsuleState === 'ask_thinking' &&
+              (handsFreeTyping ? (
+                <CapsuleProcessing cancellable={false} />
+              ) : (
+                <CapsuleAskThinking searching={askSearchingNow} />
+              ))}
             {capsuleState === 'error' && (
               <CapsuleError
                 message={shown.current.error}

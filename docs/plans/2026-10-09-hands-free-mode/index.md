@@ -52,6 +52,9 @@ Status: building (2026-10-17)
   dictated questions. "ask …" / 問下 … asks and "translate …" translates. With Ask as the
   default, "type …" dictates, and "write …" dictates unless a draft object follows ("write an
   email" stays Ask's draft command).
+- **The pill looks like the default action.** With typing as the default a hands-free request
+  shows the Dictate pill (red dot, then Transcribing and Polishing), with Ask as the default the
+  Ask pill. No separate hands-free icon: the user sees what will happen.
 - **"Thanks, Sam" ends a request; 3 s of quiet also does.** A spoken end keeps the hands off
   the keyboard, and the longer pause lets the user think mid-sentence. The end check reuses
   the wake model on the last 2.5 s before each pause.
@@ -79,8 +82,6 @@ Status: building (2026-10-17)
 - Real voices and rooms: the numbers are for synthetic `say` voices with mixed-in noise, now
   also at a built-in microphone's level. Collect a small real-voice set (with consent, kept
   outside the repository) before the plan is done.
-- The pill shows Ask's recording state for every hands-free request, also when it will be
-  typed. Should it show Dictate's look when typing is the default?
 - Should "Hey Sam, what's …" in one breath keep the words after the wake phrase? Today the request
   starts when the pill appears, so the user pauses after "Hey Sam". Prepending the ring buffer's
   audio after the match would allow one breath.
