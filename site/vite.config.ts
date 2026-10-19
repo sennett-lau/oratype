@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// Served at the root of https://oratype.sennettlau.me/ (a custom domain on GitHub Pages).
+// Served at the root of https://oratype.sennettlau.me/ (Cloudflare Workers, wrangler.jsonc).
 export default defineConfig({
   base: '/',
   plugins: [react()],

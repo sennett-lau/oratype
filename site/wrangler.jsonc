@@ -1,0 +1,19 @@
+// The site on Cloudflare Workers with static assets (plan `rename-oratype`, web.md).
+// .github/workflows/site.yml builds site/dist and runs `wrangler deploy` on every push to main
+// that touches site/. Both domains are Workers Custom Domains: Cloudflare keeps their DNS records
+// and certificates. The Worker runs first so it can redirect the old domain.
+{
+  "name": "oratype-site",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "routes": [
+    { "pattern": "oratype.sennettlau.me", "custom_domain": true },
+    { "pattern": "typelite.sennettlau.me", "custom_domain": true }
+  ],
+  "workers_dev": false
+}

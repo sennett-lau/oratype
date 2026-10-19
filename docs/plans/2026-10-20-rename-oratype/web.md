@@ -14,24 +14,25 @@ repository is renamed before 1.2.0 is tagged:
    downloads and `releases/latest/download/latest.json`, which installed Typelite copies poll
    for updates. Local clones keep working; `git remote set-url origin
    git@github.com:sennett-lau/oratype.git` makes it explicit.
-3. Point the website at the new domain (below).
+3. Move the website to Cloudflare (below).
 4. Cut 1.2.0 as usual (`docs/releasing.md`). The release files are `OraType_1.2.0_aarch64.dmg`
    and friends. Installed Typelite copies see 1.2.0 through the redirected feed, update in
    place, and the first launch moves their data (migration.md).
 
 ## Website
 
-The site stays on GitHub Pages; the DNS for `sennettlau.me` is on Cloudflare.
+The site moves from GitHub Pages to Cloudflare Workers with static assets, in the Cloudflare
+account that holds the `sennettlau.me` zone (`site/wrangler.jsonc`, `site/worker/index.ts`):
 
-1. Cloudflare DNS: a `CNAME` record `oratype` → `sennett-lau.github.io`, DNS only (grey cloud),
-   as `typelite` has today.
-2. GitHub → Settings → Pages → Custom domain: `oratype.sennettlau.me`, then Enforce HTTPS once
-   the certificate is issued.
-3. Cloudflare: switch the `typelite` record to Proxied (orange cloud), and add a Redirect Rule
-   (Rules → Redirect Rules → Single Redirect): when the hostname equals
-   `typelite.sennettlau.me`, a dynamic redirect to
-   `concat("https://oratype.sennettlau.me", http.request.uri.path)`, status 301, keep the query
-   string. A 301 tells search engines the page moved for good, so its ranking moves with it.
+- `oratype.sennettlau.me` serves the built page.
+- `typelite.sennettlau.me` answers every path with a 301 to the same path (and query) on
+  `oratype.sennettlau.me`. A 301 tells search engines the page moved for good, so its ranking
+  moves with it.
+- Both are Workers Custom Domains: Cloudflare creates their DNS records and certificates. The
+  old `typelite` record (a `CNAME` to GitHub Pages) is replaced by the Worker's.
+- `.github/workflows/site.yml` deploys on every push to `main` that touches `site/`, with the
+  repository secrets `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`; `pages.yml` and GitHub
+  Pages are retired.
 
 ## Search
 
