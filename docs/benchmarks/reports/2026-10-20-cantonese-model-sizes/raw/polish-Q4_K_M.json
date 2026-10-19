@@ -1,0 +1,28 @@
+{
+ "model": "Qwen3.5-4B-Q4_K_M.gguf",
+ "size_bytes": 2740937888,
+ "kind": "polish",
+ "ready_s": 2.0,
+ "metrics_yue": {
+  "prompt_tokens_total": 46161.0,
+  "prompt_seconds_total": 177.534,
+  "tokens_predicted_total": 2700.0,
+  "tokens_predicted_seconds_total": 96.1821,
+  "n_decode_total": 2801.0,
+  "prompt_tokens_per_s": 260.0121666835648,
+  "predicted_tokens_per_s": 28.07175139656963
+ },
+ "metrics_en+zh-Hans": {
+  "prompt_tokens_total": 3178.0,
+  "prompt_seconds_total": 21.74800000000002,
+  "tokens_predicted_total": 1635.0,
+  "tokens_predicted_seconds_total": 53.67989999999999,
+  "n_decode_total": 1698.0,
+  "prompt_tokens_per_s": 146.12837962111445,
+  "predicted_tokens_per_s": 30.458327977511143
+ },
+ "memory": {
+  "footprint": "705 MB",
+  "rss_mb": 3335
+ }
+}
