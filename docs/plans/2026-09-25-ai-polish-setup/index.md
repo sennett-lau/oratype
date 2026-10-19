@@ -1,6 +1,6 @@
 # AI polish setup, final design
 
-AI polish runs either **Built-in** (llama.cpp's `llama-server`, shipped inside Typelite and
+AI polish runs either **Built-in** (llama.cpp's `llama-server`, shipped inside OraType and
 started on this Mac) or through **your server or API key** (any OpenAI-compatible chat
 service, such as Ollama on another computer). Onboarding and Settings use the same pieces as the
 speech setup from [two-tab-speech](../2026-09-25-two-tab-speech/index.md). The visual reference is

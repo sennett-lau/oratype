@@ -9,7 +9,7 @@ Back to [index](index.md).
 |---|---|---|
 | Ready | The page opens, or Try again | Empty; selection exercises: "The text above is highlighted for you." |
 | Listening | `pipeline:voice_mode` is this role's mode (Ask: `pipeline:state` = `ask_recording`) | "Listening… press <keys> again when you finish." Translate: "Listening… press <first key> to stop, <switch> to switch language." |
-| Writing | Recording stopped (`transcribing`, `polishing`, `outputting`, Ask: `ask_thinking`) until the result is decided | Three dots and "Typelite is writing…" (Ask 1: "Thinking…") |
+| Writing | Recording stopped (`transcribing`, `polishing`, `outputting`, Ask: `ask_thinking`) until the result is decided | Three dots and "OraType is writing…" (Ask 1: "Thinking…") |
 | Success | The check passed | Empty; the top card is the result card |
 | Not quite | The check failed | "ⓘ Not quite what we expected. Try again" |
 | Didn't catch that | `pipeline:error` with `stt_no_speech_detected` | "ⓘ Didn't catch that. Try again" |

@@ -454,7 +454,7 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[test]
     fn detect_reads_this_mac() {
-        let hardware = detect(&std::env::temp_dir().join("typelite-no-such-folder/models"));
+        let hardware = detect(&std::env::temp_dir().join("oratype-no-such-folder/models"));
         assert_ne!(hardware.chip_kind, ChipKind::Unknown);
         assert!(!hardware.chip_name.is_empty());
         assert!(hardware.memory_bytes >= GB);

@@ -8,7 +8,7 @@ What the user does and sees. Back to [index](index.md).
 |---|---|
 | Highlights text, presses Ask, says "translate to English" | The pill thinks; the panel opens with the English translation. The highlight is unchanged. |
 | Same, says "translate this" or "翻译一下" (no language) | The translation goes into the active translation language (Settings → Translation). |
-| Same, says "translate this to Klingon" (a language Typelite does not know) | An ordinary Ask answer about the highlight, as before. |
+| Same, says "translate this to Klingon" (a language OraType does not know) | An ordinary Ask answer about the highlight, as before. |
 | Presses **Copy** in the panel | The translation goes on the clipboard and stays there; the button shows "Copied ✓". |
 | Presses **Replace the highlight** | The translation is pasted over the highlight in the app and the panel closes. If the paste fails, the panel says so and Copy still works. |
 | Presses Escape or ✕ | The panel closes; nothing is changed or kept. |

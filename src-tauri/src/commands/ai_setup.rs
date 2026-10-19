@@ -99,7 +99,7 @@ pub fn list_ai_models(
 }
 
 /// The result of `get_ai_hardware`: the speech check's fields plus whether this copy of
-/// Typelite has the server program.
+/// OraType has the server program.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AiHardwareCheck {

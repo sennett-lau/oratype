@@ -1,6 +1,6 @@
 # Copy pill when there is nowhere to paste
 
-When a dictation or translation finishes and no text field has focus, Typelite does not paste
+When a dictation or translation finishes and no text field has focus, OraType does not paste
 into nothing. The pill widens, shows the start of the result and a **Copy** button, and a
 countdown runs around the button's border. Also: smoother changes between every pill state. The
 visual reference is [mock.html](mock.html) (countdown option 3, one-line pill).
@@ -22,7 +22,7 @@ Status: done — 2026-09-25
 
 | Decision | Reason |
 |---|---|
-| Focus check with macOS Accessibility: the system-wide focused element's role and whether its value or selected-text range is settable | Typelite already has the Accessibility permission for pasting. |
+| Focus check with macOS Accessibility: the system-wide focused element's role and whether its value or selected-text range is settable | OraType already has the Accessibility permission for pasting. |
 | Skip the paste only when the answer is clearly "no text field"; when unknown (error, no focused element reported by an app that hides its fields), paste as today | Some web and Electron apps report their fields poorly; they must not lose paste. |
 | One-line pill: optional language tag, the result truncated with an ellipsis, **Copy** (about 300–360 pt wide) | User: the one-line pill is enough, also for translate. |
 | The countdown is the Copy button's border draining (8 s); no line inside the pill | User chose option 3: nothing overlaps the button. |

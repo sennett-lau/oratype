@@ -211,7 +211,7 @@ pub fn is_text_keycode(code: u16) -> bool {
 }
 
 /// Whether a macOS key event is one typed keystroke: a first key-down (not a repeat) of a text
-/// key, without ⌘ or ⌃ (shortcuts), that Typelite did not swallow (its own shortcuts).
+/// key, without ⌘ or ⌃ (shortcuts), that OraType did not swallow (its own shortcuts).
 pub fn counts_as_typing(event: &crate::native_hotkey::MacKeyEvent, swallowed: bool) -> bool {
     event.kind == crate::native_hotkey::MacEventKind::KeyDown
         && !event.autorepeat
@@ -487,8 +487,8 @@ pub struct NudgeContext {
     pub onboarding_done: bool,
     /// A run is active, or the Copy pill or Ask is up.
     pub busy: bool,
-    /// Typelite's own window has focus (the user types in Typelite, not another app).
-    pub typelite_focused: bool,
+    /// OraType's own window has focus (the user types in OraType, not another app).
+    pub oratype_focused: bool,
 }
 
 pub fn nudge_allowed(context: NudgeContext) -> bool {
@@ -497,7 +497,7 @@ pub fn nudge_allowed(context: NudgeContext) -> bool {
         && !context.shown_today
         && context.onboarding_done
         && !context.busy
-        && !context.typelite_focused
+        && !context.oratype_focused
 }
 
 /// Today's local calendar day as `YYYY-MM-DD`.
@@ -757,7 +757,7 @@ fn consider_nudge(app: &tauri::AppHandle, stats: &SpeedStats) {
             .try_state::<crate::shortcut_gate::ShortcutGateState>()
             .is_none_or(|gate| gate.get() == crate::shortcut_gate::ShortcutGate::All),
         busy: app_busy(app),
-        typelite_focused: app
+        oratype_focused: app
             .get_webview_window("main")
             .and_then(|window| window.is_focused().ok())
             .unwrap_or(false),
@@ -778,7 +778,7 @@ pub fn start_worker(app: tauri::AppHandle, stats: SpeedStats) {
     let (sender, receiver) = mpsc::channel::<()>();
     *stats.wake.lock().unwrap_or_else(|e| e.into_inner()) = Some(sender);
     let spawned = std::thread::Builder::new()
-        .name("typelite-speed-stats".to_string())
+        .name("oratype-speed-stats".to_string())
         .spawn(move || loop {
             let received = if stats.has_open_burst() {
                 match receiver.recv_timeout(WORKER_POLL) {
@@ -1170,7 +1170,7 @@ mod tests {
 
     #[test]
     fn totals_survive_a_save_and_load_and_hold_no_text() {
-        let dir = std::env::temp_dir().join(format!("typelite-speed-{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("oratype-speed-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join(STATS_FILE);
         assert_eq!(load_file(&path), StatsFile::default());
@@ -1308,7 +1308,7 @@ mod tests {
             shown_today: false,
             onboarding_done: true,
             busy: false,
-            typelite_focused: false,
+            oratype_focused: false,
         }
     }
 
@@ -1337,7 +1337,7 @@ mod tests {
                 ..ready()
             },
             NudgeContext {
-                typelite_focused: true,
+                oratype_focused: true,
                 ..ready()
             },
         ];

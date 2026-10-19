@@ -154,17 +154,17 @@ describe('DictionaryPane', () => {
     'adds a trimmed word with pronunciation $savedPronunciation and refreshes the list',
     async ({ pronunciation, savedPronunciation }) => {
       vi.mocked(tauri.getDictionary).mockResolvedValueOnce([
-        { id: 1, word: 'Typelite', pronunciation: savedPronunciation },
+        { id: 1, word: 'OraType', pronunciation: savedPronunciation },
       ])
       render(<DictionaryPane />)
-      fireEvent.change(screen.getByPlaceholderText('Word'), { target: { value: ' Typelite ' } })
+      fireEvent.change(screen.getByPlaceholderText('Word'), { target: { value: ' OraType ' } })
       fireEvent.change(screen.getByPlaceholderText('Pronunciation optional'), {
         target: { value: pronunciation },
       })
       fireEvent.click(screen.getByRole('button', { name: 'Add' }))
 
-      expect(await screen.findByText('Typelite')).toBeInTheDocument()
-      expect(tauri.addDictionaryEntry).toHaveBeenCalledWith('Typelite', savedPronunciation)
+      expect(await screen.findByText('OraType')).toBeInTheDocument()
+      expect(tauri.addDictionaryEntry).toHaveBeenCalledWith('OraType', savedPronunciation)
       expect(screen.getByPlaceholderText('Word')).toHaveValue('')
       expect(screen.getByPlaceholderText('Pronunciation optional')).toHaveValue('')
       expect(tauri.getCorrectionRules).toHaveBeenCalledTimes(1)
@@ -177,7 +177,7 @@ describe('DictionaryPane', () => {
     expect(wordAdd).toBeDisabled()
     fireEvent.change(screen.getByPlaceholderText('Word'), { target: { value: '   ' } })
     expect(wordAdd).toBeDisabled()
-    fireEvent.change(screen.getByPlaceholderText('Word'), { target: { value: 'Typelite' } })
+    fireEvent.change(screen.getByPlaceholderText('Word'), { target: { value: 'OraType' } })
     expect(wordAdd).toBeEnabled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Corrections' }))
@@ -189,7 +189,7 @@ describe('DictionaryPane', () => {
     fireEvent.change(screen.getByPlaceholderText('Correct phrase'), { target: { value: '   ' } })
     expect(correctionAdd).toBeDisabled()
     fireEvent.change(screen.getByPlaceholderText('Correct phrase'), {
-      target: { value: 'Typelite' },
+      target: { value: 'OraType' },
     })
     expect(correctionAdd).toBeEnabled()
     expect(tauri.addDictionaryEntry).not.toHaveBeenCalled()
@@ -242,25 +242,25 @@ describe('DictionaryPane', () => {
       }),
     )
     render(<DictionaryPane />)
-    fireEvent.change(screen.getByPlaceholderText('Word'), { target: { value: 'Typelite' } })
+    fireEvent.change(screen.getByPlaceholderText('Word'), { target: { value: 'OraType' } })
     fireEvent.change(screen.getByPlaceholderText('Pronunciation optional'), {
       target: { value: 'type light' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Add' }))
-    expect(screen.getByPlaceholderText('Word')).toHaveValue('Typelite')
+    expect(screen.getByPlaceholderText('Word')).toHaveValue('OraType')
     expect(tauri.getDictionary).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('button', { name: 'Corrections' }))
     fireEvent.change(screen.getByPlaceholderText('Wrong phrase'), {
       target: { value: 'type light' },
     })
     fireEvent.change(screen.getByPlaceholderText('Correct phrase'), {
-      target: { value: 'Typelite' },
+      target: { value: 'OraType' },
     })
 
     await act(async () => finishAdd())
     expect(tauri.getDictionary).toHaveBeenCalledTimes(1)
     expect(screen.getByPlaceholderText('Wrong phrase')).toHaveValue('type light')
-    expect(screen.getByPlaceholderText('Correct phrase')).toHaveValue('Typelite')
+    expect(screen.getByPlaceholderText('Correct phrase')).toHaveValue('OraType')
     fireEvent.click(screen.getByRole('button', { name: 'Words' }))
     expect(screen.getByPlaceholderText('Word')).toHaveValue('')
     expect(screen.getByPlaceholderText('Pronunciation optional')).toHaveValue('')
@@ -271,11 +271,11 @@ describe('DictionaryPane', () => {
     vi.mocked(tauri.getDictionary).mockRejectedValueOnce(new Error('Read failed'))
     useAppStore.setState({ dictionary: [{ id: 1, word: 'Existing', pronunciation: null }] })
     render(<DictionaryPane />)
-    fireEvent.change(screen.getByPlaceholderText('Word'), { target: { value: 'Typelite' } })
+    fireEvent.change(screen.getByPlaceholderText('Word'), { target: { value: 'OraType' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add' }))
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('dictionary.failedToAdd'))
-    expect(tauri.addDictionaryEntry).toHaveBeenCalledWith('Typelite', null)
+    expect(tauri.addDictionaryEntry).toHaveBeenCalledWith('OraType', null)
     expect(screen.getByPlaceholderText('Word')).toHaveValue('')
     expect(screen.getByText('Existing')).toBeInTheDocument()
   })
@@ -283,10 +283,10 @@ describe('DictionaryPane', () => {
   it('searches words, pronunciations, wrong phrases, and replacements locally', () => {
     useAppStore.setState({
       dictionary: [
-        { id: 1, word: 'Typelite', pronunciation: 'type light' },
+        { id: 1, word: 'OraType', pronunciation: 'type light' },
         { id: 2, word: 'MeloLab', pronunciation: 'mee-lo' },
       ],
-      correctionRules: [{ id: 3, pattern: 'type light', replacement: 'Typelite', enabled: true }],
+      correctionRules: [{ id: 3, pattern: 'type light', replacement: 'OraType', enabled: true }],
     })
     render(<DictionaryPane />)
 
@@ -294,7 +294,7 @@ describe('DictionaryPane', () => {
       target: { value: 'mee-lo' },
     })
     expect(screen.getByText('MeloLab')).toBeInTheDocument()
-    expect(screen.queryByText('Typelite')).toBeNull()
+    expect(screen.queryByText('OraType')).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: 'Corrections' }))
     fireEvent.change(screen.getByPlaceholderText('Search dictionary'), {
@@ -306,7 +306,7 @@ describe('DictionaryPane', () => {
   it('edits dictionary and correction rows inline', async () => {
     useAppStore.setState({
       dictionary: [{ id: 1, word: 'Token', pronunciation: null }],
-      correctionRules: [{ id: 2, pattern: 'type light', replacement: 'Typelite', enabled: true }],
+      correctionRules: [{ id: 2, pattern: 'type light', replacement: 'OraType', enabled: true }],
     })
     render(<DictionaryPane />)
 
@@ -345,8 +345,8 @@ describe('DictionaryPane', () => {
       skippedInvalid: 1,
       errors: [{ row: 4, code: 'dictionary_word_too_long' }],
     })
-    const file = new File(['Typelite'], 'terms.txt', { type: 'text/plain' })
-    const bytes = new TextEncoder().encode('Typelite')
+    const file = new File(['OraType'], 'terms.txt', { type: 'text/plain' })
+    const bytes = new TextEncoder().encode('OraType')
     Object.defineProperty(file, 'arrayBuffer', {
       value: vi.fn().mockResolvedValue(bytes.buffer),
     })

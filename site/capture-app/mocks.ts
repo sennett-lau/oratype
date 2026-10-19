@@ -243,7 +243,7 @@ export function handleCommand(
     case 'plugin:app|version':
       return '0.1.0'
     case 'plugin:app|name':
-      return 'Typelite'
+      return 'OraType'
 
     // Config and data
     case 'get_config':

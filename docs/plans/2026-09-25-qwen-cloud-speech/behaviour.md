@@ -1,6 +1,6 @@
 # Behaviour
 
-How the Qwen Cloud service looks and behaves in Typelite. Back to [index](index.md).
+How the Qwen Cloud service looks and behaves in OraType. Back to [index](index.md).
 
 ## Setup form
 
@@ -65,4 +65,4 @@ the other cloud services and says that cloud services receive the recordings.
   serde name, the recording limit per kind, provider dispatch, the kind chosen from the address,
   and the form testing and saving a Qwen address as `qwen_cloud`.
 - End-to-end (`src-tauri/tests/e2e_services.rs`): English and Cantonese speech from macOS `say`
-  against the real service, run only when `TYPELITE_E2E_QWEN_KEY` is set.
+  against the real service, run only when `ORATYPE_E2E_QWEN_KEY` is set.

@@ -2,7 +2,7 @@
 
 The main window becomes three tabs: **Home**, **Settings**, **Dictionary**, with **About** pinned
 to the bottom of the sidebar. History is removed
-completely, so Typelite keeps no record of what the user said. Home shows the current setup and
+completely, so OraType keeps no record of what the user said. Home shows the current setup and
 what changed in this version instead of usage counters. "Scenes" is renamed "Prompt Presets".
 
 Status: agreed — 2026-09-24
@@ -27,7 +27,7 @@ Status: agreed — 2026-09-24
 | Existing history rows are deleted on startup (the table is dropped) | Old test data should not linger after the feature is gone. |
 | Anything that needs "the last result" keeps it in memory only | Nothing about a dictation is written to disk. |
 | Home = current configuration card + "What's New" | Counters were not useful; setup and changes are. |
-| App version is 0.1.0 | First Typelite release. |
+| App version is 0.1.0 | First OraType release. |
 | Dictionary becomes the third main tab | It is used often and is not really a setting. |
 | New Settings → System section (launch at login, show in Dock) | App-level switches belong apart from dictation settings. |
 | About moves to the main sidebar, pinned at the bottom | It is not a setting; bottom placement keeps it out of the way. |

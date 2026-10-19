@@ -4,7 +4,7 @@ What each onboarding step shows and when it is complete. Back to [index](index.m
 
 | # | Step | Shows | Complete when | Saves |
 |---|---|---|---|---|
-| 1 | **Welcome** | "Welcome to Typelite" and three permission rows, each with a **Grant** button and live status: Microphone, Accessibility (typing into other apps, global shortcuts), Automation (controlling System Events for paste and app detection). | All three are granted. A small "Skip for now" is allowed. | – |
+| 1 | **Welcome** | "Welcome to OraType" and three permission rows, each with a **Grant** button and live status: Microphone, Accessibility (typing into other apps, global shortcuts), Automation (controlling System Events for paste and app detection). | All three are granted. A small "Skip for now" is allowed. | – |
 | 2 | **Voice input** | The microphone picker with a live level meter. | A device is chosen (system default counts). | `input_device` |
 | 3 | **Speech recognition** | Speech preset picker and **Test**. | Test passes. | active speech preset |
 | 4 | **AI model** | AI preset picker and **Test**. | Test passes. | active AI preset |

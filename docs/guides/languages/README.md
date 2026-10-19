@@ -1,8 +1,8 @@
 # Languages
 
-Typelite handles languages in two places: **speech recognition** decides which language it heard,
+OraType handles languages in two places: **speech recognition** decides which language it heard,
 and **AI polish** writes the text, following instructions for that language. This page covers
-the language guides, translation languages, their instructions, how Typelite recognises the
+the language guides, translation languages, their instructions, how OraType recognises the
 language you spoke, and the language presets from the repository.
 
 ## Language guides
@@ -26,7 +26,7 @@ recognition gives it: if the speech model has already changed what you said, no 
 prompt can bring it back. So check your speech model first:
 
 1. Dictate a few sentences the way you normally talk, including slang and mixed-in English words.
-2. Turn off **Settings → AI → Clean up dictation** for a moment, so Typelite pastes exactly what
+2. Turn off **Settings → AI → Clean up dictation** for a moment, so OraType pastes exactly what
    speech recognition heard.
 3. If the raw text keeps your words, the general setup is fine (see
    [Choosing models](../models/README.md)); a [language preset](#language-presets) takes care of
@@ -45,7 +45,7 @@ recording into it, but saves a detection pass and can help very short clips.
 - The speech model decides which words reach AI polish. whisper (Built-in, or a whisper.cpp or
   Speaches server) writes Cantonese as standard written Chinese and translates some English words
   (email → 電郵). [Qwen3-ASR](../speech/openai-compatible.md#qwen3-asr) and Qwen Cloud write Cantonese as it is
-  spoken, with English words kept, in Simplified characters. Typelite writes a Qwen3-ASR transcript
+  spoken, with English words kept, in Simplified characters. OraType writes a Qwen3-ASR transcript
   in the characters of the Chinese language it is recognised as (Hong Kong Traditional for
   Cantonese (Hong Kong)); Qwen Cloud's text keeps its characters, and AI polish writes the final
   script.
@@ -81,7 +81,7 @@ script, which words stay in English, with a few examples. They come from one of 
 | A language preset | A text from the repository's [preset catalogue](../../../presets/languages/README.md), written and reviewed by people who speak the language. |
 | Your own edit | Any of the above, changed by you in the language's settings. |
 
-Typelite always adds its own rules around the instructions (output only the result, keep the line
+OraType always adds its own rules around the instructions (output only the result, keep the line
 breaks, use the right Chinese script), so a preset or an edit cannot make the AI add notes or
 answer in another language.
 
@@ -101,7 +101,7 @@ part of it. See [the Cantonese guide](cantonese.md).
 ## Language presets
 
 A language preset tells the AI how to write one language. Presets live in the
-[`presets/languages`](../../../presets/languages/README.md) folder of the Typelite repository; anyone
+[`presets/languages`](../../../presets/languages/README.md) folder of the OraType repository; anyone
 can add one with a pull request (see [Contributing a language preset](../../../CONTRIBUTING.md#language-presets)).
 
 ### Choosing a preset
@@ -121,7 +121,7 @@ to default** goes back to the built-in instructions.
 
 - **Translating into the language** uses them whenever the language is on.
 - **Dictating in the language** (Dictate, no translation, no selected text) uses them too, but
-  only when Typelite recognises that you spoke that language. The **Recognition** tab shows how:
+  only when OraType recognises that you spoke that language. The **Recognition** tab shows how:
   1. **Hint characters and words** found in what you said pick the language with the most
      hits. The preset brings its own (Cantonese: 嘅 咗 喺 唔 聽日 …); add your own with
      **+ Add hint**.
@@ -142,17 +142,17 @@ to default** goes back to the built-in instructions.
   **Update**. If you edited the text, it is never replaced: **Keep mine** keeps your text, **Use
   vN instead** shows the new text first.
 - Tick **Update this preset automatically** to let a language follow new versions by itself.
-  Then Typelite checks GitHub at most once a day, only while such a language is in use, and
+  Then OraType checks GitHub at most once a day, only while such a language is in use, and
   never replaces text you edited.
 
 ### Privacy and offline use
 
 - Presets are downloaded with plain requests to `raw.githubusercontent.com`: no account, no
   identifiers, nothing about you, your languages or your text. GitHub sees your IP address, as
-  with any download. Typelite goes online only when you browse presets, or once a day for
+  with any download. OraType goes online only when you browse presets, or once a day for
   languages with automatic updates on.
 - Every download is checked against the size and SHA-256 hash in the library's index, and
-  validated, before it is used. Downloaded presets are kept in Typelite's data folder.
+  validated, before it is used. Downloaded presets are kept in OraType's data folder.
 - Offline, the built-in instructions and downloaded presets keep working; Browse shows what is
   downloaded and offers **Try again**.
 

@@ -1,24 +1,24 @@
-//! Plan `language-model-suggestions`: end-to-end check of built-in Qwen3-ASR. Typelite's own speech
+//! Plan `language-model-suggestions`: end-to-end check of built-in Qwen3-ASR. OraType's own speech
 //! server manager starts `llama-server` with the model and its audio projector, and the provider
 //! the pipeline picks for a built-in Qwen3-ASR preset transcribes a Cantonese clip.
 //!
 //! Ignored by default so `cargo test` stays offline. Run it with:
 //!
 //! ```sh
-//! TYPELITE_E2E_QWEN3_ASR_DIR=<folder with Qwen3-ASR-1.7B-Q8_0.gguf and
+//! ORATYPE_E2E_QWEN3_ASR_DIR=<folder with Qwen3-ASR-1.7B-Q8_0.gguf and
 //! mmproj-Qwen3-ASR-1.7B-Q8_0.gguf> cargo test --test e2e_qwen3_asr -- --ignored --nocapture
 //! ```
 //!
 //! It needs `src-tauri/binaries/llama-server-<triple>` from `scripts/build-llama-server.sh` (or
-//! `TYPELITE_LLAMA_SERVER`), and macOS `say` with the Sinji voice for the audio.
+//! `ORATYPE_LLAMA_SERVER`), and macOS `say` with the Sinji voice for the audio.
 
 use std::path::PathBuf;
 use std::process::Command;
 use std::time::Instant;
 
-use typelite_lib::llm::builtin;
-use typelite_lib::storage::SpeechPreset;
-use typelite_lib::stt::{self, SttConfig};
+use oratype_lib::llm::builtin;
+use oratype_lib::storage::SpeechPreset;
+use oratype_lib::stt::{self, SttConfig};
 
 const SAMPLE_RATE: u32 = 16_000;
 /// Same chunk size the recorder sends (100 ms of 16-bit mono audio).
@@ -26,7 +26,7 @@ const CHUNK_BYTES: usize = (SAMPLE_RATE as usize / 10) * 2;
 
 /// 16 kHz mono PCM of `text` spoken by the macOS voice `voice`.
 fn synthesise(text: &str, voice: &str) -> Vec<u8> {
-    let path = std::env::temp_dir().join(format!("typelite-e2e-asr-{}.wav", std::process::id()));
+    let path = std::env::temp_dir().join(format!("oratype-e2e-asr-{}.wav", std::process::id()));
     let status = Command::new("/usr/bin/say")
         .args(["-v", voice, "-o"])
         .arg(&path)
@@ -49,7 +49,7 @@ fn synthesise(text: &str, voice: &str) -> Vec<u8> {
 
 /// The folder with the Qwen3-ASR model and projector, if set and complete.
 fn model_dir() -> Option<PathBuf> {
-    let dir = std::env::var("TYPELITE_E2E_QWEN3_ASR_DIR")
+    let dir = std::env::var("ORATYPE_E2E_QWEN3_ASR_DIR")
         .ok()
         .filter(|v| !v.trim().is_empty())
         .map(PathBuf::from)?;
@@ -58,14 +58,13 @@ fn model_dir() -> Option<PathBuf> {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-#[ignore = "needs llama-server (scripts/build-llama-server.sh) and TYPELITE_E2E_QWEN3_ASR_DIR"]
+#[ignore = "needs llama-server (scripts/build-llama-server.sh) and ORATYPE_E2E_QWEN3_ASR_DIR"]
 async fn builtin_qwen3_asr_keeps_spoken_cantonese() {
     let Some(dir) = model_dir() else {
-        println!("built-in Qwen3-ASR: TYPELITE_E2E_QWEN3_ASR_DIR is not set to the model folder, skipping");
+        println!("built-in Qwen3-ASR: ORATYPE_E2E_QWEN3_ASR_DIR is not set to the model folder, skipping");
         return;
     };
-    let pid_file =
-        std::env::temp_dir().join(format!("typelite-e2e-asr-{}.pid", std::process::id()));
+    let pid_file = std::env::temp_dir().join(format!("oratype-e2e-asr-{}.pid", std::process::id()));
     builtin::speech_server().set_paths(dir, pid_file);
     assert!(
         builtin::speech_server().binary_available(),

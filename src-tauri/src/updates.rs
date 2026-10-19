@@ -1,11 +1,11 @@
 //! Plan `auto-update`: new versions from GitHub Releases, through Tauri's updater plugin.
 //!
 //! Each release carries `latest.json` (the newest version, its notes, and a signed
-//! `Typelite.app.tar.gz` per platform). The app reads it from
+//! `OraType.app.tar.gz` per platform). The app reads it from
 //! `…/releases/latest/download/latest.json` (see `plugins.updater` in tauri.conf.json), checks
 //! the download against the public key in the same place, replaces itself and restarts.
 //!
-//! With `auto_update` on (the default) Typelite checks shortly after start and every few hours,
+//! With `auto_update` on (the default) OraType checks shortly after start and every few hours,
 //! downloads a new version in the background and then asks, on Home, to restart. With it off it
 //! only checks when the user presses Check for updates, and Home offers Update. A check asks
 //! GitHub for that one file; nothing about the user or what they said is sent.
@@ -24,7 +24,7 @@ pub const UPDATE_STATUS_EVENT: &str = "update:status";
 /// The first automatic check waits this long after start, so it never slows the launch.
 #[cfg_attr(feature = "dev-build", allow(dead_code))]
 const FIRST_CHECK_DELAY: Duration = Duration::from_secs(20);
-/// Then it checks this often while Typelite runs.
+/// Then it checks this often while OraType runs.
 #[cfg_attr(feature = "dev-build", allow(dead_code))]
 const CHECK_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 /// A download that takes longer than this (the Mac slept, the network went away) is given up,
@@ -33,7 +33,7 @@ const CHECK_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 const DOWNLOAD_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 
 /// Whether this program can update itself: a release build inside a `.app` bundle. A debug
-/// build or `tauri dev` runs `target/debug/typelite`, and the updater would replace that
+/// build or `tauri dev` runs `target/debug/oratype`, and the updater would replace that
 /// folder with the release app.
 pub fn self_updatable() -> bool {
     if cfg!(feature = "dev-build") || cfg!(debug_assertions) {
@@ -52,11 +52,11 @@ fn bundle_replaceable() -> bool {
     let Ok(exe) = std::env::current_exe() else {
         return false;
     };
-    // <folder>/Typelite.app/Contents/MacOS/typelite
+    // <folder>/OraType.app/Contents/MacOS/oratype
     let Some(folder) = exe.ancestors().nth(4) else {
         return false;
     };
-    let probe = folder.join(".typelite-update-check");
+    let probe = folder.join(".oratype-update-check");
     let writable = std::fs::OpenOptions::new()
         .write(true)
         .create_new(true)

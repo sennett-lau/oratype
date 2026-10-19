@@ -25,8 +25,8 @@ key-down it also decides whether the key typed text:
 - counted: letters, digits, punctuation, Space (by physical key position, so every layout and
   input method works; with a Chinese input method the pinyin keystrokes count);
 - not counted: modifiers, arrows, Tab, Return, Delete, Escape, function and navigation keys,
-  key repeats from holding a key, anything with ⌘ or ⌃ held, keys Typelite swallowed (its own
-  shortcuts), and events Typelite sent itself (Type-directly output).
+  key repeats from holding a key, anything with ⌘ or ⌃ held, keys OraType swallowed (its own
+  shortcuts), and events OraType sent itself (Type-directly output).
 
 A counted key only tells a tracker "one keystroke now". The tracker counts the gaps between
 counted keys: a key within 2 s of the previous counted key adds one keystroke and the time of
@@ -74,7 +74,7 @@ nothing. The log never names a key.
 
 ## Permissions
 
-The key listener is an active `CGEventTap`, which needs Accessibility; Typelite already asks
+The key listener is an active `CGEventTap`, which needs Accessibility; OraType already asks
 for it to paste and to swallow the End key. An active tap receives key-down events for all
 apps, so no Input Monitoring permission is needed (macOS asks for that one only for listen-only
 taps). Without Accessibility there is no listener: nothing is counted, so typing keeps its

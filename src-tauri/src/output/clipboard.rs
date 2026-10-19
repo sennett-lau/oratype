@@ -74,7 +74,7 @@ fn should_auto_paste_after_clipboard(session_type: &str) -> bool {
 
 /// Plan `clipboard-safety`: whether to put the user's clipboard back after a paste. Only when the
 /// paste went through, restoring is on, there is something to restore, and the clipboard still
-/// holds what Typelite wrote (no app or person copied something since).
+/// holds what OraType wrote (no app or person copied something since).
 fn should_restore_clipboard(
     restore_enabled: bool,
     paste_succeeded: bool,
@@ -173,7 +173,7 @@ fn restore_clipboard_if_safe(original: Option<Snapshot>, written: i64, restore_i
 
 #[cfg(target_os = "macos")]
 fn simulate_paste(_shortcut: PasteShortcut) -> Result<(), AppError> {
-    // Typelite's own ⌘V: it must not fire a shortcut on a bare Command key (plan
+    // OraType's own ⌘V: it must not fire a shortcut on a bare Command key (plan
     // `own-keystrokes`).
     let _own = crate::native_hotkey::OwnKeystroke::begin();
     let status = std::process::Command::new("osascript")
@@ -349,7 +349,7 @@ mod tests {
         let before = pasteboard::text_snapshot("what the user copied");
         let (first_id, first) = remember_pending_clipboard_restore(Some(before.clone()));
         assert_eq!(first.as_ref(), Some(&before));
-        // A second paste before the restore: its "previous" is Typelite's own first text.
+        // A second paste before the restore: its "previous" is OraType's own first text.
         let (second_id, second) =
             remember_pending_clipboard_restore(Some(pasteboard::text_snapshot("first dictation")));
         assert_eq!(second.as_ref(), Some(&before));

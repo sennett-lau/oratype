@@ -4,7 +4,7 @@ Users want to highlight part of an Ask answer and copy only that part with ⌘C.
 the page sets `user-select: none` on `body` (so the app's windows feel native) and the Ask panel
 inherited it, and the panel is never the key window, so ⌘C went to the user's app. This plan
 makes the answer, its source cards' host, title and snippet, and error text selectable, and
-lets the panel become key, without activating Typelite, while the user works with its text.
+lets the panel become key, without activating OraType, while the user works with its text.
 
 Status: building (2026-10-09)
 
@@ -13,7 +13,7 @@ Status: building (2026-10-09)
 - The answer text (plain answers, web answers with citation chips, the could-not-replace
   result, errors) and the source titles, hosts and snippets can be highlighted with the mouse.
 - ⌘C copies the highlight; ⌘A highlights the whole answer.
-- Typelite is never activated, and keyboard focus goes back to the user's app when the panel
+- OraType is never activated, and keyboard focus goes back to the user's app when the panel
   closes, when the user clicks into their app, and before Insert pastes.
 - Clicking or dragging in the text does not dismiss the panel, open a source, or paste.
 - Citation chips stay clickable. Escape works as before.
@@ -39,7 +39,7 @@ Status: building (2026-10-09)
   (`overlay_window::set_key`). A plain window (the swap was skipped) is never made key.
 - **⌘C is handled by the page.** A `keydown` listener copies the highlight inside the panel
   through `copy_ask_text` when it sees ⌘C, rather than the Edit menu's key equivalent, which
-  belongs to the active app (not Typelite). ⌘A selects the answer. The app logs only "Ask
+  belongs to the active app (not OraType). ⌘A selects the answer. The app logs only "Ask
   panel: copied (N chars)".
 - **Giving key back.** `overlay_window::set_key(false)` clears `focusable` and, when the panel
   was key, orders it out and back in: the window server then returns keyboard focus to the
@@ -48,7 +48,7 @@ Status: building (2026-10-09)
   replacing again" do it before sending ⌘V and wait 120 ms for focus to settle. A click into the
   user's app makes its window key as usual.
 - **Insert targets are unchanged.** They paste into the frontmost app, which stays the user's
-  app because Typelite is never activated; only keyboard focus needed to move back.
+  app because OraType is never activated; only keyboard focus needed to move back.
 - **Escape is unchanged.** It is handled by the app's key tap while the panel is open, whether
   or not the panel is key.
 - **The could-not-replace "Copied" button copies the highlight when there is one**, else the
@@ -66,7 +66,7 @@ first revision expected. This revision makes ⌘C work by making the panel key.
 ## Considered
 
 - A "Copy selection" button: works without focus, but users expect ⌘C.
-- Activating Typelite on a press: the user's app would lose its active state and menu bar.
+- Activating OraType on a press: the user's app would lose its active state and menu bar.
 - Catching ⌘C in the global key tap: would steal the user's own ⌘C in their app.
 
 ## Parts

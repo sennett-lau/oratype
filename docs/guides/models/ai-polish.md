@@ -18,8 +18,8 @@ Sizes are for Q4_K_M files; "memory" is roughly what the model needs while it ru
 
 | Hardware | Suggested model | Rough memory | Notes |
 |---|---|---|---|
-| Apple Silicon, 8 GB | Qwen3 1.7B, Q4_K_M | about 1.5 GB | Typelite's Built-in **Faster** model. |
-| Apple Silicon, 16 GB | Qwen3 4B Instruct 2507, Q4_K_M | about 3 GB | Typelite's Built-in **Best quality** model. |
+| Apple Silicon, 8 GB | Qwen3 1.7B, Q4_K_M | about 1.5 GB | OraType's Built-in **Faster** model. |
+| Apple Silicon, 16 GB | Qwen3 4B Instruct 2507, Q4_K_M | about 3 GB | OraType's Built-in **Best quality** model. |
 | Apple Silicon, 32 GB or more | Qwen3 4B Instruct 2507, Q4_K_M; or a 7–8B model, Q4_K_M | about 3 GB; about 6 GB | An 8B model follows the rules more closely but answers more slowly. |
 | NVIDIA GPU, 8 GB | Qwen3 4B Instruct 2507, Q4_K_M | about 3 GB VRAM | Fast; well under a second for a sentence once warm. |
 | NVIDIA GPU, 12 GB | Qwen3 4B Instruct 2507, or a 7–8B model, Q4_K_M | 3–6 GB VRAM | The 4B answered a sentence in 0.1–0.3 s on an RTX 3080 Ti. |
@@ -61,7 +61,7 @@ server's command line.
 
 | Server or model | How to turn thinking off |
 |---|---|
-| Typelite Built-in | Already off; nothing to set. |
+| OraType Built-in | Already off; nothing to set. |
 | Ollama (OpenAI-compatible API) | Extra fields `{"reasoning_effort": "none"}` |
 | llama.cpp `llama-server` | Start it with `--reasoning off` (older builds: `--reasoning-budget 0`), or per request Extra fields `{"chat_template_kwargs": {"enable_thinking": false}}` |
 | Qwen3 hybrid models on vLLM or SGLang | Extra fields `{"chat_template_kwargs": {"enable_thinking": false}}` |

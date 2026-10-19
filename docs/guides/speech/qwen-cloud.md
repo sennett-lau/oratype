@@ -1,7 +1,7 @@
 # Qwen Cloud speech
 
 Qwen Cloud's speech model, `qwen-audio-3.0-asr-flash`, does not accept the OpenAI transcription
-API, so Typelite has a separate connection for it. It is opt-in: it is used only when you enter
+API, so OraType has a separate connection for it. It is opt-in: it is used only when you enter
 a Qwen Cloud address with your own key, and your audio is then sent to Qwen Cloud.
 
 ## Enter it
@@ -18,15 +18,15 @@ Press **Test**, then **Save**. The form shows "Qwen Cloud: sent to Qwen's own sp
 the fields.
 
 - The console shows an address ending in `/compatible-mode/v1` next to your key. You can paste
-  that too: Typelite changes it to `/api/v1` when you press Test or Save, because the speech
+  that too: OraType changes it to `/api/v1` when you press Test or Save, because the speech
   model does not work on the compatible-mode address.
 - Alibaba Model Studio (DashScope) addresses such as `https://dashscope-intl.aliyuncs.com/api/v1`
   use the same connection, but only the Token Plan address has been tested.
 
 Getting a key: sign in to the Qwen Cloud console, subscribe to a **Token Plan**, create an API
-key and copy it into Typelite with the address above.
+key and copy it into OraType with the address above.
 
-## How Typelite recognises it
+## How OraType recognises it
 
 When you press Test or Save, the address decides the connection: a `*.qwencloudapi.com` or
 `dashscope*.aliyuncs.com` host is saved as Qwen Cloud, every other address as OpenAI-compatible.
@@ -46,7 +46,7 @@ Content-Type: application/json
  "parameters": { … }}
 ```
 
-- The service answers audio without speech with an empty `400 {}`; Typelite treats that as "no
+- The service answers audio without speech with an empty `400 {}`; OraType treats that as "no
   speech", not as an error. Test sends 0.1 s of silence and counts that answer as a pass.
 - A wrong key gives `401` (`InvalidApiKey`), a wrong model `404` (`Model not exist.`).
 - Server errors and timeouts are retried, and the same voice check as the other connections runs

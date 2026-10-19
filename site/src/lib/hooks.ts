@@ -4,7 +4,7 @@ import { REPO } from '../links'
 /* ─── Theme ─── */
 
 export type Theme = 'light' | 'dark'
-const THEME_KEY = 'typelite-theme'
+const THEME_KEY = 'oratype-theme'
 
 function readStored(): Theme | null {
   try {
@@ -55,7 +55,7 @@ export interface RepoStats {
   forks: number
 }
 
-const STATS_KEY = 'typelite-repo-stats'
+const STATS_KEY = 'oratype-repo-stats'
 const STATS_TTL_MS = 30 * 60 * 1000
 
 /**

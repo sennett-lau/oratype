@@ -1,11 +1,11 @@
 # Focus check and the Copy pill flow
 
-How Typelite decides there is nowhere to paste, and what happens to the result then.
+How OraType decides there is nowhere to paste, and what happens to the result then.
 Back to [index.md](index.md).
 
 ## The decision
 
-Right before a Dictate or Translate result would be pasted, Typelite asks macOS Accessibility
+Right before a Dictate or Translate result would be pasted, OraType asks macOS Accessibility
 for the system-wide focused element (the element keyboard input goes to, in the frontmost app)
 and reads its role, its subrole, and whether its value or its selected-text range can be set.
 Only role names and flags are read, never text; the log line names the role only.
@@ -20,7 +20,7 @@ Only role names and flags are read, never text; the log line names the role only
 
 Only "not editable" skips the paste. "Unknown" pastes as before: Electron and Chromium apps
 (before their accessibility tree is on), terminals and other custom-drawn views, Office and
-design-tool canvases, games and the plain body of a web page all report roles Typelite cannot
+design-tool canvases, games and the plain body of a web page all report roles OraType cannot
 trust. The role wins over a settable value for the non-text roles, because sliders, check
 boxes and pop-ups have a settable value too.
 

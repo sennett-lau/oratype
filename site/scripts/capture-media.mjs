@@ -102,13 +102,13 @@ async function captureGif(
 ) {
   const page = await browser.newPage({ width, height, scale, dark: theme === 'dark' })
   await page.goto(`${base}/capture/?scene=${scene}&theme=${theme}`)
-  await page.waitFor('window.__typeliteCapture && document.querySelector("#frame > *")')
+  await page.waitFor('window.__oratypeCapture && document.querySelector("#frame > *")')
   await document_fonts(page)
-  const frames = await mkdtemp(join(tmpdir(), `typelite-${name}-`))
+  const frames = await mkdtemp(join(tmpdir(), `oratype-${name}-`))
   const step = 1 / fps
   let i = 0
   for (let t = from; t < to - 1e-6; t += step) {
-    await page.evaluate(`window.__typeliteCapture.setTime(${t.toFixed(4)})`)
+    await page.evaluate(`window.__oratypeCapture.setTime(${t.toFixed(4)})`)
     // Let CSS transitions (pill width, fades) run for about one frame of real time.
     await new Promise((r) => setTimeout(r, Math.round(1000 / fps)))
     await page.screenshot(join(frames, `f${String(i++).padStart(4, '0')}.png`), {

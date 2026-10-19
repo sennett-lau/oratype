@@ -23,7 +23,7 @@ export function modelLabel(id: string): string {
 /**
  * A suggested setup: one speech and one AI model for a combination of languages. Only
  * combinations listed here get a suggestion; each needs results in `evals/` (see the plan's
- * catalogue.md). Typelite shows no per-language quality labels.
+ * catalogue.md). OraType shows no per-language quality labels.
  */
 export interface LanguageSetup {
   /** Stable id, stored when the user hides the Home card. */
@@ -43,7 +43,7 @@ export const LANGUAGE_SETUPS: LanguageSetup[] = [
   },
 ]
 
-/** The setup for these languages, or null when Typelite has none for them. */
+/** The setup for these languages, or null when OraType has none for them. */
 export function setupFor(languages: readonly string[]): LanguageSetup | null {
   return LANGUAGE_SETUPS.find((setup) => setup.matches(languages)) ?? null
 }

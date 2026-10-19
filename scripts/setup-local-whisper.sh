@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sets up a local speech-recognition server for Typelite on macOS.
+# Sets up a local speech-recognition server for OraType on macOS.
 #
 # What it does:
 #   1. Installs whisper.cpp from Homebrew (the official formula).
@@ -21,10 +21,10 @@ set -euo pipefail
 PORT="${PORT:-8178}"
 HOST="${HOST:-127.0.0.1}"
 MODEL="${MODEL:-large-v3-turbo-q5_0}"
-LABEL="dev.typelite.whisper-server"
+LABEL="dev.oratype.whisper-server"
 PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 MODEL_DIR="$HOME/.local/share/whisper"
-LOG="$HOME/Library/Logs/typelite-whisper-server.log"
+LOG="$HOME/Library/Logs/oratype-whisper-server.log"
 HF_BASE="https://huggingface.co/ggerganov/whisper.cpp/resolve/main"
 
 # Known-good SHA-256 values for the models we suggest. Other models are verified against the
@@ -113,7 +113,7 @@ for _ in $(seq 1 60); do
 done
 curl -fs -o /dev/null "http://127.0.0.1:$PORT/" || fail "The server did not start. Check $LOG"
 
-TMP_WAV="$(mktemp -t typelite-test).wav"
+TMP_WAV="$(mktemp -t oratype-test).wav"
 python3 - "$TMP_WAV" <<'PYEOF'
 import sys, wave
 w = wave.open(sys.argv[1], "wb"); w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000)
@@ -125,7 +125,7 @@ rm -f "$TMP_WAV"
 
 say "Done. Test request took ${TIME}s."
 echo
-echo "In Typelite, choose the speech preset \"whisper.cpp on this Mac\" (or use these values):"
+echo "In OraType, choose the speech preset \"whisper.cpp on this Mac\" (or use these values):"
 echo "  Base URL: http://127.0.0.1:$PORT/v1"
 echo "  Model:    large-v3-turbo"
 echo "  Language: Auto"

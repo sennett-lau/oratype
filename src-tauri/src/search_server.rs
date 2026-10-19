@@ -1,4 +1,4 @@
-//! Plan `searxng-setup`: the Built-in web search provider. Typelite downloads SearXNG with a
+//! Plan `searxng-setup`: the Built-in web search provider. OraType downloads SearXNG with a
 //! private Python into `<app data>/search/`, runs it on 127.0.0.1 only, and updates it.
 //!
 //! Nothing is downloaded until the user presses Set up. The parts:
@@ -6,9 +6,9 @@
 //!   It downloads a standalone Python and installs SearXNG's libraries, so the Mac needs no
 //!   Python, git or Docker.
 //! - SearXNG (AGPL-3.0) from one commit of its `master` branch. It is fetched at the user's
-//!   request and runs as its own program; it is never part of Typelite's bundle.
+//!   request and runs as its own program; it is never part of OraType's bundle.
 //!
-//! The server runs only while Typelite runs: started by the first web search (or at launch when
+//! The server runs only while OraType runs: started by the first web search (or at launch when
 //! Built-in is chosen) and stopped at quit, like the built-in AI server (`llm/builtin.rs`).
 //! SearXNG does not log queries; its output goes to `search/searxng.log`.
 
@@ -68,7 +68,7 @@ impl SearchPaths {
     pub fn log(&self) -> PathBuf {
         self.root.join("searxng.log")
     }
-    /// The running server's process id, so a Typelite that crashed can stop it next time.
+    /// The running server's process id, so a OraType that crashed can stop it next time.
     pub fn pid(&self) -> PathBuf {
         self.root.join("searxng.pid")
     }
@@ -78,7 +78,7 @@ fn short_commit(commit: &str) -> &str {
     &commit[..commit.len().min(12)]
 }
 
-/// What is set up: SearXNG's commit, its date, and when Typelite installed it.
+/// What is set up: SearXNG's commit, its date, and when OraType installed it.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Installed {
@@ -174,7 +174,7 @@ pub fn settings_yaml(port: u16, secret_key: &str) -> String {
         .map(|engine| format!("  - name: {engine}\n    disabled: false\n"))
         .collect();
     format!(
-        "# Written by Typelite (plan `searxng-setup`). Changes are replaced on the next setup.\n\
+        "# Written by OraType (plan `searxng-setup`). Changes are replaced on the next setup.\n\
          use_default_settings:\n  engines:\n    keep_only: [{keep_only}]\n\
          server:\n  bind_address: \"127.0.0.1\"\n  port: {port}\n  secret_key: \"{secret_key}\"\n  limiter: false\n  image_proxy: false\n\
          search:\n  formats: [html, json]\n\
@@ -215,7 +215,7 @@ pub fn free_port(preferred: u16) -> u16 {
         .unwrap_or(preferred)
 }
 
-/// Stops a SearXNG a crashed Typelite left behind (its id is in `pid_file`). Only a process
+/// Stops a SearXNG a crashed OraType left behind (its id is in `pid_file`). Only a process
 /// that really runs `searx.webapp` is stopped.
 fn stop_stale_server(pid_file: &Path) {
     let Ok(text) = std::fs::read_to_string(pid_file) else {
@@ -311,7 +311,7 @@ async fn download(
 ) -> Result<Vec<u8>, String> {
     let mut response = client
         .get(url)
-        .header("User-Agent", "Typelite")
+        .header("User-Agent", "OraType")
         .timeout(Duration::from_secs(600))
         .send()
         .await
@@ -348,7 +348,7 @@ pub async fn latest_commit(client: &reqwest::Client) -> Result<(String, String),
     let url = format!("https://api.github.com/repos/{SEARXNG_REPO}/commits/master");
     let value: serde_json::Value = client
         .get(&url)
-        .header("User-Agent", "Typelite")
+        .header("User-Agent", "OraType")
         .header("Accept", "application/vnd.github+json")
         .timeout(Duration::from_secs(20))
         .send()
@@ -758,7 +758,7 @@ async fn ensure_uv(
     let asset = uv_asset();
     let hash_text = client
         .get(format!("{UV_RELEASES}/{asset}.sha256"))
-        .header("User-Agent", "Typelite")
+        .header("User-Agent", "OraType")
         .timeout(Duration::from_secs(30))
         .send()
         .await
@@ -1054,7 +1054,7 @@ mod tests {
 
     #[test]
     fn installed_needs_its_python_to_count() {
-        let root = std::env::temp_dir().join(format!("typelite-search-{}", uuid::Uuid::new_v4()));
+        let root = std::env::temp_dir().join(format!("oratype-search-{}", uuid::Uuid::new_v4()));
         let paths = SearchPaths::new(root.clone());
         std::fs::create_dir_all(&root).unwrap();
         let installed = Installed {
@@ -1083,7 +1083,7 @@ mod tests {
 
     #[test]
     fn remove_old_installs_keeps_only_the_active_one() {
-        let root = std::env::temp_dir().join(format!("typelite-search-{}", uuid::Uuid::new_v4()));
+        let root = std::env::temp_dir().join(format!("oratype-search-{}", uuid::Uuid::new_v4()));
         let paths = SearchPaths::new(root.clone());
         for commit in ["aaaaaaaaaaaaaaaa", "bbbbbbbbbbbbbbbb"] {
             std::fs::create_dir_all(paths.install_dir(commit)).unwrap();
@@ -1101,7 +1101,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[ignore = "downloads SearXNG; run by hand"]
     async fn real_setup_search_update_and_remove() {
-        let root = std::env::temp_dir().join(format!("typelite-search-{}", uuid::Uuid::new_v4()));
+        let root = std::env::temp_dir().join(format!("oratype-search-{}", uuid::Uuid::new_v4()));
         let server = SearchServer {
             paths: Mutex::new(Some(SearchPaths::new(root.clone()))),
             running: Mutex::new(None),

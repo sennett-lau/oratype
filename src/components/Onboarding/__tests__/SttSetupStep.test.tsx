@@ -15,7 +15,7 @@ vi.mock('react-i18next', async () => {
   return { useTranslation: () => ({ t: translate }) }
 })
 
-const GUIDE = 'https://github.com/sennett-lau/typelite/blob/main/docs/guides/speech/README.md'
+const GUIDE = 'https://github.com/sennett-lau/oratype/blob/main/docs/guides/speech/README.md'
 
 function config() {
   return useAppStore.getState().config
@@ -82,7 +82,7 @@ describe('SttSetupStep', () => {
       expect(within(card()).getAllByText('Recommended').length).toBeGreaterThan(0)
       expect(
         within(card()).getByText(
-          'Runs a speech model inside Typelite on this computer. No other software needed.',
+          'Runs a speech model inside OraType on this computer. No other software needed.',
         ),
       ).toBeInTheDocument()
       const models = within(card()).getByRole('radiogroup', { name: 'Model' })

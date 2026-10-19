@@ -46,7 +46,7 @@ describe('UpdateBar (plan auto-update)', () => {
     render(<UpdateBar />)
 
     const bar = await screen.findByTestId('update-bar')
-    expect(bar).toHaveTextContent('Typelite 1.1.0 is available.')
+    expect(bar).toHaveTextContent('OraType 1.1.0 is available.')
     await waitFor(() => expect(listeners.length).toBeGreaterThan(0))
     push({ state: 'downloading', version: '1.1.0', downloaded: 25, total: 100 })
     expect(screen.getByTestId('update-bar')).toHaveTextContent('25%')

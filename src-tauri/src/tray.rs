@@ -30,7 +30,7 @@ fn get_tray_labels(lang: &str) -> TrayLabels {
             stop_recording: "停止錄音",
             hands_free: "免提模式",
             settings: "設定",
-            about: "關於 Typelite",
+            about: "關於 OraType",
             quit: "結束",
         },
         "es" => TrayLabels {
@@ -40,7 +40,7 @@ fn get_tray_labels(lang: &str) -> TrayLabels {
             stop_recording: "Detener grabación",
             hands_free: "Modo manos libres",
             settings: "Ajustes",
-            about: "Acerca de Typelite",
+            about: "Acerca de OraType",
             quit: "Salir",
         },
         "fr" => TrayLabels {
@@ -50,7 +50,7 @@ fn get_tray_labels(lang: &str) -> TrayLabels {
             stop_recording: "Arrêter l’enregistrement",
             hands_free: "Mode mains libres",
             settings: "Réglages",
-            about: "À propos de Typelite",
+            about: "À propos de OraType",
             quit: "Quitter",
         },
         "de" => TrayLabels {
@@ -60,7 +60,7 @@ fn get_tray_labels(lang: &str) -> TrayLabels {
             stop_recording: "Aufnahme beenden",
             hands_free: "Freihändiger Modus",
             settings: "Einstellungen",
-            about: "Über Typelite",
+            about: "Über OraType",
             quit: "Beenden",
         },
         "ja" => TrayLabels {
@@ -70,7 +70,7 @@ fn get_tray_labels(lang: &str) -> TrayLabels {
             stop_recording: "録音を停止",
             hands_free: "ハンズフリーモード",
             settings: "設定",
-            about: "Typelite について",
+            about: "OraType について",
             quit: "終了",
         },
         "zh" => TrayLabels {
@@ -80,7 +80,7 @@ fn get_tray_labels(lang: &str) -> TrayLabels {
             stop_recording: "停止录音",
             hands_free: "免提模式",
             settings: "设置",
-            about: "关于 Typelite",
+            about: "关于 OraType",
             quit: "退出",
         },
         _ => TrayLabels {
@@ -90,7 +90,7 @@ fn get_tray_labels(lang: &str) -> TrayLabels {
             stop_recording: "Stop Recording",
             hands_free: "Hands-free Mode",
             settings: "Settings",
-            about: "About Typelite",
+            about: "About OraType",
             quit: "Quit",
         },
     }

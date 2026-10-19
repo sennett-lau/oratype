@@ -24,7 +24,7 @@ use sha2::{Digest, Sha256};
 /// `{LIBRARY_BASE_URL}/<id>/preset.md`. The main branch, so merged presets reach users without
 /// an app release; integrity comes from the sizes and hashes in the index.
 pub const LIBRARY_BASE_URL: &str =
-    "https://raw.githubusercontent.com/sennett-lau/typelite/main/presets/languages";
+    "https://raw.githubusercontent.com/sennett-lau/oratype/main/presets/languages";
 /// The language subtags the validator accepts, and the macrolanguage map, built into the app.
 const LANGUAGE_CODES_JSON: &str = include_str!("../../../../presets/languages/language-codes.json");
 

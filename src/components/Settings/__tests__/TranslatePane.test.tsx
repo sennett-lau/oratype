@@ -83,7 +83,7 @@ describe('TranslatePane', () => {
     render(<TranslatePane />)
     fireEvent.click(screen.getByRole('button', { name: 'About language presets' }))
     expect(openUrl).toHaveBeenCalledWith(
-      'https://github.com/sennett-lau/typelite/blob/main/docs/guides/languages/README.md#language-presets',
+      'https://github.com/sennett-lau/oratype/blob/main/docs/guides/languages/README.md#language-presets',
     )
   })
 })

@@ -280,7 +280,7 @@ export function validateServiceRow(row) {
     if (!/^`https?:\/\/[^\s`]+`$/.test(address)) errors.push(`${name}: Address must be \`http(s)://…\` or —`)
     else if (url.endsWith('/')) errors.push(`${name}: Address must not end with /`)
     else if (ADDRESS_ENDINGS.some((ending) => url.endsWith(ending))) {
-      errors.push(`${name}: Address must stop before the path Typelite adds`)
+      errors.push(`${name}: Address must stop before the path OraType adds`)
     }
   }
   return errors

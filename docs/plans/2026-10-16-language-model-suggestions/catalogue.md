@@ -7,8 +7,8 @@ setup. Part of plan [`language-model-suggestions`](index.md).
 
 | Option | Model | Download | Runs in |
 |---|---|---|---|
-| Best accuracy | Whisper large-v3-turbo (q5_0) | 574 MB | Typelite (whisper.cpp) |
-| Faster | Whisper small (q5_1) | 190 MB | Typelite (whisper.cpp) |
+| Best accuracy | Whisper large-v3-turbo (q5_0) | 574 MB | OraType (whisper.cpp) |
+| Faster | Whisper small (q5_1) | 190 MB | OraType (whisper.cpp) |
 | Qwen3-ASR | Qwen3-ASR 1.7B Q8_0 + mmproj (ggml-org) | 2.5 GB | Built-in speech server (`llama-server`) |
 
 ## AI polish

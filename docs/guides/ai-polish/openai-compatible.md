@@ -1,6 +1,6 @@
 # OpenAI-compatible chat servers
 
-Ollama, LM Studio, llama.cpp and most cloud services accept the OpenAI chat API. Typelite uses it
+Ollama, LM Studio, llama.cpp and most cloud services accept the OpenAI chat API. OraType uses it
 for every AI preset except Built-in.
 
 ## Enter a service

@@ -66,7 +66,7 @@ paste value after the change will show it.
 - `cargo test --lib` (947 passed), `cargo fmt --check`, frontend tests, docs check. No new
   clippy warnings.
 - Not measured end to end in the app; needs a real dictation run (see the PR).
-- `frontmostApplication` depends on AppKit's main run loop; in Typelite it always runs. A
+- `frontmostApplication` depends on AppKit's main run loop; in OraType it always runs. A
   process without a run loop (this benchmark) would keep the value from its first read.
 
 ## Reproduce

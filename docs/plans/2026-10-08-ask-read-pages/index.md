@@ -3,7 +3,7 @@
 Live questions in Ask anything ("when is the next F1 race", "next NBA game", "next Hong Kong
 Premier League match") often ended in the "Needs live information" panel even though web search
 worked: the AI saw only ~200-character search snippets, and upcoming-event questions went through
-a strict extraction that needed the event name and date copied verbatim from one snippet. Typelite
+a strict extraction that needed the event name and date copied verbatim from one snippet. OraType
 now reads the top two or three result pages, keeps the passages that fit the question, answers
 through the normal web-answer path of plan [`ask-web-search`](../2026-09-29-ask-web-search/index.md),
 and checks every date in the answer against the text the AI was given. The approach is the same

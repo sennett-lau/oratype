@@ -3,7 +3,7 @@ import { easeInOut, voiceLevel } from '../lib/clock'
 import { IconCheck, IconCopy, IconMessage, IconX } from './Icons'
 
 /**
- * A faithful copy of Typelite's pill (the "capsule"): 32 pt dark glass with the aurora light
+ * A faithful copy of OraType's pill (the "capsule"): 32 pt dark glass with the aurora light
  * inside. Sizes, colours and timings come from the app (globals.css `.pill`, `.aurora-*`,
  * useCapsuleResize.ts); here everything is a function of the demo time `t`, not of live audio.
  */

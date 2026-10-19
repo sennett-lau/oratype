@@ -139,7 +139,7 @@ mod mac {
         LAST_AUTOMATION_ANSWER.store(value, Ordering::Relaxed);
     }
 
-    /// Automation = permission to send Apple Events (AppleScript) to another app. Typelite
+    /// Automation = permission to send Apple Events (AppleScript) to another app. OraType
     /// sends them to "System Events" to press ⌘V and to read the frontmost app. This check
     /// never shows a prompt.
     pub fn automation_status() -> PermissionStatus {
@@ -161,7 +161,7 @@ mod mac {
     }
 
     /// Runs a harmless AppleScript against System Events. The first time, macOS shows
-    /// "Typelite wants to control System Events" and `osascript` waits for the answer.
+    /// "OraType wants to control System Events" and `osascript` waits for the answer.
     pub fn request_automation() -> PermissionStatus {
         let output = std::process::Command::new("/usr/bin/osascript")
             .args([

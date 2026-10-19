@@ -1,12 +1,12 @@
 # Built-in AI polish
 
 Built-in runs a small language model on your computer with llama.cpp's `llama-server`, which ships
-inside Typelite. No Ollama, no Terminal, no account: your text never leaves your computer.
+inside OraType. No Ollama, no Terminal, no account: your text never leaves your computer.
 
 ## Set it up
 
 Pick **Built-in** in the AI setup step, or in **Settings → AI**, choose a model and press
-**Set up** (or **Download** in Settings). Typelite downloads the model, checks its SHA-256,
+**Set up** (or **Download** in Settings). OraType downloads the model, checks its SHA-256,
 starts the server and sends one test request.
 
 ## The models
@@ -22,7 +22,7 @@ starts the server and sends one test request.
 - Qwen 3.5 4B is the AI half of the setup suggested for Cantonese (see **Your languages** in
   onboarding or Settings). In the polish evaluations it does better than Qwen3 4B on Cantonese
   and worse on English and Mandarin, so it is suggested only for combinations with Cantonese. They are stored in
-  `~/Library/Application Support/dev.typelite.mac/models/`, next to the speech models.
+  `~/Library/Application Support/dev.oratype.mac/models/`, next to the speech models.
 - Intel Macs, and Macs with less memory than the table says, get no Built-in option; use an
   [OpenAI-compatible](openai-compatible.md) server or service instead.
 - **Delete** in Settings removes the model file.
@@ -31,15 +31,15 @@ starts the server and sends one test request.
 
 - The server listens only on your computer (127.0.0.1, a random port and a random key that
   changes on every start), uses the GPU, and has thinking turned off (`--reasoning off`).
-- It starts when Built-in is in use and stops when Typelite quits or you pick another option.
+- It starts when Built-in is in use and stops when OraType quits or you pick another option.
   While it runs it keeps the model in memory (about 3 GB for Best quality).
-- The very first start after installing or updating Typelite takes a minute or two while macOS
+- The very first start after installing or updating OraType takes a minute or two while macOS
   prepares the GPU code; later starts take a few seconds.
 - The first polish after a start is a second or two slower, while the server processes the long
   polish instructions once and caches them. See [Benchmarks](../benchmarks/README.md) for measured
   numbers.
 
-## Building Typelite yourself
+## Building OraType yourself
 
 `npm run build:app` builds `llama-server` first (`scripts/build-llama-server.sh`, needs `cmake`).
 Without it the app still builds and runs, and Built-in AI says the server is missing. See

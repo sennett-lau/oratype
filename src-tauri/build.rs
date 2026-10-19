@@ -10,7 +10,7 @@ fn main() {
     // Plan `ai-polish-setup`: the built-in AI server binary is named after the target triple
     // (`llama-server-aarch64-apple-darwin`), as Tauri external binaries are.
     println!(
-        "cargo:rustc-env=TYPELITE_TARGET_TRIPLE={}",
+        "cargo:rustc-env=ORATYPE_TARGET_TRIPLE={}",
         std::env::var("TARGET").unwrap_or_default()
     );
 

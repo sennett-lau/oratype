@@ -20,7 +20,7 @@ vi.mock('react-i18next', async () => {
   return { useTranslation: () => ({ t: translate }) }
 })
 
-const GUIDE = 'https://github.com/sennett-lau/typelite/blob/main/docs/guides/ai-polish/README.md'
+const GUIDE = 'https://github.com/sennett-lau/oratype/blob/main/docs/guides/ai-polish/README.md'
 const GB = 1024 ** 3
 
 function config() {
@@ -87,7 +87,7 @@ describe('LlmSetupStep', () => {
 
       expect(
         within(card()).getByText(
-          'Runs a small open model inside Typelite on this computer. No other software needed.',
+          'Runs a small open model inside OraType on this computer. No other software needed.',
         ),
       ).toBeInTheDocument()
       const models = within(card()).getByRole('radiogroup', { name: 'Model' })
@@ -162,7 +162,7 @@ describe('LlmSetupStep', () => {
 
       expect(
         within(card()).getByText(
-          'This copy of Typelite was built without the built-in AI server. Use your own server or API key instead.',
+          'This copy of OraType was built without the built-in AI server. Use your own server or API key instead.',
         ),
       ).toBeInTheDocument()
       expect(cardButtons()).toEqual([])

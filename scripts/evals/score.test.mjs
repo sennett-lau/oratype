@@ -154,7 +154,7 @@ describe('summary and baseline', () => {
 
 describe('dataset check', () => {
   const root = () => {
-    const dir = mkdtempSync(join(tmpdir(), 'typelite-evals-'))
+    const dir = mkdtempSync(join(tmpdir(), 'oratype-evals-'))
     writeFileSync(
       join(dir, 'languages.json'),
       JSON.stringify({ en: { unit: 'word', fillers: ['um'] } }),

@@ -1,6 +1,6 @@
 ---
 name: add-language-guide
-description: Write a community language guide (docs/guides/languages/<id>.md) that recommends the speech model, AI polish model and language preset for one language, in the format the docs check enforces. Use when someone wants Typelite to handle their language or dialect better and has tested a setup.
+description: Write a community language guide (docs/guides/languages/<id>.md) that recommends the speech model, AI polish model and language preset for one language, in the format the docs check enforces. Use when someone wants OraType to handle their language or dialect better and has tested a setup.
 ---
 
 # Add a language guide

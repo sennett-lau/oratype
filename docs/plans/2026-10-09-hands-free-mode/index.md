@@ -1,6 +1,6 @@
 # Hands-free mode ("Hey Sam")
 
-Say "Hey Sam" and then a request, with no shortcut. Typelite listens on the microphone for the
+Say "Hey Sam" and then a request, with no shortcut. OraType listens on the microphone for the
 wake phrase with its own small pipeline: an in-memory ring buffer, its own voice gate, and a
 wake check on short voiced segments with the whisper.cpp that it already ships and a small
 model that the app downloads. After the wake phrase the pill records the request like the Ask
@@ -42,9 +42,9 @@ Status: building (2026-10-17)
   the prompt, Whisper left "Hey Sam" out of "Hey Sam, what's the weather" (8 of 8 misses), and
   it heard "Hey Pam" as "Hey Sam". 512 frames is half the time of the full window with the same
   accuracy.
-- **Typelite's own fuzzy matcher.** It tolerates Whisper's spellings ("Hay Sam", "K. Sam", "He is
+- **OraType's own fuzzy matcher.** It tolerates Whisper's spellings ("Hay Sam", "K. Sam", "He is
   Sam", "嘿 Sam", "Heysam") but needs the phrase at the start of the segment, so speech that
-  only mentions "hey Sam" mid-sentence does not wake Typelite.
+  only mentions "hey Sam" mid-sentence does not wake OraType.
 - **The hands-free run is an Ask run.** It reuses Ask's recording, voice check, intent detection
   and pill. One flag on the Ask state tells the stop path to apply hands-free routing first.
 - **Typing is the default; Settings can make it Ask** (changed 2026-10-17 after first use).

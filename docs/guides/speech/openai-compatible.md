@@ -1,6 +1,6 @@
 # OpenAI-compatible speech servers
 
-Most speech servers and cloud services accept the OpenAI transcription API. Typelite uses it for
+Most speech servers and cloud services accept the OpenAI transcription API. OraType uses it for
 every address in **Your server or API key** except a Qwen Cloud address
 ([Qwen Cloud](qwen-cloud.md)).
 
@@ -21,7 +21,7 @@ The spoken language is set separately, under **Settings → Speech → Language*
 
 ## The protocol
 
-When a recording ends, Typelite sends it as one request:
+When a recording ends, OraType sends it as one request:
 
 ```
 POST <address>/audio/transcriptions
@@ -40,7 +40,7 @@ and expects a JSON answer with the text, and with `verbose_json` the language it
 {"text": "Let's meet at four tomorrow.", "language": "en"}
 ```
 
-- The detected language lets Typelite add the right [language instructions](../languages/README.md)
+- The detected language lets OraType add the right [language instructions](../languages/README.md)
   when it polishes. A server that refuses `verbose_json` gets plain requests for the rest of the
   session and keeps working, without a detected language.
 
@@ -53,7 +53,7 @@ and expects a JSON answer with the text, and with `verbose_json` the language it
 
 ## What the address looks like
 
-- It ends before `/audio/transcriptions`; Typelite adds that part.
+- It ends before `/audio/transcriptions`; OraType adds that part.
 - A server on another computer uses that computer's address, for example
   `http://192.0.2.20:8000/v1`, or its name on a private network such as Tailscale.
 - `http://` is fine on your own network; cloud services use `https://`.
@@ -112,8 +112,8 @@ A computer with an NVIDIA GPU recognises speech several times faster than a lapt
 [Qwen3-ASR](https://huggingface.co/Qwen/Qwen3-ASR-1.7B) (Apache-2.0) is the speech model to use when whisper does not write your
 language the way you speak it, for example Cantonese (see the
 [language guides](../languages/README.md#language-guides)). It runs on llama.cpp's `llama-server`,
-the same C++ runtime family as whisper.cpp, or on vLLM. Both answer Typelite's transcription
-request; Typelite then:
+the same C++ runtime family as whisper.cpp, or on vLLM. Both answer OraType's transcription
+request; OraType then:
 
 - removes the language tag Qwen3-ASR puts in front of the text (`language Cantonese<asr_text>…`)
   and uses it as the detected language for the
@@ -122,7 +122,7 @@ request; Typelite then:
   Chinese in Simplified characters, so a dictation recognised as Cantonese (Hong Kong) becomes Hong
   Kong Traditional, with Cantonese 係 and 覆.
 
-In Typelite, use address `http://<that-computer's-address>:<port>/v1`, model `qwen3-asr`, no API
+In OraType, use address `http://<that-computer's-address>:<port>/v1`, model `qwen3-asr`, no API
 key, and leave **Spoken language** on **Auto-detect**.
 
 **With llama.cpp (Mac, NVIDIA or CPU).** Install llama.cpp (on a Mac, `brew install llama.cpp`; on

@@ -21,13 +21,13 @@ JSON body:
 - `"type": "input_audio"` and `parameters.format` are required. Without them every request gets
   an empty `400 {}`, the same answer as silence.
 - `language` is optional. Left out, the model detects the language. The endpoint accepts any code
-  without error, so Typelite sends the preset's language as it is, or nothing for auto.
+  without error, so OraType sends the preset's language as it is, or nothing for auto.
 
 ## Response
 
 `200` with the transcript in `output.text` (also top-level `text`, and `output.sentence.text`).
 Several sentences still come back as one `output.sentence` object whose text holds all of them.
-Word timings and `usage.duration` (seconds) are also returned; Typelite reads only the text.
+Word timings and `usage.duration` (seconds) are also returned; OraType reads only the text.
 
 ## Errors
 

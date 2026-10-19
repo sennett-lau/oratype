@@ -1,4 +1,4 @@
-//! Plan `hands-free-mode` (wake-check.md): Typelite's own fuzzy match of a short transcript
+//! Plan `hands-free-mode` (wake-check.md): OraType's own fuzzy match of a short transcript
 //! against the wake phrase ("Hey" + the user's wake name, default "Sam").
 //!
 //! The transcript comes from a small Whisper model, so the match tolerates what such a model
@@ -6,7 +6,7 @@
 //! ("Hay Sam", "Hi Sam", "嘿 Sam"), a joined word ("Heysam"), a vowel heard differently
 //! ("Hey Sem") and, at higher sensitivity, one wrong letter. The phrase must come at the start
 //! of what was heard (up to two filler words before it, "Oh, hey Sam"), so a conversation that
-//! merely mentions "hey Sam" in the middle of a sentence does not wake Typelite.
+//! merely mentions "hey Sam" in the middle of a sentence does not wake OraType.
 //!
 //! The same name ends a request: "Thanks, Sam" at the very end of what was heard (routing.md).
 

@@ -1,6 +1,6 @@
 # Interface languages
 
-Typelite's interface came in English and Simplified Chinese, chosen on the About page. This plan
+OraType's interface came in English and Simplified Chinese, chosen on the About page. This plan
 adds Traditional Chinese, Spanish, French, German and Japanese, moves the choice to
 Settings → General, and makes each language a single file that anyone can correct.
 
@@ -42,4 +42,4 @@ Status: building (2026-10-05)
 
 ## Open questions
 
-- Should a first launch pick the macOS language when Typelite has it?
+- Should a first launch pick the macOS language when OraType has it?

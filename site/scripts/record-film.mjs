@@ -8,7 +8,7 @@
 //   window.render(t) draws the frame at t seconds (pure: the same t gives the same frame)
 //   window.ready     a promise that resolves once its images have decoded
 // Each frame is rendered and screenshot at 1920×1080 and 30 fps, so the film never depends on
-// real-time playback. Then ffmpeg encodes typelite-<version>-promo.mp4 with music.wav from the
+// real-time playback. Then ffmpeg encodes oratype-<version>-promo.mp4 with music.wav from the
 // same folder (made by site/scripts/promo-music.py), writes sheet.png (one frame per second, to
 // check the film at a glance) and removes the frames. A preview writes preview/t<seconds>.png.
 //
@@ -66,7 +66,7 @@ try {
 }
 
 if (!preview) {
-  const video = join(dir, `typelite-${version}-promo.mp4`)
+  const video = join(dir, `oratype-${version}-promo.mp4`)
   const music = join(dir, 'music.wav')
   const audio = existsSync(music) ? ['-i', music, '-c:a', 'aac', '-b:a', '192k', '-shortest'] : []
   if (!audio.length) console.warn('No music.wav: the film is silent (site/scripts/promo-music.py)')

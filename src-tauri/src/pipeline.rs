@@ -1194,13 +1194,13 @@ impl PipelineHandle {
         // Update tray tooltip + menu to reflect pipeline state
         if let Some(tray_handle) = self.app_handle.try_state::<crate::TrayHandle>() {
             let tooltip = match new_state {
-                PipelineState::Preparing => "Typelite - Preparing...",
-                PipelineState::Recording => "Typelite - Recording...",
-                PipelineState::Transcribing => "Typelite - Transcribing...",
-                PipelineState::Polishing => "Typelite - Polishing...",
-                PipelineState::Outputting => "Typelite - Outputting...",
-                PipelineState::AskRecording => "Typelite - Ask...",
-                PipelineState::AskThinking => "Typelite - Answering...",
+                PipelineState::Preparing => "OraType - Preparing...",
+                PipelineState::Recording => "OraType - Recording...",
+                PipelineState::Transcribing => "OraType - Transcribing...",
+                PipelineState::Polishing => "OraType - Polishing...",
+                PipelineState::Outputting => "OraType - Outputting...",
+                PipelineState::AskRecording => "OraType - Ask...",
+                PipelineState::AskThinking => "OraType - Answering...",
                 PipelineState::Idle => crate::APP_NAME,
             };
             if let Ok(t) = tray_handle.tray.lock() {
@@ -1985,7 +1985,7 @@ impl PipelineHandle {
         // Update tray for transcribing state
         if let Some(tray_handle) = self.app_handle.try_state::<crate::TrayHandle>() {
             if let Ok(t) = tray_handle.tray.lock() {
-                let _ = t.set_tooltip(Some("Typelite - Transcribing..."));
+                let _ = t.set_tooltip(Some("OraType - Transcribing..."));
             }
         }
         crate::refresh_tray(&self.app_handle);
@@ -2467,7 +2467,7 @@ impl PipelineHandle {
         self.set_state(PipelineState::Polishing);
         let llm_start = std::time::Instant::now();
 
-        // Plan `ai-polish-setup`: for the Built-in preset this starts Typelite's own server when
+        // Plan `ai-polish-setup`: for the Built-in preset this starts OraType's own server when
         // needed.
         *self
             .last_ai_preset_id

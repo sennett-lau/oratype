@@ -1,8 +1,8 @@
 # Language presets
 
-Language presets tell Typelite's AI how to write one language: which words and grammar to use,
+Language presets tell OraType's AI how to write one language: which words and grammar to use,
 which script, what stays in English, with a few examples. When someone adds a language in
-Typelite, the app lists the presets that fit it and downloads the one they choose from this
+OraType, the app lists the presets that fit it and downloads the one they choose from this
 folder. They can still edit the text in the app.
 
 Anyone can add a preset or improve one with a pull request. You do not need to know Rust or
@@ -136,7 +136,7 @@ and a region: `en`, `en-GB`, `pt-BR`, `zh-Hant-HK`, `yue-Hant-HK`.
 
 ### Recognition
 
-When Typelite polishes (cleans up) a dictation, it adds the notes of at most one of the user's
+When OraType polishes (cleans up) a dictation, it adds the notes of at most one of the user's
 languages: the one the speech is in. Your preset tells it how to recognise that language:
 
 1. **Hints first.** If the transcript contains any of your `hints`, your language is a
@@ -162,7 +162,7 @@ The body has these sections, in this order:
 
 - `## Instructions` (required): how to write the language. Write it as a guide for a writer
   ("Write colloquial written Cantonese…"), not as "Translate into…"; the same text is used when
-  Typelite polishes speech in this language and when it translates into it. Typelite adds its
+  OraType polishes speech in this language and when it translates into it. OraType adds its
   own fixed rules around your text (output only the result, the target language, the Chinese
   script), so do not repeat those.
 - `## Variant: <code>` (optional, one per code): a short regional note, at most 400

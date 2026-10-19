@@ -19,6 +19,7 @@ pub mod pipeline;
 pub mod platform;
 pub mod readiness;
 pub mod recording_deadline;
+pub mod rename_migration;
 pub mod search_server;
 pub mod selection;
 pub mod shortcut_gate;
@@ -119,7 +120,7 @@ fn reconcile_auto_start_preference(
 /// On macOS every app has an *activation policy*:
 /// - `ActivationPolicy::Regular` is a normal app: Dock icon, and its own menu bar when focused.
 /// - `ActivationPolicy::Accessory` is a menu-bar utility: no Dock icon and no app menu bar,
-///   but it can still open windows. Typelite's tray (menu-bar) icon keeps working either way.
+///   but it can still open windows. OraType's tray (menu-bar) icon keeps working either way.
 ///
 /// Switching the policy while the app runs can hide its windows, so if the main window was
 /// visible it is shown and focused again afterwards. `set_activation_policy` is queued on the
@@ -250,7 +251,7 @@ fn build_ask_window(handle: &tauri::AppHandle) -> tauri::Result<tauri::WebviewWi
         "ask",
         tauri::WebviewUrl::App("index.html#ask".into()),
     )
-    .title("Typelite Ask")
+    .title("OraType Ask")
     .inner_size(452.0, 192.0)
     .resizable(false)
     .decorations(false)
@@ -352,8 +353,8 @@ mod tests {
 
     #[test]
     fn cli_action_parser_supports_first_and_later_instance_arguments() {
-        let toggle = vec!["/usr/bin/typelite".to_string(), "toggle".to_string()];
-        let ask = vec!["Typelite.exe".to_string(), "ask".to_string()];
+        let toggle = vec!["/usr/bin/oratype".to_string(), "toggle".to_string()];
+        let ask = vec!["OraType.exe".to_string(), "ask".to_string()];
 
         assert_eq!(parse_cli_action(&toggle), Some(CliAction::Toggle));
         assert_eq!(parse_cli_action(&ask), Some(CliAction::Ask));
@@ -362,11 +363,11 @@ mod tests {
     #[test]
     fn cli_action_parser_does_not_hijack_urls_or_ambiguous_commands() {
         let url_arg = vec![
-            "typelite".to_string(),
-            "typelite://auth/callback?mode=toggle".to_string(),
+            "oratype".to_string(),
+            "oratype://auth/callback?mode=toggle".to_string(),
         ];
         let ambiguous = vec![
-            "typelite".to_string(),
+            "oratype".to_string(),
             "toggle".to_string(),
             "ask".to_string(),
         ];
@@ -377,7 +378,7 @@ mod tests {
 
     #[test]
     fn cli_toggle_and_ask_are_gated_until_onboarding_is_finished() {
-        // Plan `onboarding-shortcut-gate`: `typelite toggle` is a dictation, `typelite ask` is Ask.
+        // Plan `onboarding-shortcut-gate`: `oratype toggle` is a dictation, `oratype ask` is Ask.
         use shortcut_gate::{ShortcutGate, ShortcutGateRequest};
         let toggle = cli_action_role(CliAction::Toggle);
         let ask = cli_action_role(CliAction::Ask);
@@ -782,10 +783,10 @@ fn apply_linux_workarounds() {
         let env = LinuxLaunchEnv::current();
         let plan = linux_workaround_plan(
             &env,
-            env_flag_enabled("TYPELITE_DISABLE_WEBKIT_DMABUF"),
-            env_flag_enabled("TYPELITE_DISABLE_WEBKIT_COMPOSITING"),
-            env_flag_enabled("TYPELITE_FORCE_GDK_X11"),
-            env_flag_enabled("TYPELITE_FORCE_SOFTWARE_GL"),
+            env_flag_enabled("ORATYPE_DISABLE_WEBKIT_DMABUF"),
+            env_flag_enabled("ORATYPE_DISABLE_WEBKIT_COMPOSITING"),
+            env_flag_enabled("ORATYPE_FORCE_GDK_X11"),
+            env_flag_enabled("ORATYPE_FORCE_SOFTWARE_GL"),
         );
 
         if plan.disable_dmabuf {
@@ -1018,21 +1019,21 @@ fn dispatch_cli_action(app: &tauri::AppHandle, action: CliAction) {
     }
 }
 
-/// The app's name in the menu bar tooltip: "Typelite Dev" for the development build, so the two
+/// The app's name in the menu bar tooltip: "OraType Dev" for the development build, so the two
 /// apps can be told apart when both are installed.
 #[cfg(not(feature = "dev-build"))]
-pub(crate) const APP_NAME: &str = "Typelite";
+pub(crate) const APP_NAME: &str = "OraType";
 #[cfg(feature = "dev-build")]
-pub(crate) const APP_NAME: &str = "Typelite Dev";
+pub(crate) const APP_NAME: &str = "OraType Dev";
 
 /// The log folder's name under `~/Library/Logs`. The development build (`dev-build` feature)
 /// writes to its own folder, so its log never mixes with the release app's.
 #[cfg(not(feature = "dev-build"))]
-const LOG_FOLDER: &str = "Typelite";
+const LOG_FOLDER: &str = "OraType";
 #[cfg(feature = "dev-build")]
-const LOG_FOLDER: &str = "Typelite Dev";
+const LOG_FOLDER: &str = "OraType Dev";
 
-/// Where the log file lives: `~/Library/Logs/Typelite/typelite.log` on macOS (open it with
+/// Where the log file lives: `~/Library/Logs/OraType/oratype.log` on macOS (open it with
 /// Console.app or any editor). The log holds timings, sizes and errors only, never dictated text.
 fn log_file_path() -> Option<std::path::PathBuf> {
     #[cfg(target_os = "macos")]
@@ -1042,16 +1043,16 @@ fn log_file_path() -> Option<std::path::PathBuf> {
             std::path::PathBuf::from(home)
                 .join("Library/Logs")
                 .join(LOG_FOLDER)
-                .join("typelite.log"),
+                .join("oratype.log"),
         )
     }
     #[cfg(not(target_os = "macos"))]
     {
-        Some(std::env::temp_dir().join("typelite").join("typelite.log"))
+        Some(std::env::temp_dir().join("oratype").join("oratype.log"))
     }
 }
 
-/// Keep one previous log: rename the current file to `typelite.log.1` once it passes 5 MB.
+/// Keep one previous log: rename the current file to `oratype.log.1` once it passes 5 MB.
 fn open_log_file(path: &std::path::Path) -> Option<std::fs::File> {
     const MAX_LOG_BYTES: u64 = 5 * 1024 * 1024;
     std::fs::create_dir_all(path.parent()?).ok()?;
@@ -1075,7 +1076,7 @@ fn init_logging() {
 
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| {
         EnvFilter::new(
-            "info,typelite_lib=debug,hyper_util=warn,reqwest=warn,tao=warn,whisper_rs=warn",
+            "info,oratype_lib=debug,hyper_util=warn,reqwest=warn,tao=warn,whisper_rs=warn",
         )
     });
     let file_layer = log_file_path()
@@ -1104,6 +1105,12 @@ pub fn run() {
     apply_linux_workarounds();
 
     init_logging();
+
+    // Plan `rename-oratype`: move Typelite's folders across before anything reads them; a bundle
+    // still called Typelite.app is renamed and started again from there.
+    if rename_migration::run() == rename_migration::Next::Exit {
+        return;
+    }
 
     #[cfg(target_os = "linux")]
     log_linux_launch_diagnostics(xinitthreads_status);
@@ -1161,7 +1168,7 @@ pub fn run() {
             // Initialize data directory and database
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
-            let db_path = data_dir.join("typelite.db");
+            let db_path = data_dir.join("oratype.db");
             // Unmute the output if a previous run crashed while it held the mute.
             audio::output_mute::init(&data_dir);
 
@@ -1284,7 +1291,7 @@ pub fn run() {
                 .map_err(|e| anyhow::anyhow!("Failed to build tray menu: {}", e))?;
 
             // macOS: a black-on-transparent "template image" (from
-            // icons/source/typelite-tray.svg). macOS then tints it itself, so it reads
+            // icons/source/oratype-tray.svg). macOS then tints it itself, so it reads
             // correctly on light and dark menu bars. Other platforms keep the app icon.
             // The development build adds a dot (icons/dev/tray.svg), since a template image
             // has no colour to tell the two apps apart.
@@ -1463,7 +1470,7 @@ pub fn run() {
                 }
             }
 
-            tracing::info!("Typelite started");
+            tracing::info!("OraType started");
 
             // Plan `language-prompt-library`: the daily check for languages with auto-update on.
             commands::language_presets::start_auto_updates(app_handle.clone());
@@ -1646,7 +1653,7 @@ pub fn run() {
                 llm::builtin::server().stop();
                 // Plan `language-model-suggestions`: and the built-in speech server.
                 llm::builtin::speech_server().stop();
-                // Plan `searxng-setup`: the Built-in search server runs only while Typelite runs.
+                // Plan `searxng-setup`: the Built-in search server runs only while OraType runs.
                 search_server::server().stop();
             }
             #[cfg(target_os = "macos")]

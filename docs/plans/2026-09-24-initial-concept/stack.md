@@ -15,10 +15,10 @@ Language, build and packaging. Back to [index](index.md).
 
 ## Packaging
 
-SwiftPM builds a bare executable, so a small script (`make app`) assembles `Typelite.app`:
+SwiftPM builds a bare executable, so a small script (`make app`) assembles `OraType.app`:
 
-- `Contents/MacOS/Typelite` (the binary) and `Contents/Info.plist`.
-- `Info.plist`: bundle id `dev.typelite.app`, `LSUIElement = true` (menu-bar only, no Dock icon),
+- `Contents/MacOS/OraType` (the binary) and `Contents/Info.plist`.
+- `Info.plist`: bundle id `dev.oratype.app`, `LSUIElement = true` (menu-bar only, no Dock icon),
   `NSMicrophoneUsageDescription`.
 - No App Sandbox: event taps and pasting into other apps need it off.
 - Signed with a stable self-signed certificate from the login keychain, so macOS keeps

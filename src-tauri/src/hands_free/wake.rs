@@ -1,4 +1,4 @@
-//! Plan `hands-free-mode` (wake-check.md): the wake check. Runs the whisper.cpp that Typelite
+//! Plan `hands-free-mode` (wake-check.md): the wake check. Runs the whisper.cpp that OraType
 //! already ships on one short voiced segment with a small model, then matches the text against
 //! the wake phrase (`matcher.rs`).
 //!

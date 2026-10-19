@@ -15,7 +15,7 @@ shown. What is measured and how it is kept stay as `speed-board` describes them.
 
 ## Goals
 
-- The sidebar shows the Typelite icon, so the window is recognisable at a glance.
+- The sidebar shows the OraType icon, so the window is recognisable at a glance.
 - The top of Home says what the app does in one line.
 - A shortcut tile answers one question: which keys do I press?
 - Insights gives one number the user can remember: how long it usually takes from stop to text.
@@ -30,8 +30,8 @@ shown. What is measured and how it is kept stay as `speed-board` describes them.
 
 | Decision | Reason |
 |---|---|
-| Sidebar brand: the app icon (`src/assets/typelite-icon.png`, a copy of the 64 px bundle icon) at 28 pt with 7 pt corners, then "Typelite" in 18 pt bold | The icon is the one users see in the Dock; 64 px stays sharp at 28 pt on Retina. |
-| Headline "Just say it." at 26 pt bold, subtitle "Press a shortcut anywhere, speak, and clean text lands where you're typing." | Says the whole product in two lines; replaces "Welcome to Typelite", which said nothing. |
+| Sidebar brand: the app icon (`src/assets/oratype-icon.png`, a copy of the 64 px bundle icon) at 28 pt with 7 pt corners, then "OraType" in 18 pt bold | The icon is the one users see in the Dock; 64 px stays sharp at 28 pt on Retina. |
+| Headline "Just say it." at 26 pt bold, subtitle "Press a shortcut anywhere, speak, and clean text lands where you're typing." | Says the whole product in two lines; replaces "Welcome to OraType", which said nothing. |
 | Tiles: icon and name on the first row, key caps on the second; no description, no Switch language hint | What each shortcut does is explained in Settings → General and in the tutorial; the tile is a reminder of the keys. |
 | Extra shortcut rows (edit selection, switch prompt preset, open app) keep their description | They are rare and not taught in the tutorial. |
 | Insights shows the mean of every finished run, whatever preset it used | One stable "usual wait"; per-preset numbers belong to the comparison in plan `speed-by-preset`. |

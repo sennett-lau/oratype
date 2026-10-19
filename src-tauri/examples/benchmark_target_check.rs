@@ -4,8 +4,8 @@
 //!     cargo run --release --example benchmark_target_check -- [samples]
 use std::time::Instant;
 
+use oratype_lib::app_detector::cache::TargetCheckBenchmark;
 use serde_json::json;
-use typelite_lib::app_detector::cache::TargetCheckBenchmark;
 
 fn main() {
     let samples: usize = std::env::args()

@@ -12,7 +12,7 @@
 //   --languages en,zh-Hant-HK  (the user's language list for polish routing; default: the app's)
 //   --presets  (those languages use their presets from presets/languages/, as downloaded ones)
 //   --baseline <file>|none  --save-baseline  --out <dir>
-// TYPELITE_EVAL_* environment variables work as well (see src-tauri/examples/eval_run.rs).
+// ORATYPE_EVAL_* environment variables work as well (see src-tauri/examples/eval_run.rs).
 import { createHash } from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -195,21 +195,21 @@ function polish(options) {
   const cases = filterCases(loadPolish({ langs: list(options.lang), split }), options)
   if (!cases.length) throw new Error('no cases match')
   const env = {}
-  const llama = options['llama-model'] ?? process.env.TYPELITE_EVAL_LLAMA_MODEL
-  if (llama) env.TYPELITE_EVAL_LLAMA_MODEL = resolve(llama)
+  const llama = options['llama-model'] ?? process.env.ORATYPE_EVAL_LLAMA_MODEL
+  if (llama) env.ORATYPE_EVAL_LLAMA_MODEL = resolve(llama)
   // A release build of the driver finds llama-server only next to itself or through this variable.
   const binaries = join(REPO, 'src-tauri', 'binaries')
   const server =
     existsSync(binaries) && readdirSync(binaries).find((f) => f.startsWith('llama-server-'))
-  if (llama && server && !process.env.TYPELITE_LLAMA_SERVER)
-    env.TYPELITE_LLAMA_SERVER = join(binaries, server)
-  if (options['ai-url']) env.TYPELITE_EVAL_AI_URL = options['ai-url']
-  if (options['ai-model']) env.TYPELITE_EVAL_AI_MODEL = options['ai-model']
-  if (options.languages) env.TYPELITE_EVAL_LANGUAGES = options.languages
-  if (options.presets) env.TYPELITE_EVAL_PRESETS = '1'
+  if (llama && server && !process.env.ORATYPE_LLAMA_SERVER)
+    env.ORATYPE_LLAMA_SERVER = join(binaries, server)
+  if (options['ai-url']) env.ORATYPE_EVAL_AI_URL = options['ai-url']
+  if (options['ai-model']) env.ORATYPE_EVAL_AI_MODEL = options['ai-model']
+  if (options.languages) env.ORATYPE_EVAL_LANGUAGES = options.languages
+  if (options.presets) env.ORATYPE_EVAL_PRESETS = '1'
   const model = llama
     ? basename(llama)
-    : (options['ai-model'] ?? process.env.TYPELITE_EVAL_AI_MODEL ?? 'server')
+    : (options['ai-model'] ?? process.env.ORATYPE_EVAL_AI_MODEL ?? 'server')
   const outDir = outputDir('polish', options)
   const rows = cases.flatMap((c) =>
     Array.from({ length: n }, (_, sample) => ({ id: c.id, input: c.input, sample })),
@@ -255,13 +255,13 @@ function speech(options) {
   if (clips.some((c) => c.source === 'synthetic-say' && !existsSync(c.audio_path)))
     synth({ lang: options.lang })
   const env = {}
-  const whisper = options['whisper-model'] ?? process.env.TYPELITE_EVAL_WHISPER_MODEL
-  if (whisper) env.TYPELITE_EVAL_WHISPER_MODEL = resolve(whisper)
-  if (options['speech-url']) env.TYPELITE_EVAL_SPEECH_URL = options['speech-url']
-  if (options['speech-model']) env.TYPELITE_EVAL_SPEECH_MODEL = options['speech-model']
+  const whisper = options['whisper-model'] ?? process.env.ORATYPE_EVAL_WHISPER_MODEL
+  if (whisper) env.ORATYPE_EVAL_WHISPER_MODEL = resolve(whisper)
+  if (options['speech-url']) env.ORATYPE_EVAL_SPEECH_URL = options['speech-url']
+  if (options['speech-model']) env.ORATYPE_EVAL_SPEECH_MODEL = options['speech-model']
   const model = whisper
     ? basename(whisper)
-    : (options['speech-model'] ?? process.env.TYPELITE_EVAL_SPEECH_MODEL ?? 'server')
+    : (options['speech-model'] ?? process.env.ORATYPE_EVAL_SPEECH_MODEL ?? 'server')
   const outDir = outputDir('speech', options)
   console.log(`evals: ${clips.length} speech clip(s) with ${model}`)
   const answers = runDriver(

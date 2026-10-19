@@ -1,4 +1,4 @@
-# dmgbuild settings for Typelite's installer DMG (see scripts/build-dmg.sh).
+# dmgbuild settings for OraType's installer DMG (see scripts/build-dmg.sh).
 #
 # dmgbuild writes the Finder window layout (.DS_Store) itself, so no Finder or AppleScript runs:
 # it works on a CI runner and in a terminal without the Automation permission. The window shows

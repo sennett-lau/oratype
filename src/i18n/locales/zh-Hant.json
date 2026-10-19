@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Typelite",
+    "name": "OraType",
     "tagline": "AI 語音輸入"
   },
   "nav": {
@@ -89,7 +89,7 @@
     "output_wayland_clipboard_copy_only": "已複製到剪貼簿。Wayland 下需要手動貼上。",
     "mic_fallback_default": "所選麥克風「{{details}}」未連線，已改用系統預設麥克風。",
     "stt_unreachable": "無法連線語音服務（{{details}}）。請檢查「設定 → 語音」中的地址，並確認服務正在執行。",
-    "output_held_no_accessibility": "缺少輔助使用權限，Typelite 無法輸入文字。結果在「拷貝」膠囊裡。請在「系統設定 → 隱私權與安全性 → 輔助使用」中允許 Typelite。"
+    "output_held_no_accessibility": "缺少輔助使用權限，OraType 無法輸入文字。結果在「拷貝」膠囊裡。請在「系統設定 → 隱私權與安全性 → 輔助使用」中允許 OraType。"
   },
   "home": {
     "headline": "說出來就好。",
@@ -120,7 +120,7 @@
       "editSelectionDesc": "說出如何修改選中的文字",
       "switchScene": "切換提示詞預設",
       "switchSceneDesc": "切換到下一個提示詞預設",
-      "openApp": "開啟 Typelite",
+      "openApp": "開啟 OraType",
       "openAppDesc": "顯示主視窗"
     },
     "subtitle": "在任何地方按下快捷鍵說話，整潔的文字就會出現在你正在輸入的地方。",
@@ -178,7 +178,7 @@
   },
   "onboarding": {
     "welcome": {
-      "intro": "歡迎使用 Typelite。按下快捷鍵、說話，潤色後的文字就會出現在你正在輸入的地方。先允許 Typelite 需要的三項許可權。",
+      "intro": "歡迎使用 OraType。按下快捷鍵、說話，潤色後的文字就會出現在你正在輸入的地方。先允許 OraType 需要的三項許可權。",
       "skipForNow": "暫時跳過"
     },
     "permissions": {
@@ -197,7 +197,7 @@
       }
     },
     "microphone": {
-      "intro": "選擇 Typelite 使用的麥克風。說話時音量條會跳動。"
+      "intro": "選擇 OraType 使用的麥克風。說話時音量條會跳動。"
     },
     "shortcut": {
       "notLive": "快捷鍵未啟用：{{error}}"
@@ -250,7 +250,7 @@
       "listeningHold": "正在聽… 說完後鬆開 {{key}}。",
       "listeningStop": "正在聽… 按 {{stop}} 停止。",
       "listeningTranslate": "正在聽… 按 {{stop}} 停止，按 {{switch}} 切換語言。",
-      "writing": "Typelite 正在寫…",
+      "writing": "OraType 正在寫…",
       "thinking": "正在思考…",
       "miss": "結果還不太對。",
       "noSpeech": "沒有聽清。",
@@ -312,7 +312,7 @@
       "webSearch": "網路搜尋",
       "webSearchSub": "可選：讓問答查詢新聞、比分和賽程。",
       "languages": "你的語言",
-      "languagesSub": "Typelite 會看看有沒有適合你所說語言的建議設定。"
+      "languagesSub": "OraType 會看看有沒有適合你所說語言的建議設定。"
     },
     "layout": {
       "back": "返回",
@@ -535,7 +535,7 @@
     "dictationMode": "聽寫觸發方式",
     "system": "系統",
     "showInDock": "在程式塢中顯示",
-    "showInDockHint": "關閉後 Typelite 不在程式塢中顯示圖示，請從選單欄圖示開啟。",
+    "showInDockHint": "關閉後 OraType 不在程式塢中顯示圖示，請從選單欄圖示開啟。",
     "siMode": "超級智慧模式",
     "siModeHint": "把介面裡每一處「人工」智慧都升級為「超級」智慧。只改介面文字，純屬娛樂。",
     "audio": "音訊",
@@ -874,7 +874,7 @@
       "resetToPreset": "恢復預設",
       "resetToDefault": "恢復預設",
       "defaultsFailed": "無法載入內建說明。留空即使用內建說明。",
-      "contractNote": "Typelite 總會在外面加上自己的規則，所以這些說明無法改變它要做的事或輸出語言。",
+      "contractNote": "OraType 總會在外面加上自己的規則，所以這些說明無法改變它要做的事或輸出語言。",
       "recognitionHelp": "決定潤色何時使用這些說明。翻譯總會使用它們，因為目標語言由你選擇。",
       "hears": "語音識別聽到的語言",
       "fromThePreset": "來自預設",
@@ -894,7 +894,7 @@
       "loading": "正在載入預設…",
       "builtinItem": "內建預設",
       "builtinTag": "內建",
-      "builtinSummary": "隨 Typelite 提供，離線也能使用。",
+      "builtinSummary": "隨 OraType 提供，離線也能使用。",
       "downloaded": "已下載",
       "notesFor": "含 {{variant}} 說明",
       "byAuthors": "作者 {{authors}}",
@@ -915,7 +915,7 @@
   "presetShare": {
     "import": "匯入…",
     "export": "匯出…",
-    "fileType": "Typelite 預設",
+    "fileType": "OraType 預設",
     "exportTitle": "匯出預設",
     "exportHelp": "選擇要放進檔案的已儲存預設。內建預設只留在這臺電腦 上。",
     "exportListLabel": "要匯出的預設",
@@ -931,16 +931,16 @@
     "importNone": "這個檔案中沒有此頁面的預設。",
     "importConfirm": "新增（{{count}}）",
     "keyIncluded": "API 金鑰",
-    "skippedUnknown": "已跳過 {{count}} 個此版本 Typelite 不認識的型別。",
+    "skippedUnknown": "已跳過 {{count}} 個此版本 OraType 不認識的型別。",
     "otherService": "檔案中還有 {{count}} 個屬於{{page}}的預設，請在那裡匯入。",
     "pageSpeech": "設定 → 語音",
     "pageAi": "設定 → AI",
     "imported": "已新增 {{count}} 個。使用前請先測試。",
     "keysFailed": "{{count}} 個 API 金鑰無法儲存到鑰匙串，請重新輸入。",
     "errors": {
-      "not_json": "這不是 Typelite 預設檔案（不是有效的 JSON）。",
-      "wrong_format": "這不是 Typelite 預設檔案。",
-      "newer_version": "這個檔案由更新版本的 Typelite 建立（格式 {{version}}）。請更新 Typelite 後再匯入。",
+      "not_json": "這不是 OraType 預設檔案（不是有效的 JSON）。",
+      "wrong_format": "這不是 OraType 預設檔案。",
+      "newer_version": "這個檔案由更新版本的 OraType 建立（格式 {{version}}）。請更新 OraType 後再匯入。",
       "invalid_version": "這個預設檔案沒有有效的格式版本。",
       "too_large": "這個檔案太大，不是預設檔案。",
       "too_many_entries": "這個檔案中的預設太多。",
@@ -965,12 +965,13 @@
     "failed": "無法開始錄製快捷鍵：{{error}}"
   },
   "whatsNew": {
+    "renamed": "Typelite 現已改名為 OraType。你的設定、模型和字典都會保留。請再授予一次「輔助使用」和「麥克風」權限（系統設定 → 隱私權與安全性）；如果 macOS 詢問是否讓 OraType 使用鑰匙圈中的「Typelite」，請選「永遠允許」：那是你儲存的 API 金鑰。",
     "handsFree": "免提模式：說「Hey Sam」，停一停，再說出內容，不用按任何快捷鍵。你說的話會輸入到 App；說「問下 …」就改為提問。說「多謝 Sam」或停頓 3 秒結束。在「設定 → 通用 → 免提」開啟；一個小型模型（60 MB）在你的 Mac 上聆聽，喚醒前不會傳送任何聲音。",
     "pillAfterIdle": "靜置一段時間後，膠囊會照常出現。以前大約八分鐘沒有聽寫後，膠囊可能不再顯示，但聽寫仍然有效。",
     "polishCutOff": "長篇聽寫（尤其是粵語）不會再被潤飾截短。內建 AI 的空間加倍；如果答案仍然超出，會改為貼上你的轉錄文字。",
-    "ownKeystrokes": "快捷鍵設為單一 Command 鍵時，在 Typelite 需要複製選取文字的 App 中，「隨便問」不會再一開始就停止。",
-    "languageModels": "你的語言：告訴 Typelite 你會說哪些語言（在引導設定或「設定 → 語音」中）。說粵語的話，它會建議下載兩個內建模型：把粵語照你所說寫出來的 Qwen3-ASR，以及用於潤飾的 Qwen 3.5 4B。",
-    "clipboardSafe": "Typelite 不再動你的剪貼簿：無法輸入的結果會留在「複製」膠囊裡；貼上後會還原你原先複製的全部內容（包括圖片和檔案）；剪貼簿管理工具也不再記錄聽寫內容。",
+    "ownKeystrokes": "快捷鍵設為單一 Command 鍵時，在 OraType 需要複製選取文字的 App 中，「隨便問」不會再一開始就停止。",
+    "languageModels": "你的語言：告訴 OraType 你會說哪些語言（在引導設定或「設定 → 語音」中）。說粵語的話，它會建議下載兩個內建模型：把粵語照你所說寫出來的 Qwen3-ASR，以及用於潤飾的 Qwen 3.5 4B。",
+    "clipboardSafe": "OraType 不再動你的剪貼簿：無法輸入的結果會留在「複製」膠囊裡；貼上後會還原你原先複製的全部內容（包括圖片和檔案）；剪貼簿管理工具也不再記錄聽寫內容。",
     "typeAfterSwitch": "點進一個 App 後立刻聽寫，現在會直接輸入文字，而不是複製到剪貼簿。",
     "askReadsPages": "開啟網頁搜尋後，提問會讀取排名靠前的結果網頁，新聞、比分和賽程等問題都能得到回答；無法確認的日期會標示出來。",
     "translateHighlight": "選取文字，按提問並說「把這個翻譯成英文」：譯文會在提問面板中顯示，並提供複製和取代。",
@@ -993,9 +994,9 @@
     "sourceIcons": "來源卡片的「開啟」和「複製連結」改為常駐圖示，誤點不再會開啟或複製連結。",
     "whatsNewPaging": "「新功能」每次顯示一個版本，可用箭頭檢視更早的版本。",
     "lighterApp": "更輕更快：錄音時工作量更少，語音檢測更省資源，詞典在詞條很多時也更快。",
-    "webSearch": "隨便問可以為需要最新資訊的問題（新聞、比分、賽程、價格）用 SearXNG 搜尋網路：Typelite 一鍵在你的 Mac 上安裝它，也可以使用你自己的伺服器。",
+    "webSearch": "隨便問可以為需要最新資訊的問題（新聞、比分、賽程、價格）用 SearXNG 搜尋網路：OraType 一鍵在你的 Mac 上安裝它，也可以使用你自己的伺服器。",
     "askSources": "來自網路的回答會標註來源：在回答旁開啟來源欄，檢視每個網頁，開啟它或複製連結。",
-    "autoUpdate": "從 GitHub Releases 更新：Typelite 在後臺下載新版本，並提示你重新啟動。只會請求版本檔案；可在「設定 → 系統」中關閉。",
+    "autoUpdate": "從 GitHub Releases 更新：OraType 在後臺下載新版本，並提示你重新啟動。只會請求版本檔案；可在「設定 → 系統」中關閉。",
     "keepAccessibility": "從 1.1.0 起，每次更新後輔助功能許可權都會保留。從 1.0 升級時，安裝後需要再開啟一次。",
     "copyPill": "文字無法輸入到前臺應用時，膠囊會改為提供帶「複製」按鈕的結果。",
     "translateLanguageLive": "在設定中新增的翻譯語言會立即出現在翻譯膠囊中，無需重新啟動。",
@@ -1006,7 +1007,7 @@
     "polishRequests": "你口述的請求（例如「用日語寫一封郵件……」）會被照寫下來，AI 潤色不會去執行它，也不會切換語言。",
     "polishCodeWords": "AI 潤色會保留完整的檔名、命令和簡短的程式碼詞：「dot gitignore」會寫成 .gitignore。",
     "polishSpelledNames": "你逐個字母拼出的名字，AI 潤色會按這個拼寫寫一次，並去掉那些字母。",
-    "installWindow": "安裝視窗改為常見的樣式：大圖示和箭頭，把 Typelite 拖到「應用程式」即可。",
+    "installWindow": "安裝視窗改為常見的樣式：大圖示和箭頭，把 OraType 拖到「應用程式」即可。",
     "tutorialClose": "設定教程的關閉按鈕與視窗按鈕對齊，也更容易看清。",
     "builtin": "首個正式版本。內建語音識別和 AI 潤色：一鍵設定，你的語音和文字都留在你的 Mac 上。",
     "ownServer": "也可以使用你自己的伺服器或 API 金鑰：任何相容 OpenAI 的語音或聊天服務、Qwen Cloud 或 ElevenLabs。",
@@ -1020,7 +1021,7 @@
     "microphonePicker": "麥克風選擇器，帶即時輸入電平。",
     "setupTutorial": "分步設定教程。",
     "nativeGlass": "Native Glass 外觀，跟隨淺色和深色模式。",
-    "noHistory": "不儲存歷史：Typelite 不會記錄你說的內容。"
+    "noHistory": "不儲存歷史：OraType 不會記錄你說的內容。"
   },
   "status": {
     "label": "連線狀態",
@@ -1060,7 +1061,7 @@
     },
     "builtinTitle": "內建",
     "recommended": "推薦",
-    "builtinBody": "在這臺電腦上的 Typelite 裡執行語音模型。無需安裝其他軟體。",
+    "builtinBody": "在這臺電腦上的 OraType 裡執行語音模型。無需安裝其他軟體。",
     "changeModel": "更換模型",
     "download": "下載",
     "use": "使用",
@@ -1138,7 +1139,7 @@
     "engines": {
       "builtin": {
         "title": "內建",
-        "detail": "在這臺電腦上的 Typelite 裡執行語音模型"
+        "detail": "在這臺電腦上的 OraType 裡執行語音模型"
       },
       "server": {
         "title": "你的伺服器或 API 金鑰",
@@ -1168,7 +1169,7 @@
     "skipHint": "聽寫仍可使用，會貼上原始轉寫文字"
   },
   "aiSetup": {
-    "builtinBody": "在這臺電腦 上的 Typelite 裡執行一個小型開源模型。無需安裝其他軟體。",
+    "builtinBody": "在這臺電腦 上的 OraType 裡執行一個小型開源模型。無需安裝其他軟體。",
     "progressLabel": "AI 模型下載",
     "testing": "正在啟動模型並測試…",
     "models": {
@@ -1183,11 +1184,11 @@
     },
     "errors": {
       "load": "{{reason}}",
-      "serverMissing": "這個 Typelite 版本沒有內建 AI 伺服器。請改用你自己的伺服器或 API 金鑰。"
+      "serverMissing": "這個 OraType 版本沒有內建 AI 伺服器。請改用你自己的伺服器或 API 金鑰。"
     },
     "hardware": {
       "none": "這臺電腦 無法流暢執行內建 AI 模型。請改用你自己的伺服器或 API 金鑰。",
-      "serverMissing": "這個 Typelite 版本沒有內建 AI 伺服器。請改用你自己的伺服器或 API 金鑰。",
+      "serverMissing": "這個 OraType 版本沒有內建 AI 伺服器。請改用你自己的伺服器或 API 金鑰。",
       "leftOut": {
         "needs_apple_silicon": "內建 AI 需要 Apple 晶片的 Mac。",
         "needs_memory": "較大的模型需要 16 GB 記憶體。",
@@ -1215,12 +1216,12 @@
     "optional": "可選",
     "uses": "搜尋使用",
     "builtin": "內建",
-    "builtinDetail": "Typelite 在這臺 Mac 上設定 SearXNG",
+    "builtinDetail": "OraType 在這臺 Mac 上設定 SearXNG",
     "recommended": "推薦",
     "own": "你自己的 SearXNG",
     "ownDetail": "你網路上的地址，以及可選的金鑰",
     "setupTitle": "在這臺 Mac 上設定 SearXNG",
-    "setupBody": "Typelite 會下載 SearXNG（一個同時查詢多個搜尋引擎的免費搜尋引擎）以及它自己的 Python。約 230 MB，來自 GitHub。它只在這臺 Mac 上、並且只在 Typelite 開啟時執行。",
+    "setupBody": "OraType 會下載 SearXNG（一個同時查詢多個搜尋引擎的免費搜尋引擎）以及它自己的 Python。約 230 MB，來自 GitHub。它只在這臺 Mac 上、並且只在 OraType 開啟時執行。",
     "setupLicence": "SearXNG 是獨立的開源軟體（AGPL），在你按下「設定」時才下載。",
     "setup": "設定",
     "settingUp": "正在設定 SearXNG…",
@@ -1261,19 +1262,19 @@
   "updates": {
     "group": "更新",
     "auto": "自動更新",
-    "autoHint": "Typelite 啟動時以及每 6 小時在 GitHub 上檢查新版本，在後臺下載，然後請你重新啟動。只會請求版本檔案，不會發送任何關於你或你所說內容的資訊。",
-    "version": "Typelite {{version}}",
+    "autoHint": "OraType 啟動時以及每 6 小時在 GitHub 上檢查新版本，在後臺下載，然後請你重新啟動。只會請求版本檔案，不會發送任何關於你或你所說內容的資訊。",
+    "version": "OraType {{version}}",
     "check": "檢查更新",
     "checking": "正在檢查更新…",
     "upToDate": "你已在使用最新版本。",
-    "availableTitle": "Typelite {{version}} 已可用。",
+    "availableTitle": "OraType {{version}} 已可用。",
     "availableBody": "更新以獲得最新的修復和功能。",
     "update": "更新",
-    "downloadingTitle": "正在下載 Typelite {{version}}…",
+    "downloadingTitle": "正在下載 OraType {{version}}…",
     "downloading": "請稍候。",
     "downloadingPercent": "{{percent}}%",
-    "readyTitle": "Typelite {{version}} 已準備好。",
-    "readyBody": "重新啟動即可使用。如果更新後某個快捷鍵失效，請在「隱私與安全性」→「輔助功能」中把 Typelite 關閉後再開啟。",
+    "readyTitle": "OraType {{version}} 已準備好。",
+    "readyBody": "重新啟動即可使用。如果更新後某個快捷鍵失效，請在「隱私與安全性」→「輔助功能」中把 OraType 關閉後再開啟。",
     "restart": "重新啟動以更新",
     "failed": "更新沒有完成：{{message}}",
     "disabled": "開發版本不會自行更新。"

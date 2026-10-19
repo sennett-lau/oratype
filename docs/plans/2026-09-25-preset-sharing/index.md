@@ -20,7 +20,7 @@ Status: agreed — 2026-09-25
 
 | Decision | Reason |
 |---|---|
-| One JSON file, `*.typelite-presets.json`, with a format version and two lists (`speech`, `ai`); each entry holds kind, name, address, model and the speech language or, for AI, the extra request fields | Readable, easy to send, easy to check. The kind lets a later version add kinds without breaking older readers. |
+| One JSON file, `*.oratype-presets.json`, with a format version and two lists (`speech`, `ai`); each entry holds kind, name, address, model and the speech language or, for AI, the extra request fields | Readable, easy to send, easy to check. The kind lets a later version add kinds without breaking older readers. |
 | API keys are left out by default; an "Include API keys" option is off and warns that anyone with the file can use the key | Keys live in the macOS Keychain and are secrets. |
 | Import shows what the file contains (name and host per preset) with checkboxes, then adds the chosen ones; nothing becomes active by itself | The user sees what they add; a shared file cannot switch their setup. |
 | A name clash gets a suffix ("Groq (2)"), existing presets are never overwritten | Import cannot destroy anything. |

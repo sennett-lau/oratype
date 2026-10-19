@@ -1114,7 +1114,7 @@ mod tests {
 
     /// Benchmarks (docs/guides/benchmarks/polish-speed.md) publish the exact polish prompt, so
     /// anyone can time the same request. Regenerate it after a prompt change with
-    /// `TYPELITE_WRITE_BENCHMARK_PROMPT=1 cargo test --lib benchmark_prompt`.
+    /// `ORATYPE_WRITE_BENCHMARK_PROMPT=1 cargo test --lib benchmark_prompt`.
     #[test]
     fn benchmark_prompt_matches_the_published_file() {
         let prompt = build_system_prompt(AppType::General, &[], "", "preserve", false, "", false);
@@ -1122,7 +1122,7 @@ mod tests {
             env!("CARGO_MANIFEST_DIR"),
             "/../docs/guides/benchmarks/data/polish-system-prompt.txt"
         );
-        if std::env::var_os("TYPELITE_WRITE_BENCHMARK_PROMPT").is_some() {
+        if std::env::var_os("ORATYPE_WRITE_BENCHMARK_PROMPT").is_some() {
             std::fs::write(path, &prompt).unwrap();
         }
         let published = std::fs::read_to_string(path).unwrap_or_default();
@@ -1450,9 +1450,9 @@ mod tests {
 
     #[test]
     fn test_build_prompt_with_dictionary() {
-        let dict = vec!["Typelite".to_string(), "Tauri".to_string()];
+        let dict = vec!["OraType".to_string(), "Tauri".to_string()];
         let prompt = build_system_prompt(AppType::General, &dict, "", "preserve", false, "", false);
-        assert!(prompt.contains("\"Typelite\""));
+        assert!(prompt.contains("\"OraType\""));
         assert!(prompt.contains("\"Tauri\""));
     }
 

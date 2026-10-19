@@ -7,13 +7,13 @@ use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
-use serde_json::{json, Value};
-use typelite_lib::app_detector::types::ContextProfile;
-use typelite_lib::llm::{
+use oratype_lib::app_detector::types::ContextProfile;
+use oratype_lib::llm::{
     openai::OpenAiProvider, ChunkCallback, LlmConfig, LlmProvider, PolishRequest,
 };
-use typelite_lib::stt::chinese_script::{convert, ChineseScript};
-use typelite_lib::voice_intent::{VoiceIntent, VoiceIntentKind, VoiceOutputPlacement};
+use oratype_lib::stt::chinese_script::{convert, ChineseScript};
+use oratype_lib::voice_intent::{VoiceIntent, VoiceIntentKind, VoiceOutputPlacement};
+use serde_json::{json, Value};
 
 const WARMUPS: usize = 5;
 const SAMPLES: usize = 15;

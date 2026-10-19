@@ -1,6 +1,6 @@
 //! Plan `language-model-suggestions`: built-in speech that runs in `llama-server` (Qwen3-ASR).
 //!
-//! Typelite starts a second `llama-server` with the model and its audio projector
+//! OraType starts a second `llama-server` with the model and its audio projector
 //! (`llm::builtin::speech_server`, separate from the AI server so both stay loaded) and uploads
 //! each recording to its OpenAI-compatible `/v1/audio/transcriptions` endpoint with the same
 //! client as any speech server. That client removes Qwen3-ASR's `language X<asr_text>` tag and

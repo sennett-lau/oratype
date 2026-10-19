@@ -9,7 +9,7 @@ The format is in [CONTRIBUTING.md → Benchmarks](../../../CONTRIBUTING.md#bench
 method and data are on its page in `docs/guides/benchmarks/`. Read both first.
 
 1. **Ask** (skip what the user already said): which test (polish or speech), the server's address
-   and model as entered in Typelite, a key if it needs one, the hardware class, the server and its
+   and model as entered in OraType, a key if it needs one, the hardware class, the server and its
    version and flags, the model file and quantisation, and whether it runs on this computer or
    over the network.
 2. **Measure:** `node scripts/benchmark.mjs polish|speech --address <address> --model <model>`.

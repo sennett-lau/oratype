@@ -217,7 +217,7 @@ pub fn route(profiles: &[LanguageProfile], transcript: &str, detected: Option<&s
 }
 
 /// Speech codes that cover several languages or written forms (ISO 639 macrolanguages whose
-/// members Typelite tells apart): whisper reports `zh` for Mandarin and for Cantonese.
+/// members OraType tells apart): whisper reports `zh` for Mandarin and for Cantonese.
 const MACROLANGUAGES: &[&str] = &["zh"];
 
 fn is_macrolanguage(code: &str) -> bool {

@@ -1,15 +1,15 @@
 # Built-in AI
 
-How Typelite runs a local model for AI polish. Back to [index](index.md).
+How OraType runs a local model for AI polish. Back to [index](index.md).
 
 ## Pieces
 
 ```
-Typelite.app/Contents/MacOS/
-  typelite            main program (whisper.cpp compiled in)
+OraType.app/Contents/MacOS/
+  oratype            main program (whisper.cpp compiled in)
   llama-server        llama.cpp server, shipped with the app (Tauri externalBin)
 
-~/Library/Application Support/dev.typelite.mac/
+~/Library/Application Support/dev.oratype.mac/
   models/ggml-*.bin   speech models (plan `quick-speech-setup`)
   models/*.gguf       AI models (this plan)
   llama-server.pid    process id of the running server, to stop one a crash left behind
@@ -32,9 +32,9 @@ download-with-progress shared with speech).
   bundle is signed with the binary inside.
 - At runtime the app looks for `llama-server` next to its executable (where Tauri puts external
   binaries), then for the triple-named file there, then (debug builds only) in
-  `src-tauri/binaries/`. `TYPELITE_LLAMA_SERVER` overrides the path.
+  `src-tauri/binaries/`. `ORATYPE_LLAMA_SERVER` overrides the path.
 - Without the binary the app builds and runs; the AI hardware check reports the server as
-  missing, and the Built-in card and Settings say "This copy of Typelite was built without the
+  missing, and the Built-in card and Settings say "This copy of OraType was built without the
   built-in AI server" instead of offering a setup.
 - llama.cpp is MIT; its notice, and those of the libraries inside `llama-server`, are in
   `THIRD_PARTY_NOTICES.md` with a note on the Qwen model licence (Apache-2.0).
@@ -65,13 +65,13 @@ download-with-progress shared with speech).
 - Each start gets a new random API key, passed in the environment (`LLAMA_API_KEY`) so it never
   shows on a command line; requests send it as a bearer token. Other programs and web pages on
   this Mac therefore cannot use the server, whatever its CORS settings.
-- Typelite waits for `/health` before sending requests (up to four minutes: the first start
+- OraType waits for `/health` before sending requests (up to four minutes: the first start
   after install or update compiles the Metal shaders, which takes one to two minutes; macOS
   caches the result and later starts take a few seconds).
 - If it exits unexpectedly it is started again on the next polish request. It is stopped when
-  Typelite quits, when the user switches to another engine, and when its model is deleted. A
-  server left by a crashed Typelite is found through the pid file and stopped at the next start.
-- Its output goes to the Typelite log filtered to errors, the load and listen lines and the
+  OraType quits, when the user switches to another engine, and when its model is deleted. A
+  server left by a crashed OraType is found through the pid file and stopped at the next start.
+- Its output goes to the OraType log filtered to errors, the load and listen lines and the
   per-request timing totals. At its default verbosity llama-server never prints the prompt or
   the answer.
 

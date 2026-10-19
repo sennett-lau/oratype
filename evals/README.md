@@ -1,6 +1,6 @@
 # Language evaluations
 
-A dataset and runner for measuring how well Typelite **polishes** dictations and **recognises
+A dataset and runner for measuring how well OraType **polishes** dictations and **recognises
 speech**, in every language, through the app's own code. It needs only text and audio, so an
 agent can run it, read the failures and improve the dataset or the polish prompt on its own.
 The design is plan [`language-evals`](../docs/plans/2026-10-09-language-evals/index.md); the

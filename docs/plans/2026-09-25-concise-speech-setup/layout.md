@@ -21,7 +21,7 @@ the "How to set this up" link, which opens the guide card in a sheet.
   **Add new preset…**, which opens the same fields plus a Name field, and **Delete** for the
   selected custom preset.
 - A "server on another computer" is just Local server with a different address; if the user
-  changes the address, Typelite offers "Save as a preset" with a suggested name ("Local server —
+  changes the address, OraType offers "Save as a preset" with a suggested name ("Local server —
   192.0.2.10").
 
 ## Onboarding vs Settings

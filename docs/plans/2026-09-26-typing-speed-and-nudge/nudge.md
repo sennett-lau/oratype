@@ -13,7 +13,7 @@ hold:
 - onboarding is finished (the shortcut gate allows every role, plan
   [onboarding-shortcut-gate](../2026-09-26-onboarding-shortcut-gate/index.md));
 - no run is active and the Copy pill is not up;
-- Typelite's own window does not have focus (the user types in another app).
+- OraType's own window does not have focus (the user types in another app).
 
 The check runs on a background thread, never on the key listener thread. A stretch that was
 refused (for example during a run) starts over, so the next chance comes after another minute.

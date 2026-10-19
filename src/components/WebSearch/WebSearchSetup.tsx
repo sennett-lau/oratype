@@ -423,7 +423,7 @@ function BuiltinCard({ onboarding }: { onboarding: boolean }) {
 
 /**
  * Plan `searxng-setup`: Settings → Search and the onboarding step. Two choices, as on the AI
- * tab: Built-in (Typelite sets up SearXNG here) and Your own SearXNG (an address and a key).
+ * tab: Built-in (OraType sets up SearXNG here) and Your own SearXNG (an address and a key).
  */
 export function WebSearchSetup({
   idPrefix = 'web-search',

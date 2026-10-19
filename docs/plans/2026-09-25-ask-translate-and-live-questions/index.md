@@ -1,7 +1,7 @@
 # Ask: translate selections, and live questions
 
 Ask anything can translate highlighted text into a language the user picks, and it answers
-honestly when a question needs live information that Typelite cannot fetch yet. Web search
+honestly when a question needs live information that OraType cannot fetch yet. Web search
 itself is deferred; this plan leaves a clear place for it.
 
 Status: agreed — 2026-09-25
@@ -36,7 +36,7 @@ the Ask panel instead of replacing the selection.
 | Selected text + Ask + "translate this into X" keeps working, including Chinese variants | Matches Typeless, where highlight-translate is part of Ask. |
 | Selected text + Ask + an edit instruction ("make this shorter", "改短一点") replaces the selection; questions about it answer in the panel | Edits are what the user wants in the text; the grammar decides, so it is instant and testable. |
 | Live questions are detected by the AI (a small classification step) with a keyword fallback | Keywords alone miss many cases; the model already runs for Ask. |
-| Live question reply: "This needs live information from the web, which Typelite can't look up yet." with **Answer anyway** and, later, **Set up web search** | Honest now; "Answer anyway" is the skip path the future setup reuses. |
+| Live question reply: "This needs live information from the web, which OraType can't look up yet." with **Answer anyway** and, later, **Set up web search** | Honest now; "Answer anyway" is the skip path the future setup reuses. |
 | "Answer anyway" answers from the model's own knowledge with a visible note that it may be out of date | Useful when the user accepts that. |
 
 ## Parts

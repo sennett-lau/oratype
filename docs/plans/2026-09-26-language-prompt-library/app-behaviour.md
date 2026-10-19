@@ -1,6 +1,6 @@
 # App behaviour
 
-How the library appears in Typelite: the Settings rows, the language sheet, browsing and
+How the library appears in OraType: the Settings rows, the language sheet, browsing and
 previewing presets, updates, the config, and how the text reaches polish and translation. The
 screens are in [mock.html](mock.html). Back to [index](index.md).
 

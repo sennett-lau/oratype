@@ -1,10 +1,10 @@
 //! "Mute other audio while recording" (Settings → General → Audio).
 //!
-//! When a recording starts and the setting is on, Typelite mutes the default output device if
+//! When a recording starts and the setting is on, OraType mutes the default output device if
 //! it is not muted already, and remembers that it did so. When the recording ends, it unmutes
-//! only if Typelite was the one that muted it, so sound the user muted stays muted.
+//! only if OraType was the one that muted it, so sound the user muted stays muted.
 //!
-//! Crash safety: while Typelite holds the mute, a small flag file (`muted-by-typelite`) sits in
+//! Crash safety: while OraType holds the mute, a small flag file (`muted-by-oratype`) sits in
 //! the app data folder. If the app dies mid-recording, the next start sees the flag, unmutes
 //! and deletes it (see [`init`]).
 //!
@@ -22,14 +22,14 @@ pub(crate) trait OutputMuteBackend {
     fn set_muted(&self, muted: bool) -> bool;
 }
 
-/// Stores the "Typelite muted the output" marker that survives a crash.
+/// Stores the "OraType muted the output" marker that survives a crash.
 pub(crate) trait MuteFlagStore {
     fn exists(&self) -> bool;
     fn write(&self);
     fn remove(&self);
 }
 
-/// Recording sessions that asked for muting, and whether Typelite currently holds the mute.
+/// Recording sessions that asked for muting, and whether OraType currently holds the mute.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub(crate) struct MuteState {
     sessions: u32,
@@ -75,7 +75,7 @@ pub(crate) fn restore_after_crash(backend: &impl OutputMuteBackend, flag: &impl 
             backend.set_muted(false);
         }
         flag.remove();
-        tracing::info!("Restored output audio muted by a previous Typelite run");
+        tracing::info!("Restored output audio muted by a previous OraType run");
     }
 }
 
@@ -95,7 +95,9 @@ impl MuteFlagStore for FileFlag {
     }
 }
 
-const FLAG_FILE_NAME: &str = "muted-by-typelite";
+const FLAG_FILE_NAME: &str = "muted-by-oratype";
+/// Plan `rename-oratype`: the flag Typelite (before 1.2.0) left when it crashed while muting.
+const LEGACY_FLAG_FILE_NAME: &str = "muted-by-typelite";
 
 static FLAG_PATH: OnceLock<PathBuf> = OnceLock::new();
 static STATE: Mutex<MuteState> = Mutex::new(MuteState {
@@ -106,6 +108,10 @@ static STATE: Mutex<MuteState> = Mutex::new(MuteState {
 /// Call once at startup with the app data folder. Repairs a mute left by a crash.
 pub fn init(data_dir: &std::path::Path) {
     let path = data_dir.join(FLAG_FILE_NAME);
+    let legacy = data_dir.join(LEGACY_FLAG_FILE_NAME);
+    if legacy.exists() && !path.exists() {
+        let _ = std::fs::rename(&legacy, &path);
+    }
     let _ = FLAG_PATH.set(path.clone());
     #[cfg(target_os = "macos")]
     restore_after_crash(&coreaudio_backend::DefaultOutput, &FileFlag(path));
@@ -178,7 +184,7 @@ impl OutputMuteBackend for NoOutput {
 ///
 /// `AudioObjectGetPropertyData` / `AudioObjectSetPropertyData` read and write a property;
 /// they return an `OSStatus` where 0 means success. Some devices (for example HDMI outputs)
-/// have no settable mute; then Typelite simply leaves the sound as it is.
+/// have no settable mute; then OraType simply leaves the sound as it is.
 #[cfg(target_os = "macos")]
 mod coreaudio_backend {
     use super::OutputMuteBackend;
@@ -419,7 +425,7 @@ mod tests {
     #[test]
     fn file_flag_round_trips_on_disk() {
         let path = std::env::temp_dir().join(format!(
-            "typelite-mute-flag-{}",
+            "oratype-mute-flag-{}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()

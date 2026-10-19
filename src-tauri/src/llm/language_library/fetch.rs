@@ -1,7 +1,7 @@
 //! Plan `language-prompt-library`: downloading the index and presets from GitHub.
 //!
 //! Every request is a plain HTTPS GET with no query string, no cookies and no identifiers, and a
-//! fixed `User-Agent: Typelite`. The index is fetched with `If-None-Match`, so an unchanged
+//! fixed `User-Agent: OraType`. The index is fetched with `If-None-Match`, so an unchanged
 //! index costs one small response. A preset is accepted only when its size and SHA-256 equal the
 //! index entry and it validates; a mismatch usually means the preset changed on `main` after the
 //! index was fetched, so the index is fetched again once and the download retried.
@@ -42,7 +42,7 @@ impl std::fmt::Display for FetchError {
 /// The HTTP client for the library: no cookies, a fixed user agent.
 pub fn client() -> reqwest::Client {
     reqwest::Client::builder()
-        .user_agent("Typelite")
+        .user_agent("OraType")
         .timeout(REQUEST_TIMEOUT)
         .build()
         .unwrap_or_default()
@@ -356,7 +356,7 @@ pub(crate) mod tests {
             // Plain GETs: no query string, no cookies, a fixed user agent.
             assert!(head.starts_with("GET /presets/languages/index.json HTTP/1.1"));
             assert!(!lower.contains("cookie"));
-            assert!(lower.contains("user-agent: typelite\r\n"));
+            assert!(lower.contains("user-agent: oratype\r\n"));
         }
     }
 

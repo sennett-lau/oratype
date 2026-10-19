@@ -38,16 +38,16 @@ pub const MAX_TITLE_CHARS: usize = 160;
 /// Keychain namespace for a search provider's optional key.
 pub const CREDENTIAL_NAMESPACE: &str = "search";
 
-/// The search providers Typelite knows.
+/// The search providers OraType knows.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum SearchProviderKind {
     /// Your own SearXNG, at `base_url`.
     Searxng,
-    /// Plan `searxng-setup`: the SearXNG Typelite sets up and runs on this Mac.
+    /// Plan `searxng-setup`: the SearXNG OraType sets up and runs on this Mac.
     Builtin,
     /// Search is off (the default). A provider this version does not know (settings.json from a
-    /// newer Typelite) reads as off, instead of failing the whole settings file.
+    /// newer OraType) reads as off, instead of failing the whole settings file.
     #[default]
     #[serde(other)]
     None,

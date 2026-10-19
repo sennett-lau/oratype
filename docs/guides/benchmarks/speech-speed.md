@@ -18,12 +18,12 @@ Median seconds.
 |---|---|
 | [`speech-short-en.txt`](data/speech-short-en.txt) | The sentence the clip says (about 4 s). |
 
-The clip is made from that sentence with the macOS voice Samantha, as Typelite records it (16 kHz,
+The clip is made from that sentence with the macOS voice Samantha, as OraType records it (16 kHz,
 16-bit, mono WAV). On a Mac the script makes it for you; elsewhere, record the sentence yourself
 and pass it with `--wav <file>`, and say so in a note.
 
 ## Method
 
-`node scripts/benchmark.mjs speech --address <address> --model <model>` sends Typelite's own
+`node scripts/benchmark.mjs speech --address <address> --model <model>` sends OraType's own
 request, `POST <address>/audio/transcriptions` with the WAV, one warm-up and then 5 timed
 requests, and prints the median.

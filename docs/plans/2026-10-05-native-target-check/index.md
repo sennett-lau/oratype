@@ -1,6 +1,6 @@
 # Native target-app check before paste
 
-Before inserting a result, Typelite checks that the app the user dictated into is still in front.
+Before inserting a result, OraType checks that the app the user dictated into is still in front.
 On macOS that check ran an AppleScript through System Events, about 200–300 ms each time, and
 the paste path runs it twice. It now asks AppKit directly, which takes microseconds.
 

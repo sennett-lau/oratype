@@ -219,7 +219,7 @@ export function HeroFrame({ t }: { t: number }) {
         </div>
         <div className="card caption">
           <span className="caption-label">
-            <IconSparkle size={14} /> Typelite types
+            <IconSparkle size={14} /> OraType types
           </span>
           <p className="caption-text caption-clean">{!inHold && u >= DONE ? ex.clean : ' '}</p>
         </div>

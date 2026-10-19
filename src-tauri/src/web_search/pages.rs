@@ -101,7 +101,7 @@ async fn fetch_html(client: &reqwest::Client, url: &str) -> Option<String> {
         // Some sites refuse requests without a browser-like user agent. It names no user.
         .header(
             reqwest::header::USER_AGENT,
-            "Mozilla/5.0 (Macintosh) Typelite",
+            "Mozilla/5.0 (Macintosh) OraType",
         )
         .timeout(FETCH_BUDGET)
         .send()

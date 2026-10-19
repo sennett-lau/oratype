@@ -1121,7 +1121,7 @@ fn handle_advanced_role_shortcut(
 /// `ask-panel-above-pill`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EscapeAction {
-    /// Nothing of Typelite's is up: Escape goes to the focused app as usual.
+    /// Nothing of OraType's is up: Escape goes to the focused app as usual.
     PassThrough,
     /// An Ask is starting, recording or thinking: cancel it.
     CancelAsk,
@@ -1135,7 +1135,7 @@ pub enum EscapeAction {
 }
 
 /// Decides what Escape does. A run wins over the Copy pill and the Ask panel (a new run closes
-/// them anyway). Escape is Typelite's only while one of these is up; otherwise it reaches the
+/// them anyway). Escape is OraType's only while one of these is up; otherwise it reaches the
 /// focused app.
 pub fn escape_action(
     pipeline_state: pipeline::PipelineState,
@@ -1177,13 +1177,13 @@ fn current_escape_action(handle: &tauri::AppHandle) -> EscapeAction {
     )
 }
 
-/// The Escape gate for the native key listener: true when Escape is Typelite's (it is then
+/// The Escape gate for the native key listener: true when Escape is OraType's (it is then
 /// swallowed). Runs on the listener thread for each Escape press, so it only reads state.
 pub fn escape_gate(handle: &tauri::AppHandle) -> bool {
     current_escape_action(handle) != EscapeAction::PassThrough
 }
 
-/// Escape was pressed while it is Typelite's: cancel the run exactly like the pill's cancel
+/// Escape was pressed while it is OraType's: cancel the run exactly like the pill's cancel
 /// button (Ask cancel for an Ask run, abort for dictation and Translate), or close the Copy
 /// pill or the Ask panel. Runs off the listener thread, because stopping audio capture may take
 /// a moment.

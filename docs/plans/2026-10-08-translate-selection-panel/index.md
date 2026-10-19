@@ -26,7 +26,7 @@ Supersedes one decision of
 - Changing the Translate shortcut. With a highlight it still translates in place; it is the
   "writing" path.
 - Storing translations or highlights. Nothing is kept after the panel closes (no history).
-- Languages outside Typelite's translation list.
+- Languages outside OraType's translation list.
 
 ## Key decisions
 

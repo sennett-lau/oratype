@@ -13,7 +13,7 @@
 //!   `Regular` activation policy, which "Show in Dock" selects) is not allowed there; only
 //!   windows of a menu-bar app (`Accessory`) are, and *non-activating panels* of any app. So the
 //!   window is turned into a non-activating panel (`NSPanel` with the `NonactivatingPanel` style),
-//!   which also means clicking it never activates Typelite.
+//!   which also means clicking it never activates OraType.
 //! - Its level (the window's layer) puts it above what full screen shows on top of the app:
 //!   the Dock (level 20) and the menu bar (24) slide in over a full-screen app when the pointer
 //!   reaches the edge, and the pill sits at the bottom. `NSStatusWindowLevel` (25) is the lowest
@@ -35,7 +35,7 @@
 //!   which aborts a Rust program.
 //!
 //! So after the swap we (1) add and remove a do-nothing observer for each key the old hidden
-//! subclass handled, which makes KVO build `NSKVONotifying_TypeliteOverlayPanel` with the same
+//! subclass handled, which makes KVO build `NSKVONotifying_OraTypeOverlayPanel` with the same
 //! setters, and (2) the panel class overrides the three add/remove-observer methods: an
 //! observer registered after the swap is removed normally, one registered before it is removed
 //! while the object briefly wears its old class again, exactly as KVO filed it. If any step
@@ -99,7 +99,7 @@ pub fn panel_swap_is_safe(window: ClassLayout, panel: ClassLayout) -> bool {
 /// Tauri's own window class (from its windowing library, tao).
 pub const TAURI_WINDOW_CLASS: &str = "TaoWindow";
 /// Our `NSPanel` subclass that stands in for Tauri's window class.
-pub const OVERLAY_PANEL_CLASS: &str = "TypeliteOverlayPanel";
+pub const OVERLAY_PANEL_CLASS: &str = "OraTypeOverlayPanel";
 /// Prefix of the classes that key-value observing (KVO) creates at run time.
 ///
 /// KVO is Cocoa's "tell me when this property changes" mechanism. The first time anything
@@ -243,7 +243,7 @@ pub fn set_frame(window: &tauri::WebviewWindow, x: f64, y: f64, width: f64, heig
 }
 
 /// Shows the hand cursor (`pointer`) or the arrow over an overlay. An overlay is never the key
-/// window and Typelite stays in the background, so WebKit's CSS `cursor` never applies there;
+/// window and OraType stays in the background, so WebKit's CSS `cursor` never applies there;
 /// see `mac::set_cursor`. Does nothing off macOS, where the webview sets the cursor itself.
 pub fn set_cursor(window: &tauri::WebviewWindow, pointer: bool) {
     #[cfg(target_os = "macos")]
@@ -256,7 +256,7 @@ pub fn set_cursor(window: &tauri::WebviewWindow, pointer: bool) {
 }
 
 /// Plan `ask-panel-select-text`: makes an overlay panel the key window (`key`), or gives key
-/// back (`!key`), without ever activating Typelite. A non-activating `NSPanel` may be key while
+/// back (`!key`), without ever activating OraType. A non-activating `NSPanel` may be key while
 /// another app stays active: key presses (⌘C) then reach its web view, while the user's app
 /// stays frontmost. Giving key back orders the panel out and in again, so the window server
 /// returns keyboard focus to the active app's window. Returns whether the panel was key before
@@ -585,7 +585,7 @@ mod mac {
     fn observer_class() -> Option<&'static AnyClass> {
         static CLASS: OnceLock<Option<usize>> = OnceLock::new();
         registered(&CLASS, || {
-            let mut builder = ClassBuilder::new(c"TypeliteKvoReobserver", class!(NSObject))?;
+            let mut builder = ClassBuilder::new(c"OraTypeKvoReobserver", class!(NSObject))?;
             // SAFETY: the signature matches -observeValueForKeyPath:ofObject:change:context:.
             unsafe {
                 builder.add_method(
@@ -628,7 +628,7 @@ mod mac {
     }
 
     /// Adds and removes a do-nothing observer for each key. The object is no longer of a KVO
-    /// class after the swap, so KVO makes a new one (`NSKVONotifying_TypeliteOverlayPanel`)
+    /// class after the swap, so KVO makes a new one (`NSKVONotifying_OraTypeOverlayPanel`)
     /// with those setters and switches the object to it; the class stays because the earlier
     /// observers are still registered.
     unsafe fn reobserve(window: &AnyObject, keys: &[String]) -> bool {
@@ -1085,8 +1085,8 @@ mod tests {
     #[test]
     fn a_swapped_panel_is_recognised_so_the_swap_runs_once() {
         let chain = [
-            "NSKVONotifying_TypeliteOverlayPanel",
-            "TypeliteOverlayPanel",
+            "NSKVONotifying_OraTypeOverlayPanel",
+            "OraTypeOverlayPanel",
             "NSPanel",
             "NSWindow",
         ];

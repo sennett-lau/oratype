@@ -1,11 +1,11 @@
 //! Plan `copy-when-no-field`: is there a text field to paste into?
 //!
-//! Before a Dictate or Translate result is pasted, Typelite asks macOS Accessibility for the
+//! Before a Dictate or Translate result is pasted, OraType asks macOS Accessibility for the
 //! focused UI element of the whole system (the element keyboard input goes to, in whatever app
 //! is frontmost) and reads its role and a few attributes. Only a clear "this is not a text
 //! field" skips the paste; the pill then offers a Copy button instead. When the answer is not
 //! clear (an error, no focused element, or a role that apps also use for their custom text
-//! views), Typelite pastes as before, because some web, Electron and custom-drawn apps report
+//! views), OraType pastes as before, because some web, Electron and custom-drawn apps report
 //! their fields poorly and must not lose paste.
 //!
 //! The decision itself is a pure function over the role and attributes
@@ -113,7 +113,7 @@ pub fn focused_text_length() -> Option<i64> {
 }
 
 /// Whether typed text landed: `Some(false)` only when the length was readable both times, text
-/// was typed, and the length did not change. `None` when it cannot be told (then Typelite
+/// was typed, and the length did not change. `None` when it cannot be told (then OraType
 /// assumes it landed, as before).
 ///
 /// A field that still holds one or two characters after many were typed is a code editor's
@@ -316,7 +316,7 @@ mod platform {
 
     /// The focused element's character count: `AXNumberOfCharacters`, else the length of a
     /// string `AXValue` (in UTF-16 units; only a change matters). Never reads the text itself
-    /// into Typelite beyond its length.
+    /// into OraType beyond its length.
     pub(super) fn focused_text_length() -> Option<i64> {
         let system = Owned::new(unsafe { AXUIElementCreateSystemWide() })?;
         unsafe { AXUIElementSetMessagingTimeout(system.0, MESSAGING_TIMEOUT_SECONDS) };

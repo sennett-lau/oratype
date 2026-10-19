@@ -547,7 +547,7 @@ pub fn normalize_translation_code(value: &str) -> Option<String> {
 /// plan `two-tab-speech`). Every config has it, with or without a downloaded model.
 pub const BUILTIN_SPEECH_PRESET_ID: &str = BUILTIN_WHISPER_PRESET_ID;
 /// Id of the AI preset used as the fallback: the Built-in one (`llama-server` started by
-/// Typelite, plan `ai-polish-setup`). Every config has it, with or without a downloaded model.
+/// OraType, plan `ai-polish-setup`). Every config has it, with or without a downloaded model.
 pub const BUILTIN_AI_PRESET_ID: &str = BUILTIN_LLAMA_PRESET_ID;
 /// Id of the old "Ollama on this Mac" template (plan `setup-without-dead-ends`).
 pub const LEGACY_OLLAMA_LOCAL_PRESET_ID: &str = "builtin-ai-ollama-local";
@@ -766,7 +766,7 @@ impl SpeechPreset {
 }
 
 /// Id of the "Built-in (on-device)" AI preset (plan `ai-polish-setup`): llama.cpp's `llama-server`,
-/// started by Typelite on this Mac. Every config has it, with or without a downloaded model.
+/// started by OraType on this Mac. Every config has it, with or without a downloaded model.
 pub const BUILTIN_LLAMA_PRESET_ID: &str = "builtin-ai-this-mac";
 
 /// How an AI preset reaches its model.
@@ -777,13 +777,13 @@ pub enum AiProviderKind {
     /// plan `ai-polish-setup` have no `kind`, so this is the default.
     #[default]
     OpenaiCompatible,
-    /// `llama-server` run by Typelite with a downloaded model file (plan `ai-polish-setup`). The
+    /// `llama-server` run by OraType with a downloaded model file (plan `ai-polish-setup`). The
     /// base URL is filled in at runtime from the running server and never stored.
     Builtin,
 }
 
 /// A saved chat endpoint: an OpenAI-compatible `POST {base_url}/chat/completions` server, or
-/// with `kind: builtin` a model file that Typelite's own `llama-server` runs.
+/// with `kind: builtin` a model file that OraType's own `llama-server` runs.
 /// The optional API key lives in the Keychain under the preset id.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 #[serde(default)]
@@ -841,7 +841,7 @@ impl AiPreset {
         }
     }
 
-    /// True when Typelite's own `llama-server` runs this preset.
+    /// True when OraType's own `llama-server` runs this preset.
     pub fn is_builtin_llama(&self) -> bool {
         self.kind == AiProviderKind::Builtin
     }
@@ -2571,8 +2571,8 @@ impl ConfigManager {
 
 // ─── DictionaryStore (SQLite backed) ───
 
-/// Typelite no longer keeps a record of dictations. Older builds stored them in a `history`
-/// table inside `typelite.db` (the same file that holds the dictionary), so drop that table and
+/// OraType no longer keeps a record of dictations. Older builds stored them in a `history`
+/// table inside `oratype.db` (the same file that holds the dictionary), so drop that table and
 /// its index on startup. Dropping a table in SQLite also drops its indexes and triggers; the
 /// explicit `DROP INDEX` covers an index left behind by an interrupted older migration.
 fn drop_legacy_history(conn: &Connection) -> Result<()> {
@@ -5148,7 +5148,7 @@ mod tests {
 
     fn temp_dictionary_store(name: &str) -> DictionaryStore {
         let path = std::env::temp_dir().join(format!(
-            "typelite-dictionary-test-{}-{}.sqlite",
+            "oratype-dictionary-test-{}-{}.sqlite",
             name,
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -5175,7 +5175,7 @@ mod tests {
     async fn dictionary_store_ignores_disabled_correction_rules_for_prompt() {
         let store = temp_dictionary_store("correction-rules-disabled");
 
-        store.add_correction("泰普莱特", "Typelite").await.unwrap();
+        store.add_correction("泰普莱特", "OraType").await.unwrap();
         let rules = store.correction_rules().await.unwrap();
         store
             .set_correction_enabled(rules[0].id, false)
@@ -5195,7 +5195,7 @@ mod tests {
         let entries = store.list().await.unwrap();
 
         store
-            .update(entries[0].id, "Typelite", Some("type light"))
+            .update(entries[0].id, "OraType", Some("type light"))
             .await
             .unwrap();
         assert!(store
@@ -5204,7 +5204,7 @@ mod tests {
             .is_err());
 
         let updated = store.list().await.unwrap();
-        assert_eq!(updated[0].word, "Typelite");
+        assert_eq!(updated[0].word, "OraType");
         assert_eq!(updated[0].pronunciation.as_deref(), Some("type light"));
     }
 
@@ -5216,7 +5216,7 @@ mod tests {
         let rules = store.correction_rules().await.unwrap();
 
         store
-            .update_correction(rules[0].id, "type light", "Typelite", false)
+            .update_correction(rules[0].id, "type light", "OraType", false)
             .await
             .unwrap();
         assert!(store
@@ -5226,7 +5226,7 @@ mod tests {
 
         let updated = store.correction_rules().await.unwrap();
         assert_eq!(updated[0].pattern, "type light");
-        assert_eq!(updated[0].replacement, "Typelite");
+        assert_eq!(updated[0].replacement, "OraType");
         assert!(!updated[0].enabled);
     }
 
@@ -5261,7 +5261,7 @@ mod tests {
     #[tokio::test]
     async fn dictionary_store_drops_legacy_history_table_and_keeps_dictionary() {
         let path = std::env::temp_dir().join(format!(
-            "typelite-legacy-history-drop-{}.sqlite",
+            "oratype-legacy-history-drop-{}.sqlite",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
@@ -5284,7 +5284,7 @@ mod tests {
                     word TEXT NOT NULL,
                     pronunciation TEXT
                 );
-                INSERT INTO dictionary (word) VALUES ('Typelite');",
+                INSERT INTO dictionary (word) VALUES ('OraType');",
             )
             .unwrap();
         }
@@ -5292,7 +5292,7 @@ mod tests {
         let store = DictionaryStore::new(path.clone()).unwrap();
         let words = store.list().await.unwrap();
         assert_eq!(words.len(), 1);
-        assert_eq!(words[0].word, "Typelite");
+        assert_eq!(words[0].word, "OraType");
 
         let conn = Connection::open(&path).unwrap();
         let leftovers: i64 = conn

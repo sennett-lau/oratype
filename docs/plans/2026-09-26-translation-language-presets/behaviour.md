@@ -40,7 +40,7 @@ How per-language translation settings are stored, used and edited. Back to [inde
 - Everything else (polish, Ask answers, edits of selected text, the live-question check) keeps
   the AI polish preset.
 - The preset's address, model, API key (Keychain, under the preset id) and extra request fields
-  are all used. For Built-in AI the address comes from Typelite's own server, started when needed.
+  are all used. For Built-in AI the address comes from OraType's own server, started when needed.
 - An id that is missing at request time (a config edited by hand, a race with a delete) falls
   back to the AI polish preset with a warning in the log.
 - The log line for each AI request names the preset id and, for a translation, the language

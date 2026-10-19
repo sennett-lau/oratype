@@ -1,6 +1,6 @@
 /**
  * Capture page for scripts/capture-media.mjs: renders one demo at a fixed size, with its
- * clock driven frame by frame (`window.__typeliteCapture.setTime`). Not part of the site build.
+ * clock driven frame by frame (`window.__oratypeCapture.setTime`). Not part of the site build.
  *
  *   /capture/?scene=hero|translate|ask|og&theme=light|dark
  */
@@ -27,7 +27,7 @@ function Og() {
     <div className="og">
       <div className="og-brand">
         <img src={`${import.meta.env.BASE_URL}icon-256.png`} alt="" width={64} height={64} />
-        Typelite
+        OraType
       </div>
       <h1>
         Just <span className="gradient-text">say it.</span>

@@ -1,7 +1,7 @@
 # Docs structure
 
 The user guides are regrouped by what they set up (speech recognition, AI polish, languages)
-and, inside speech and AI, by **connection**: the ways Typelite can reach a service (Built-in,
+and, inside speech and AI, by **connection**: the ways OraType can reach a service (Built-in,
 OpenAI-compatible, Qwen Cloud). Each supported service gets a small **service card** with
 checked front matter, and the tables that list them are generated from the cards. The repository
 gains a `CONTRIBUTING.md`, a refreshed `README.md`, a neutral hardware benchmark page and a
@@ -58,7 +58,7 @@ are kept as history.
 ## Structure
 
 ```
-README.md                          what Typelite is, features, get started, links
+README.md                          what OraType is, features, get started, links
 CONTRIBUTING.md                    code, service cards, language presets, connections, bugs
 docs/guides/
   README.md                        start here: speech → polish → paste; choose a setup

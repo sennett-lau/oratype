@@ -6,7 +6,7 @@ is agreed.
 
 ## Providers
 
-- **Built-in (recommended)**: set up and run by Typelite on this Mac.
+- **Built-in (recommended)**: set up and run by OraType on this Mac.
 - **Your own SearXNG**: an address and an optional key, as in plan `ask-web-search`.
 - Off: no web search.
 

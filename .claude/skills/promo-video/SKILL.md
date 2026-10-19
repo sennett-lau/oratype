@@ -1,6 +1,6 @@
 ---
 name: promo-video
-description: Make the short promo video for a Typelite release (10–15 s, 1920×1080) from the real app UI, in the standard folder output/promo-<version>/. Use when preparing a release, or when someone asks for a promo, launch or "what's new" video for a version.
+description: Make the short promo video for a OraType release (10–15 s, 1920×1080) from the real app UI, in the standard folder output/promo-<version>/. Use when preparing a release, or when someone asks for a promo, launch or "what's new" video for a version.
 ---
 
 # Make a release promo video
@@ -13,7 +13,7 @@ lives in **`output/promo-<version>/`** (git-ignored), so every release looks the
 | `film.html` | The film: shots, captions and timing, drawn by `render(t)` |
 | `stills/<shot>.png` | Stills of the real app (dark, 2× or 4×), from the capture harness |
 | `music.wav` | The soundtrack, synthesised for the film's length |
-| `typelite-<version>-promo.mp4` | **The video** (the one file to share) |
+| `oratype-<version>-promo.mp4` | **The video** (the one file to share) |
 | `sheet.png` | One frame per second on one image, to check the film at a glance |
 | `preview/` | Single frames from `--preview` (optional, safe to delete) |
 
@@ -22,7 +22,7 @@ lives in **`output/promo-<version>/`** (git-ignored), so every release looks the
 - **1920×1080, 30 fps**, H.264 (`yuv420p`, CRF 16) with AAC 192 kbit/s, **10–15 s**.
 - **Three to five shots:** a title card (the version and one headline), one to three shots of
   the new feature on real stills, and the end card (name, free and open source, the site
-  `typelite.sennettlau.me`).
+  `oratype.sennettlau.me`).
 - **Real UI only.** Stills come from the app's own components in the capture harness
   (`site/capture-app`), never a drawing of a screen that does not exist. Numbers in captions
   come from the release's measurements; claim nothing that was not measured or shipped.
@@ -75,10 +75,10 @@ lives in **`output/promo-<version>/`** (git-ignored), so every release looks the
    node site/scripts/record-film.mjs <version>
    ```
 
-   It renders every frame, encodes `typelite-<version>-promo.mp4` with the music, writes
+   It renders every frame, encodes `oratype-<version>-promo.mp4` with the music, writes
    `sheet.png` and deletes the frames. Look at `sheet.png`, and check the length with
    `ffprobe -v error -show_entries format=duration -of csv=p=0 <mp4>`.
-6. **Hand over:** reveal the video in Finder (`open -R output/promo-<version>/typelite-<version>-promo.mp4`)
+6. **Hand over:** reveal the video in Finder (`open -R output/promo-<version>/oratype-<version>-promo.mp4`)
    and give the path. Nothing in `output/` is committed; changes to the harness or the scripts
    go in a pull request.
 

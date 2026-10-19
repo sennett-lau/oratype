@@ -1,15 +1,15 @@
 import { version } from '../../package.json'
 
 // App metadata
-export const APP_NAME = 'Typelite'
+export const APP_NAME = 'OraType'
 /**
  * The app's version, without a leading "v". `package.json` is the one place it is set: Tauri
  * reads it there too (`version` in tauri.conf.json points at it), and a Rust test checks that
  * Cargo.toml matches.
  */
 export const APP_VERSION: string = version
-export const APP_REPO_URL = 'https://github.com/sennett-lau/typelite'
-export const APP_LICENSE_URL = 'https://github.com/sennett-lau/typelite/blob/main/LICENSE'
+export const APP_REPO_URL = 'https://github.com/sennett-lau/oratype'
+export const APP_LICENSE_URL = 'https://github.com/sennett-lau/oratype/blob/main/LICENSE'
 
 export const LANGUAGES: { value: string; label?: string; labelKey?: string }[] = [
   { value: 'auto', labelKey: 'settings.autoDetect' },

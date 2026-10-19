@@ -245,7 +245,7 @@ pub(crate) mod test_audio {
             return None;
         }
         let path = std::env::temp_dir().join(format!(
-            "typelite-voice-{}-{}.wav",
+            "oratype-voice-{}-{}.wav",
             std::process::id(),
             text.len()
         ));

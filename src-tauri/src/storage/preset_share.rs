@@ -1,4 +1,4 @@
-//! Plan `preset-sharing`: export and import presets as a `*.typelite-presets.json` file.
+//! Plan `preset-sharing`: export and import presets as a `*.oratype-presets.json` file.
 //!
 //! The file holds a format name, a format version and two lists, `speech` and `ai`. Each entry
 //! has a kind, a name, a base URL and a model; speech entries also have a language, AI entries
@@ -26,11 +26,14 @@ use super::{
 use crate::credentials::{CredentialSecretReader, CredentialVault};
 
 /// Value of the `format` field.
-pub const FORMAT: &str = "typelite-presets";
+pub const FORMAT: &str = "oratype-presets";
+/// Plan `rename-oratype`: the `format` of files exported by Typelite (before 1.2.0). They are
+/// read as before; new files are written as [`FORMAT`].
+pub const LEGACY_FORMAT: &str = "typelite-presets";
 /// Newest format version this build reads and the one it writes.
 pub const VERSION: u64 = 1;
 /// End of the suggested file name.
-pub const FILE_SUFFIX: &str = ".typelite-presets.json";
+pub const FILE_SUFFIX: &str = ".oratype-presets.json";
 /// Largest file that is read. Real files are a few kilobytes.
 pub const MAX_FILE_BYTES: u64 = 1024 * 1024;
 /// Most entries read from one list.
@@ -64,9 +67,9 @@ fn is_shareable_kind(service: ServiceKind, kind: &str) -> bool {
 pub enum ShareError {
     /// The file is not valid JSON (or not text).
     NotJson,
-    /// JSON, but not a Typelite presets file.
+    /// JSON, but not a OraType presets file.
     WrongFormat,
-    /// Made by a newer Typelite with a format this build does not know.
+    /// Made by a newer OraType with a format this build does not know.
     NewerVersion {
         version: u64,
     },
@@ -507,7 +510,10 @@ pub fn parse_file(text: &str) -> Result<ParsedFile, ShareError> {
     let Some(object) = value.as_object() else {
         return Err(ShareError::WrongFormat);
     };
-    if object.get("format").and_then(Value::as_str) != Some(FORMAT) {
+    if !matches!(
+        object.get("format").and_then(Value::as_str),
+        Some(FORMAT | LEGACY_FORMAT)
+    ) {
         return Err(ShareError::WrongFormat);
     }
     let version = match object.get("version").and_then(Value::as_u64) {
@@ -665,6 +671,18 @@ pub fn store_keys<V: CredentialVault>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn files_exported_by_typelite_still_import() {
+        // Plan `rename-oratype`.
+        let parsed =
+            parse_file(r#"{"format":"typelite-presets","version":1,"speech":[],"ai":[]}"#).unwrap();
+        assert!(parsed.speech.is_empty() && parsed.ai.is_empty());
+        assert!(matches!(
+            parse_file(r#"{"format":"other-presets","version":1}"#),
+            Err(ShareError::WrongFormat)
+        ));
+    }
     use anyhow::{anyhow, Result};
     use std::sync::Mutex;
 
@@ -887,15 +905,15 @@ mod tests {
             Err(ShareError::WrongFormat)
         );
         assert_eq!(
-            parse_file(r#"{"format":"typelite-presets"}"#),
+            parse_file(r#"{"format":"oratype-presets"}"#),
             Err(ShareError::InvalidVersion)
         );
         assert_eq!(
-            parse_file(r#"{"format":"typelite-presets","version":0}"#),
+            parse_file(r#"{"format":"oratype-presets","version":0}"#),
             Err(ShareError::InvalidVersion)
         );
         assert_eq!(
-            parse_file(r#"{"format":"typelite-presets","version":1,"speech":{}}"#),
+            parse_file(r#"{"format":"oratype-presets","version":1,"speech":{}}"#),
             Err(ShareError::WrongFormat)
         );
     }
@@ -903,7 +921,7 @@ mod tests {
     #[test]
     fn parse_rejects_a_newer_version() {
         assert_eq!(
-            parse_file(r#"{"format":"typelite-presets","version":2,"speech":[]}"#),
+            parse_file(r#"{"format":"oratype-presets","version":2,"speech":[]}"#),
             Err(ShareError::NewerVersion { version: 2 })
         );
     }
@@ -936,7 +954,7 @@ mod tests {
 
     #[test]
     fn parse_rejects_entries_with_wrong_field_types() {
-        let text = r#"{"format":"typelite-presets","version":1,
+        let text = r#"{"format":"oratype-presets","version":1,
             "speech":[{"name":"A","base_url":"http://a.example/v1"}, 5]}"#;
         assert_eq!(
             parse_file(text),
@@ -945,7 +963,7 @@ mod tests {
                 index: 1,
             })
         );
-        let text = r#"{"format":"typelite-presets","version":1,
+        let text = r#"{"format":"oratype-presets","version":1,
             "ai":[{"name":"A","base_url":"http://a.example/v1","extra_request_fields":[1]}]}"#;
         assert_eq!(
             parse_file(text),
@@ -959,7 +977,7 @@ mod tests {
     #[test]
     fn parse_ignores_unknown_fields_and_skips_unknown_kinds() {
         let text = r#"{
-            "format": "typelite-presets",
+            "format": "oratype-presets",
             "version": 1,
             "exported_by": "a future build",
             "speech": [
@@ -1052,7 +1070,7 @@ mod tests {
 
     #[test]
     fn an_imported_qwen_compatible_mode_address_becomes_the_native_one() {
-        let text = r#"{"format":"typelite-presets","version":1,"speech":[
+        let text = r#"{"format":"oratype-presets","version":1,"speech":[
             {"kind":"qwen_cloud","name":"Qwen","model":"qwen-audio-3.0-asr-flash",
              "base_url":"https://token-plan.maas.qwencloudapi.com/compatible-mode/v1/"},
             {"kind":"openai_compatible","name":"Other","model":"m",
@@ -1078,7 +1096,7 @@ mod tests {
 
     #[test]
     fn qwen_cloud_is_a_speech_kind_only() {
-        let text = r#"{"format":"typelite-presets","version":1,"ai":[
+        let text = r#"{"format":"oratype-presets","version":1,"ai":[
             {"kind":"qwen_cloud","name":"Qwen","base_url":"https://a.example/v1","model":"m"}
         ]}"#;
         let parsed = parse_file(text).unwrap();
@@ -1088,22 +1106,22 @@ mod tests {
 
     #[test]
     fn parse_fills_a_missing_name_from_the_model() {
-        let text = r#"{"format":"typelite-presets","version":1,
+        let text = r#"{"format":"oratype-presets","version":1,
             "ai":[{"base_url":"http://a.example/v1","model":"llama3"}]}"#;
         assert_eq!(parse_file(text).unwrap().ai[0].name, "llama3");
     }
 
     #[test]
     fn preview_lists_the_page_entries_and_counts_the_rest() {
-        let text = r#"{"format":"typelite-presets","version":1,
+        let text = r#"{"format":"oratype-presets","version":1,
             "speech":[{"name":"S","base_url":"http://s.example:9000/v1","model":"w",
                        "api_key":"k"},
                       {"kind":"future","name":"F"}],
             "ai":[{"name":"A","base_url":"https://a.example/v1","model":"m"},
                   {"name":"B","base_url":"https://b.example/v1","model":"m"}]}"#;
         let parsed = parse_file(text).unwrap();
-        let speech = preview(&parsed, ServiceKind::Speech, "x.typelite-presets.json");
-        assert_eq!(speech.file_name, "x.typelite-presets.json");
+        let speech = preview(&parsed, ServiceKind::Speech, "x.oratype-presets.json");
+        assert_eq!(speech.file_name, "x.oratype-presets.json");
         assert_eq!(
             speech.entries,
             vec![ImportEntry {
@@ -1144,7 +1162,7 @@ mod tests {
     fn merge_adds_untested_presets_with_new_ids_and_keeps_the_active_one() {
         let mut config = config_with_user_presets();
         let before = config.clone();
-        let text = r#"{"format":"typelite-presets","version":1,
+        let text = r#"{"format":"oratype-presets","version":1,
             "speech":[{"name":"Groq","base_url":"https://api.groq.com/openai/v1",
                        "model":"whisper-large-v3-turbo","language":"en","api_key":"gsk"},
                       {"name":"Other","base_url":"http://o.example/v1","model":"w",
@@ -1185,7 +1203,7 @@ mod tests {
     #[test]
     fn merged_presets_survive_normalisation() {
         let mut config = config_with_user_presets();
-        let text = r#"{"format":"typelite-presets","version":1,
+        let text = r#"{"format":"oratype-presets","version":1,
             "ai":[{"name":"Ollama on the office PC","base_url":"http://h.example:11434/v1",
                    "model":"m","extra_request_fields":{"reasoning_effort":"none"}}]}"#;
         let parsed = parse_file(text).unwrap();
@@ -1205,7 +1223,7 @@ mod tests {
     fn merge_needs_a_choice() {
         let mut config = AppConfig::default();
         let parsed = parse_file(
-            r#"{"format":"typelite-presets","version":1,
+            r#"{"format":"oratype-presets","version":1,
                 "ai":[{"name":"A","base_url":"http://a.example/v1"}]}"#,
         )
         .unwrap();
@@ -1249,7 +1267,7 @@ mod tests {
     fn suggested_file_names_end_with_the_suffix() {
         assert_eq!(
             suggested_file_name(ServiceKind::Speech),
-            "speech.typelite-presets.json"
+            "speech.oratype-presets.json"
         );
         assert!(suggested_file_name(ServiceKind::Ai).ends_with(FILE_SUFFIX));
     }

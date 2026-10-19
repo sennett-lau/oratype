@@ -3,8 +3,8 @@
 <plist version="1.0">
 <dict>
     <key>NSMicrophoneUsageDescription</key>
-    <string>Typelite needs microphone access to capture voice input for speech-to-text.</string>
+    <string>OraType needs microphone access to capture voice input for speech-to-text.</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Typelite needs automation access to detect the active application for context-aware text output.</string>
+    <string>OraType needs automation access to detect the active application for context-aware text output.</string>
 </dict>
 </plist>

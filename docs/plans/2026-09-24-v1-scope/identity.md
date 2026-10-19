@@ -1,17 +1,17 @@
 # Identity and build
 
-Names, identifiers and build settings for Typelite. Back to [index](index.md).
+Names, identifiers and build settings for OraType. Back to [index](index.md).
 
 ## Identity
 
 | Where | Value |
 |---|---|
-| App name, window titles, tray, UI text | Typelite |
-| Bundle id (`tauri.conf.json`) | `dev.typelite.mac` |
-| Crate and library names (`Cargo.toml`) | `typelite`, `typelite_lib` |
-| npm package (`package.json`) | `typelite` |
-| Data folder, database, keychain service | `dev.typelite.mac`, `typelite.db`, `Typelite` |
-| Env vars and thread names | `TYPELITE_*`, `typelite-*` |
+| App name, window titles, tray, UI text | OraType |
+| Bundle id (`tauri.conf.json`) | `dev.oratype.mac` |
+| Crate and library names (`Cargo.toml`) | `oratype`, `oratype_lib` |
+| npm package (`package.json`) | `oratype` |
+| Data folder, database, keychain service | `dev.oratype.mac`, `oratype.db`, `OraType` |
+| Env vars and thread names | `ORATYPE_*`, `oratype-*` |
 | Icons | `src-tauri/icons/source/*.svg` |
 
 ## Licence
@@ -28,4 +28,4 @@ MIT. `LICENSE` carries every required copyright notice.
 
 ## Updates
 
-There is no auto-updater until Typelite publishes its own releases with its own signing key.
+There is no auto-updater until OraType publishes its own releases with its own signing key.

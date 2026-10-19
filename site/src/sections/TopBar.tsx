@@ -29,9 +29,9 @@ export function TopBar({ stats }: { stats: RepoStats | null }) {
   return (
     <header className={`topbar ${scrolled ? 'is-scrolled' : ''}`}>
       <div className="container topbar-inner">
-        <a className="brand" href="#top" aria-label="Typelite, back to top">
+        <a className="brand" href="#top" aria-label="OraType, back to top">
           <img src={`${import.meta.env.BASE_URL}icon-256.png`} alt="" width={30} height={30} />
-          Typelite
+          OraType
         </a>
         <nav className="topnav" aria-label="Sections">
           {NAV.map(([label, href]) => (
@@ -51,7 +51,7 @@ export function TopBar({ stats }: { stats: RepoStats | null }) {
             className="btn btn-glass btn-sm btn-star"
             href={links.repo}
             aria-label={
-              stats ? `Star Typelite on GitHub, ${stats.stars} stars` : 'Star Typelite on GitHub'
+              stats ? `Star OraType on GitHub, ${stats.stars} stars` : 'Star OraType on GitHub'
             }
           >
             <IconStar size={15} />

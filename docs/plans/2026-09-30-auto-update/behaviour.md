@@ -13,10 +13,10 @@ dev build: disabled
 
 | State | Home bar | Settings → System → Updates |
 |---|---|---|
-| idle, checking, upToDate | hidden | "Typelite X.Y.Z", the line under it, Check for updates |
-| available (auto off) | "Typelite N is available." · Update | Update |
-| downloading | "Downloading Typelite N… 42%" | the same line |
-| ready | "Typelite N is ready. Restart to start using it" (with the Accessibility hint) · Restart to update | Restart to update |
+| idle, checking, upToDate | hidden | "OraType X.Y.Z", the line under it, Check for updates |
+| available (auto off) | "OraType N is available." · Update | Update |
+| downloading | "Downloading OraType N… 42%" | the same line |
+| ready | "OraType N is ready. Restart to start using it" (with the Accessibility hint) · Restart to update | Restart to update |
 | failed | only after an Update the user pressed: the reason | the reason, Check for updates |
 | disabled (dev build) | hidden | "The development build does not update itself." |
 
@@ -24,8 +24,8 @@ dev build: disabled
 
 Each release adds, next to the DMG and the ZIP:
 
-- `Typelite_X.Y.Z_aarch64.app.tar.gz`: the app, as Tauri's updater package.
-- `Typelite_X.Y.Z_aarch64.app.tar.gz.sig`: its signature.
+- `OraType_X.Y.Z_aarch64.app.tar.gz`: the app, as Tauri's updater package.
+- `OraType_X.Y.Z_aarch64.app.tar.gz.sig`: its signature.
 - `latest.json`: `version`, `notes` (What's New), `pub_date`, and for `darwin-aarch64` the
   package URL and signature (`scripts/updater-manifest.mjs`).
 

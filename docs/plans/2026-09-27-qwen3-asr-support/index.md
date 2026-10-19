@@ -4,8 +4,8 @@ Qwen3-ASR is an open speech model (Apache-2.0) that writes Cantonese as it is sp
 English words in English, where whisper rewrites Cantonese into formal written Chinese. It runs on
 llama.cpp's `llama-server` (the same C++ runtime family as whisper.cpp) and on vLLM, both with an
 OpenAI-compatible `/v1/audio/transcriptions` endpoint. Two things in its answers do not fit
-Typelite today: every transcript starts with a language tag (`language Cantonese<asr_text>…`),
-and Chinese comes back in Simplified characters. Typelite removes the tag, uses it as the detected
+OraType today: every transcript starts with a language tag (`language Cantonese<asr_text>…`),
+and Chinese comes back in Simplified characters. OraType removes the tag, uses it as the detected
 language, and writes the transcript in the characters of the Chinese language the language router
 picks, so a Qwen3-ASR server works as an ordinary speech preset with no helper program.
 

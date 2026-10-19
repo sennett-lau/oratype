@@ -63,7 +63,7 @@ async fn choose_file(builder: FileDialogBuilder<tauri::Wry>, save: bool) -> Opti
 
 fn file_dialog(window: &Window, filter_name: &str) -> FileDialogBuilder<tauri::Wry> {
     let name = if filter_name.trim().is_empty() {
-        "Typelite presets"
+        "OraType presets"
     } else {
         filter_name.trim()
     };
@@ -261,7 +261,7 @@ mod tests {
 
     #[test]
     fn read_file_rejects_large_and_binary_files() {
-        let dir = std::env::temp_dir().join(format!("typelite-share-{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("oratype-share-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let big = dir.join("big.json");
         std::fs::write(&big, vec![b' '; preset_share::MAX_FILE_BYTES as usize + 1]).unwrap();
@@ -276,9 +276,9 @@ mod tests {
     #[test]
     fn a_file_with_keys_is_private() {
         use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("typelite-share-{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("oratype-share-{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
-        let path = dir.join("keys.typelite-presets.json");
+        let path = dir.join("keys.oratype-presets.json");
         write_file(&path, "{}", true).unwrap();
         let mode = std::fs::metadata(&path).unwrap().permissions().mode();
         assert_eq!(mode & 0o777, 0o600);

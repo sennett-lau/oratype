@@ -1,6 +1,6 @@
 # Pure-Rust inference (candle) against whisper.cpp and llama.cpp
 
-Could Typelite drop its C++ engines (whisper.cpp for built-in speech, llama.cpp's llama-server
+Could OraType drop its C++ engines (whisper.cpp for built-in speech, llama.cpp's llama-server
 for built-in AI) for pure-Rust inference, with one language less and maybe more speed? This
 tests [candle](https://github.com/huggingface/candle) 0.11, the most complete Rust library with
 Whisper and Qwen3 on Metal, against the shipping engines on the same Mac, inputs and models.

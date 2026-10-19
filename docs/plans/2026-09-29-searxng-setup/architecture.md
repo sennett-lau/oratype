@@ -4,14 +4,14 @@ How the built-in SearXNG is installed, run and updated. Back to [index.md](index
 
 ## Files
 
-Everything lives in `<app data>/search/` (`~/Library/Application Support/dev.typelite.mac/search/`):
+Everything lives in `<app data>/search/` (`~/Library/Application Support/dev.oratype.mac/search/`):
 
 ```
 search/
   bin/uv                  uv, from its GitHub release (checked with SHA-256)
   python/                 the standalone Python uv downloads (UV_PYTHON_INSTALL_DIR)
   searxng-<commit>/       one SearXNG install: source + .venv with its libraries
-  settings.yml            SearXNG settings written by Typelite
+  settings.yml            SearXNG settings written by OraType
   installed.json          the active commit, its date, and when it was set up
   searxng.log             the server's output (no questions: SearXNG does not log queries)
 ```

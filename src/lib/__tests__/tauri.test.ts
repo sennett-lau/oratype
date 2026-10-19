@@ -228,18 +228,18 @@ describe('dictionary correction commands', () => {
   it('updates dictionary and correction rows through typed commands', async () => {
     vi.mocked(invoke).mockResolvedValue(undefined)
 
-    await updateDictionaryEntry(4, 'Typelite', 'type light')
-    await updateCorrectionRule(7, 'type light', 'Typelite', false)
+    await updateDictionaryEntry(4, 'OraType', 'type light')
+    await updateCorrectionRule(7, 'type light', 'OraType', false)
 
     expect(invoke).toHaveBeenNthCalledWith(1, 'update_dictionary_entry', {
       id: 4,
-      word: 'Typelite',
+      word: 'OraType',
       pronunciation: 'type light',
     })
     expect(invoke).toHaveBeenNthCalledWith(2, 'update_correction_rule', {
       id: 7,
       pattern: 'type light',
-      replacement: 'Typelite',
+      replacement: 'OraType',
       enabled: false,
     })
   })

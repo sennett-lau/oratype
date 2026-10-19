@@ -29,7 +29,7 @@ Status: done — 2026-09-27
 | Speaking WPM = total words / total recording minutes over every successful Dictate or Translate paste | A running average is steady; recording length is what the user spent speaking. |
 | The final text is counted and dropped at once; only run count, word total and minutes are kept | No dictation content is stored (hard constraint). |
 | Typing is measured from the existing key listener (a `CGEventTap` under Accessibility) | No new permission and no second listener. |
-| Only key-downs that type text count: letters, digits, punctuation, Space; not modifiers, arrows, function keys, key repeats, shortcuts with ⌘ or ⌃, keys Typelite swallowed, or keys Typelite itself sent | Counts what the user types, not navigation, shortcuts or Typelite's own paste. |
+| Only key-downs that type text count: letters, digits, punctuation, Space; not modifiers, arrows, function keys, key repeats, shortcuts with ⌘ or ⌃, keys OraType swallowed, or keys OraType itself sent | Counts what the user types, not navigation, shortcuts or OraType's own paste. |
 | Typing counts gaps: a counted key within 2 s of the previous counted key adds one keystroke and that gap's time; a longer pause, and a lone key, add nothing. Typing WPM = (keystrokes / 5) / active minutes | Short replies, commands and fixes count too, pauses do not drag the number down, and the speed does not depend on how long a run is. "Five keystrokes = one word" is the standard. |
 | Totals live in a small `speed-stats.json` in the app data folder, written by a background thread | Survives restarts; the key listener thread never touches the disk. |
 | "Measure typing speed" (default on) and "Reset speed stats" sit in Settings → System → Insights, next to "Clear insights data" of plan `speed-by-preset` | The user decides, and every Insights data control is in one place; when off nothing is counted and there is no nudge. |
@@ -37,7 +37,7 @@ Status: done — 2026-09-27
 | Each burst added to the totals writes one debug log line with only its keystroke count and seconds, from the background thread | The log shows that typing is measured without holding any content, and the key listener thread never touches the disk. |
 | When the key listener cannot start (Accessibility missing, or stale after a rebuild), the shortcut supervisor retries until it works: after 1 s, doubling to 10 s; it stops when the app quits | A stale grant once left shortcuts and typing dead for hours after 3 quick retries; now they come back within about 10 s of the grant being fixed, without a restart. |
 | The nudge is a pill state in the capsule window, so it appears where the pill does and never takes focus | Reuses the non-activating panel and its screen placement. |
-| Nudge after about 60 s of mostly continuous typing (pauses under 5 s) in another app, at most once per local day, never during a run, before onboarding is finished, or while Typelite's own window has focus | Helpful at the right moment, never in the way. |
+| Nudge after about 60 s of mostly continuous typing (pauses under 5 s) in another app, at most once per local day, never during a run, before onboarding is finished, or while OraType's own window has focus | Helpful at the right moment, never in the way. |
 | The nudge offers "Don't show again" (kept in `speed-stats.json`) and ✕, and hides by itself after 8 s | Easy to silence for good. |
 
 ## Parts

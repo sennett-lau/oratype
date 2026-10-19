@@ -12,16 +12,16 @@ false-wake rates, and the other approaches below, which were compared on paper o
 
 ## Question
 
-How should Typelite detect "Hey Sam" while the microphone is always on? The owner's limits: no
+How should OraType detect "Hey Sam" while the microphone is always on? The owner's limits: no
 extra install for users, no vendored external project, nothing heard leaves the Mac before the
 wake phrase, and a low resource cost.
 
 ## Decision
 
-Use Typelite's own pipeline: an in-memory ring buffer, its own energy and noise-floor voice gate
+Use OraType's own pipeline: an in-memory ring buffer, its own energy and noise-floor voice gate
 in Rust, and a check of each voiced segment of 2 s or less with the whisper.cpp it already
 ships. The check uses Whisper base q5_1 (60 MB, downloaded by the app), a prompt with the wake
-name, a 512-frame encoder window and Typelite's own fuzzy matcher.
+name, a 512-frame encoder window and OraType's own fuzzy matcher.
 
 ## Why
 

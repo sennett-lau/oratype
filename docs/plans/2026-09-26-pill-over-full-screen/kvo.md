@@ -15,7 +15,7 @@ Overlay window ask: unexpected window class "NSKVONotifying_TaoWindow", kept as 
 Key-value observing (KVO) is Cocoa's "tell me when this property changes" mechanism. The first
 time anything observes an object, the Objective-C runtime creates a hidden subclass named
 `NSKVONotifying_<class>`, overrides the observed setters there, and switches the object to it.
-By the time Typelite sees them, the pill and Ask windows are observed (WebKit's
+By the time OraType sees them, the pill and Ask windows are observed (WebKit's
 `WKWindowVisibilityObserver` watches `contentLayoutRect` and `titlebarAppearsTransparent`, and
 AppKit watches a layer property), so their class is `NSKVONotifying_TaoWindow`, with Tauri's
 `TaoWindow` as its superclass. The swap accepted only `TaoWindow`, so it never ran, and with
@@ -41,7 +41,7 @@ answers `class` with its superclass). Just replacing the class with the panel cl
 2. The layout check compares the panel class with Tauri's class under the KVO class.
 3. The keys the old KVO class handled are read from its own `setFoo:` methods.
 4. After the swap, a do-nothing observer is added and removed for each of those keys. KVO then
-   builds `NSKVONotifying_TypeliteOverlayPanel` with the same setters and moves the object onto
+   builds `NSKVONotifying_OraTypeOverlayPanel` with the same setters and moves the object onto
    it; the earlier observers are stored per object, so they stay registered.
 5. The panel class overrides `addObserver:forKeyPath:options:context:` and both
    `removeObserver:` methods. It notes the observers added after the swap; a removal of one of
@@ -56,7 +56,7 @@ All of this happens on the main thread, where AppKit windows live.
 
 | Line | Meaning |
 |---|---|
-| `Overlay window capsule: now a non-activating panel (was "NSKVONotifying_TaoWindow", now "NSKVONotifying_TypeliteOverlayPanel")` | The swap worked; the same line appears for `ask`. |
+| `Overlay window capsule: now a non-activating panel (was "NSKVONotifying_TaoWindow", now "NSKVONotifying_OraTypeOverlayPanel")` | The swap worked; the same line appears for `ask`. |
 | `… unexpected window class "…", kept as a window` | A class this code does not know (for example after a Tauri update). Full screen then works only with "Show in Dock" off. |
 | `… window layout differs, kept as a window` | Tauri's class changed size or moved its `focusable` variable. |
 | `… key-value observing could not be moved to the panel, kept as a window` | Step 4 failed; the window is exactly as before. |
@@ -65,7 +65,7 @@ All of this happens on the main thread, where AppKit windows live.
 
 A throwaway binary (not committed) opened the real `capsule` window, added its own KVO observer,
 ran the conversion and read the result back: class chain
-`NSKVONotifying_TypeliteOverlayPanel → TypeliteOverlayPanel → NSPanel`, all four earlier
+`NSKVONotifying_OraTypeOverlayPanel → OraTypeOverlayPanel → NSPanel`, all four earlier
 observers still registered, `setTitle:` still notified the observer registered before the swap,
 observers added and removed after it behaved normally, style mask gained NonactivatingPanel,
 level 25, behavior 0x151, `canBecomeKeyWindow` false. Removing the pre-swap observer and closing

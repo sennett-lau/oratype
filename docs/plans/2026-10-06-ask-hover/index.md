@@ -1,7 +1,7 @@
 # Hover and pointer cursor in the Ask panel
 
 The Ask panel's sources, citations and buttons had hover styles and `cursor: pointer` in CSS,
-but neither showed. The Ask window is never the key window and Typelite stays in the background
+but neither showed. The Ask window is never the key window and OraType stays in the background
 (so the user's app keeps focus), and WebKit sends a page in that state no mouse moves. The app
 now feeds the cursor position to the page, which applies hover itself, and sets the hand cursor
 natively.

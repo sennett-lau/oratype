@@ -17,5 +17,5 @@ node scripts/benchmark.mjs polish --address <address> --model <model> [--key <ke
 node scripts/benchmark.mjs speech --address <address> --model <model> [--key <key>]
 ```
 
-The address and model are what you would enter in Typelite. Measured your setup? Add a row to the
+The address and model are what you would enter in OraType. Measured your setup? Add a row to the
 test's table; see [Contributing → Benchmarks](../../../CONTRIBUTING.md#benchmarks).

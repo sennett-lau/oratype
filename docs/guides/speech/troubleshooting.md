@@ -12,7 +12,7 @@
 
 ## "Didn't catch that"
 
-Typelite found no speech: the recording held less than 200 ms of voice, or the recogniser
+OraType found no speech: the recording held less than 200 ms of voice, or the recogniser
 returned only a phrase it invents for silence. Speak a little longer or closer to the microphone,
 and check the microphone chosen in Settings. The log line `speech check: …` gives the numbers.
 
@@ -37,6 +37,6 @@ recognition and the reply. Ways to speed it up:
 
 ## Still stuck
 
-Check `~/Library/Logs/Typelite/typelite.log`: each speech request logs the endpoint, status and
+Check `~/Library/Logs/OraType/oratype.log`: each speech request logs the endpoint, status and
 duration (never your text). Attach it to an issue; see
 [Reporting bugs](../../../CONTRIBUTING.md#reporting-bugs).

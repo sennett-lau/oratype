@@ -1,6 +1,6 @@
 # ElevenLabs speech-to-text API
 
-What Typelite sends and expects, from the
+What OraType sends and expects, from the
 [API reference](https://elevenlabs.io/docs/api-reference/speech-to-text/convert). Back to
 [index.md](index.md).
 
@@ -40,7 +40,7 @@ Other fields (`diarize`, `keyterms`, `timestamps_granularity`, webhooks, ...) ar
 Errors carry `{"detail": {"status": "...", "message": "..."}}` (validation errors: `422` with a
 `detail` list or text).
 
-| Answer | Typelite |
+| Answer | OraType |
 |---|---|
 | `401`/`403` | Invalid key (`stt_invalid_key`), with the service's message. |
 | `detail.status == "quota_exceeded"` (any status) or `429` | Quota error (`stt_quota_exceeded`). |

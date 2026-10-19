@@ -1,6 +1,6 @@
 # Performance benchmarks
 
-This is the record of Typelite's application performance: recording UI updates, streaming
+This is the record of OraType's application performance: recording UI updates, streaming
 responses and transcript processing. Start with the [current baseline](BASELINE.md) to see the
 latest measured numbers. [Speech and model benchmarks](../guides/benchmarks/README.md) cover
 setup-specific inference services separately. Research that evaluates replacing a runtime,
@@ -52,7 +52,7 @@ needs an interpretation fixed. Executable fixtures remain in `benchmarks/` and
 Before repeating an optimization proposal, search [docs/research/](../research/README.md) and
 the reports here for the component or runtime name. A performance experiment that does not
 result in a shipping change still gets a dated record: in its report here when it tunes
-Typelite's own code, or as a research entry when it evaluates a different runtime, engine or
+OraType's own code, or as a research entry when it evaluates a different runtime, engine or
 model. A new runtime release or hardware target can justify new evidence; the same hypothesis
 alone does not.
 

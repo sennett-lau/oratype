@@ -126,7 +126,7 @@ describe('Exercise page states (plan tutorial-one-page)', () => {
 
     emit('stt:final', "Let's have lunch at 1 oh no let's do it at 2")
     emit('pipeline:state', 'transcribing')
-    expect(text(line())).toBe('Typelite is writing…')
+    expect(text(line())).toBe('OraType is writing…')
 
     // The insert result arrives before the keystrokes reached the box: keep writing.
     const result = "Let's have lunch at 2."

@@ -4,7 +4,7 @@ For reviewers; not downloaded by the app.
 
 ## Sources
 
-- The built-in Hong Kong translation default in Typelite (`src-tauri/src/llm/prompt.rs`):
+- The built-in Hong Kong translation default in OraType (`src-tauri/src/llm/prompt.rs`):
   Cantonese words versus written-Chinese words, code-mixing, Hong Kong vocabulary, digits, and
   the English → Cantonese examples.
 - A Cantonese polish preference written and tested for dictation in Hong Kong Cantonese mixed
@@ -17,7 +17,7 @@ For reviewers; not downloaded by the app.
   to put the Cantonese words back (more written-Chinese → Cantonese pairs, one example of it).
 - The model hint points to the speech model, which matters more than the polish model.
 
-Tested with Typelite's real polish prompt, a 4B Qwen 3.5 model in Ollama (thinking off,
+Tested with OraType's real polish prompt, a 4B Qwen 3.5 model in Ollama (thinking off,
 temperature 0.3), ten everyday Cantonese sentences with fillers, a self-correction, English words
 and a swear word, two runs each. "Similar" is how close the output is to what was said.
 

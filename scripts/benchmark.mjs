@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Benchmarks (docs/guides/benchmarks/): times Typelite's own requests against your server with the
+// Benchmarks (docs/guides/benchmarks/): times OraType's own requests against your server with the
 // published data in docs/guides/benchmarks/data/, so every row in the Results tables is measured
 // the same way.
 //
@@ -85,8 +85,8 @@ async function polish(address, model, headers) {
 async function speech(address, model, headers) {
   let wav = option('wav')
   if (!wav) {
-    wav = join(tmpdir(), 'typelite-benchmark-speech.wav')
-    const aiff = join(tmpdir(), 'typelite-benchmark-speech.aiff')
+    wav = join(tmpdir(), 'oratype-benchmark-speech.wav')
+    const aiff = join(tmpdir(), 'oratype-benchmark-speech.aiff')
     execFileSync('say', ['-v', 'Samantha', '-o', aiff, read('speech-short-en.txt')])
     execFileSync('afconvert', ['-f', 'WAVE', '-d', 'LEI16@16000', '-c', '1', aiff, wav])
   }

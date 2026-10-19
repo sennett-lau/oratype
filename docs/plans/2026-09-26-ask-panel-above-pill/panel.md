@@ -50,7 +50,7 @@ and closes the panel; if the paste fails the panel says so and stays.
 | Event | Panel |
 |---|---|
 | Escape while the panel is open and no run is active | closes; Escape is swallowed |
-| Escape while nothing of Typelite's is up | untouched; Escape reaches the app |
+| Escape while nothing of OraType's is up | untouched; Escape reaches the app |
 | ✕ | closes |
 | A new Dictate, Translate or Ask run starts | closes |
 | Insert or "Try replacing again" succeeds | closes |

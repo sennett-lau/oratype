@@ -14,7 +14,7 @@ someone else.
 ## Export
 
 - **Export…** lists your saved presets; untick the ones to leave out and pick where to save the
-  `.typelite-presets.json` file. Only saved presets are exported, so save your edits first.
+  `.oratype-presets.json` file. Only saved presets are exported, so save your edits first.
 - The Built-in presets are never exported (they are model files on your computer). Shipped AI
   presets you have not changed, and addresses that still hold `<computer-ip>`, are not offered.
 - AI presets are exported with their extra request fields.
@@ -27,9 +27,9 @@ someone else.
   added; a name that is taken gets a number, like "Groq (2)".
 - Nothing is replaced, and the preset in use does not change. Pick an imported preset and press
   **Test** before you use it.
-- A file from a newer Typelite, or one with an address that is not `http://` or `https://`, is
+- A file from a newer OraType, or one with an address that is not `http://` or `https://`, is
   rejected. Presets of a kind this version does not know are skipped.
 - Qwen Cloud speech presets keep their connection; see [Qwen Cloud](speech/qwen-cloud.md).
 
-Language presets (how Typelite writes each language) are shared differently: through the
+Language presets (how OraType writes each language) are shared differently: through the
 repository's catalogue. See [Languages](languages/README.md).

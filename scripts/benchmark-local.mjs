@@ -275,7 +275,7 @@ copyFileSync(artifact.executable, savedExecutable)
 metadata.rust_executable = savedExecutable
 metadata.rust_executable_sha256 = executableHash
 
-const scratch = mkdtempSync(join(tmpdir(), 'typelite-bench-'))
+const scratch = mkdtempSync(join(tmpdir(), 'oratype-bench-'))
 const groups = new Map()
 try {
   for (let processRun = 0; processRun < runs; processRun++) {
@@ -285,7 +285,7 @@ try {
       join(root, 'node_modules/.bin/vitest'),
       ['run', '--config', 'benchmarks/vitest.config.ts'],
       {
-        env: { ...process.env, TYPELITE_BENCH_OUTPUT: frontendOutput },
+        env: { ...process.env, ORATYPE_BENCH_OUTPUT: frontendOutput },
       },
     )
     const frontend = JSON.parse(readFileSync(frontendOutput, 'utf8'))
