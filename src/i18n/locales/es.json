@@ -965,6 +965,10 @@
     "failed": "No se pudo empezar a grabar el atajo: {{error}}"
   },
   "whatsNew": {
+    "handsFree": "Modo manos libres: di «Hey Sam», haz una pausa y habla, sin atajos. Tus palabras se escriben en la app; di «ask …» para preguntar. Termina con «Thanks, Sam» o una pausa de 3 segundos. Actívalo en Ajustes → General → Manos libres; un modelo pequeño (60 MB) escucha en tu Mac, así que no se envía nada antes de la frase de activación.",
+    "pillAfterIdle": "La píldora vuelve a aparecer tras un rato sin usarla. Tras unos ocho minutos sin dictar, podía dejar de mostrarse aunque el dictado seguía funcionando.",
+    "polishCutOff": "Los dictados largos, sobre todo en cantonés, ya no se cortan al pulirlos. La IA integrada tiene el doble de espacio, y una respuesta que aun así se queda sin espacio se sustituye por tu transcripción.",
+    "ownKeystrokes": "Con un atajo en una sola tecla Comando, «Pregunta lo que sea» ya no se detiene al empezar en apps donde Typelite copia tu selección para leerla.",
     "languageModels": "Tus idiomas: dile a Typelite qué idiomas hablas (en la configuración inicial o en Ajustes → Voz). Para el cantonés sugiere dos modelos integrados para descargar: Qwen3-ASR, que escribe el cantonés tal como lo dices, y Qwen 3.5 4B para el pulido.",
     "clipboardSafe": "Typelite ya no toca tu portapapeles: un resultado que no puede escribir espera en la cápsula Copiar, tras pegar vuelve todo lo que habías copiado (también imágenes y archivos) y los gestores de portapapeles ya no guardan los dictados.",
     "typeAfterSwitch": "Si haces clic en una app y dictas enseguida, ahora el texto se escribe en lugar de copiarse.",
