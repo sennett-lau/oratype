@@ -41,7 +41,8 @@ committed.
 
 `.github/workflows/site.yml` builds `site/` and deploys it to Cloudflare Workers with static
 assets (`wrangler.jsonc`) on every push to `main` that changes `site/**` (or the preset index),
-and on demand from the Actions tab (**Run workflow**). It needs two repository secrets:
+and on demand from the Actions tab (**Run workflow**). Without the two repository secrets below
+it only builds, and the site is deployed by hand. The secrets:
 
 - `CLOUDFLARE_API_TOKEN`: an API token of the Cloudflare account that owns `sennettlau.me`, made
   from the **Edit Cloudflare Workers** template plus **Zone → DNS → Edit** and **Zone → SSL and
