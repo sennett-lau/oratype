@@ -31,7 +31,7 @@ Status: building (2026-10-20)
 | Files exported by Typelite (presets, dictionary) still import; new files carry the new format names | Users have shared and saved such files. |
 | The signing certificate keeps its name, "Typelite Signing" | Only `codesign` shows it. A new certificate means new repository secrets and a new keychain item on the maintainer's Mac for no visible gain. |
 | The GitHub repository is renamed `oratype` | GitHub redirects every old repository URL, release downloads included, so installed Typelite copies find the 1.2.0 update through the old feed URL. A new repository must never take the name `typelite`, or the redirects stop. |
-| `typelite.sennettlau.me` answers with a permanent redirect (301) to `oratype.sennettlau.me`, path and query kept, in Cloudflare | GitHub Pages serves one custom domain per site; a 301 carries the old domain's ranking over. See [web.md](web.md). |
+| The site moves from GitHub Pages to Cloudflare Workers, which also answers `typelite.sennettlau.me` with a permanent redirect (301) to the same page on `oratype.sennettlau.me` | GitHub Pages serves one custom domain per site, so the redirect needed a separate Cloudflare rule; a Worker does both in code, and Cloudflare keeps both domains' DNS and certificates. A 301 carries the old domain's ranking over. See [web.md](web.md). |
 | Recorded data (benchmark and research JSON) keeps the old name | It is evidence of past runs; rewriting it would change what was measured. |
 
 ## Parts

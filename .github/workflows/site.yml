@@ -1,7 +1,8 @@
-name: Site (GitHub Pages)
+name: Site (Cloudflare)
 
-# Builds the one-page site in site/ and deploys it to GitHub Pages.
-# Needs Settings → Pages → Source: "GitHub Actions" (and a public repository, or a paid plan).
+# Builds the one-page site in site/ and deploys it to Cloudflare Workers (site/wrangler.jsonc):
+# oratype.sennettlau.me, with typelite.sennettlau.me redirecting to it (plan `rename-oratype`).
+# Needs the repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (site/README.md).
 
 on:
   push:
@@ -9,21 +10,19 @@ on:
     paths:
       - 'site/**'
       - 'presets/languages/index.json'
-      - '.github/workflows/pages.yml'
+      - '.github/workflows/site.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # One deployment at a time; a newer push replaces a queued one, a running one finishes.
 concurrency:
-  group: pages
+  group: site
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,17 +36,10 @@ jobs:
           cache-dependency-path: site/package-lock.json
       - run: npm ci
       - run: npm run build
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: cloudflare/wrangler-action@v3
         with:
-          path: site/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: site
+          wranglerVersion: '4.151.2'
+          command: deploy

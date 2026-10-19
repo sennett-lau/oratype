@@ -1,6 +1,6 @@
 # OraType site
 
-The one-page website for OraType: Vite, React and TypeScript, deployed to GitHub Pages at
+The one-page website for OraType: Vite, React and TypeScript, deployed to Cloudflare Workers at
 `https://oratype.sennettlau.me/`. It is a separate project with its own
 `package.json` and lockfile; nothing here is part of the app.
 
@@ -39,17 +39,21 @@ committed.
 
 ## Deploy
 
-`.github/workflows/pages.yml` builds `site/` and deploys it on every push to `main` that
-changes `site/**` (or the preset index), and on demand from the Actions tab
-(**Run workflow**). Before the first deploy:
+`.github/workflows/site.yml` builds `site/` and deploys it to Cloudflare Workers with static
+assets (`wrangler.jsonc`) on every push to `main` that changes `site/**` (or the preset index),
+and on demand from the Actions tab (**Run workflow**). It needs two repository secrets:
 
-1. GitHub Pages needs the repository to be **public** (or a paid plan for private Pages).
-2. Enable it in **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+- `CLOUDFLARE_API_TOKEN`: an API token of the Cloudflare account that owns `sennettlau.me`, made
+  from the **Edit Cloudflare Workers** template plus **Zone → DNS → Edit** and **Zone → SSL and
+  Certificates → Edit**, limited to that zone.
+- `CLOUDFLARE_ACCOUNT_ID`: that account's ID.
 
-The site is served at the root of the custom domain `oratype.sennettlau.me` (Settings → Pages →
-Custom domain, with a DNS `CNAME oratype → sennett-lau.github.io`), so `vite.config.ts` sets
-`base: '/'`. GitHub redirects the old `sennett-lau.github.io/oratype/` address there. To move it,
-change the custom domain, and the absolute URLs in `index.html` (canonical, Open Graph,
+The Worker (`worker/index.ts`) serves `dist/` at `oratype.sennettlau.me` and answers
+`typelite.sennettlau.me`, the site's old name, with a 301 to the same page on the new domain
+(plan `rename-oratype`). Both are Workers Custom Domains, so Cloudflare keeps their DNS records
+and certificates; `vite.config.ts` sets `base: '/'`. To deploy by hand: `npm run build`, then
+`CLOUDFLARE_API_TOKEN=… CLOUDFLARE_ACCOUNT_ID=… npx wrangler deploy`. To move the site, change
+the routes in `wrangler.jsonc` and the absolute URLs in `index.html` (canonical, Open Graph,
 structured data), `public/robots.txt` and `public/sitemap.xml`.
 
 ## Media
