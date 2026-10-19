@@ -6,7 +6,7 @@ identifier, the crate, the website and the repository. Installed copies update t
 themselves and keep their settings, models, dictionary and API keys. Old links (the website, the
 repository, its releases and the update feed) lead to the new name.
 
-Status: building (2026-10-20)
+Status: done (2026-10-20)
 
 ## Goals and non-goals
 
