@@ -122,7 +122,7 @@ function openSource(url: string) {
   openAskSource(url).catch(() => {})
 }
 
-/** A letter mark for a site: its first letter on a colour taken from its name. Typelite shows
+/** A letter mark for a site: its first letter on a colour taken from its name. OraType shows
  * no site icons, because loading one would contact the site. */
 function SiteMark({ url }: { url: string }) {
   const host = sourceHost(url)
@@ -401,7 +401,7 @@ export function AskAnswerPanel({
   }, [])
 
   // Plan `ask-panel-select-text`: text in the panel can be highlighted and copied with ⌘C.
-  // The panel is key only after a press in its text or a highlight in it (Typelite is never
+  // The panel is key only after a press in its text or a highlight in it (OraType is never
   // activated), and ⌘C copies through the app: the Edit menu's Copy is not ours to use while
   // another app is active.
   const panelRef = useRef<HTMLElement | null>(null)

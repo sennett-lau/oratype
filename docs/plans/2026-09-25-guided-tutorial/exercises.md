@@ -2,13 +2,13 @@
 
 Back to [index](index.md). Each exercise: record/test the shortcut as today, then a card with
 the script, a practice box (where text is pasted), and a before/after panel ("You said" = raw
-transcript, "Typelite wrote" = final text).
+transcript, "OraType wrote" = final text).
 
 ## Step 5 — Dictate
 
 1. **Change of mind.** Script: *"Let's have lunch at 1… oh no, let's do it at 2."*
    Expected: "Let's have lunch at 2." Success: the pasted text contains "2" and not "at 1".
-   Caption after success: "Typelite kept only your correction."
+   Caption after success: "OraType kept only your correction."
 2. **Fillers.** Script: *"Um, so, I think we should, like, ship it on Friday."*
    Expected: "I think we should ship it on Friday." Success: text pasted and contains "Friday".
    Caption: "Fillers like um and like are removed."

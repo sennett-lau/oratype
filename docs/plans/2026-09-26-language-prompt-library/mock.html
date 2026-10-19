@@ -1,4 +1,4 @@
-<title>Typelite Language Presets</title>
+<title>OraType Language Presets</title>
 <style>
   :root {
     --page-bg: #f2f3f6; --page-ink: #1b1d22; --page-muted: #5d6270; --page-line: #dcdfe6; --page-card: #fff;
@@ -285,7 +285,7 @@
 </defs></svg>
 <div class="wrap">
   <header>
-    <div class="eyebrow">Typelite · design iteration</div>
+    <div class="eyebrow">OraType · design iteration</div>
     <h1>Language presets from GitHub</h1>
     <p class="lead">Each translation language can use a preset from the project's library on GitHub, the built-in default, or your own text. Presets are plain prompt text; you see every text before it is used, and updates apply by themselves only for a language whose auto-update you turned on (and never over text you edited).</p>
   </header>
@@ -336,9 +336,9 @@
     <div class="app" id="app">
       <div class="win lp">
         <div class="set">
-          <nav class="side" aria-label="Typelite">
+          <nav class="side" aria-label="OraType">
             <div class="lights" style="padding:6px 6px 0"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
-            <div class="brand">Typelite</div>
+            <div class="brand">OraType</div>
             <div class="nav">Home</div><div class="nav on">Settings</div><div class="nav">Dictionary</div>
           </nav>
           <div class="main">
@@ -349,9 +349,9 @@
               <button type="button"><svg><use href="#i-text"/></svg>Prompts</button>
               <button type="button"><svg><use href="#i-mon"/></svg>System</button>
             </nav>
-            <div class="ghead" style="margin-top:0"><span class="glabel">AI polish uses</span><a class="link" href="https://github.com/sennett-lau/typelite/blob/main/docs/guides/ai-polish.md" target="_blank" rel="noopener">Learn more</a></div>
+            <div class="ghead" style="margin-top:0"><span class="glabel">AI polish uses</span><a class="link" href="https://github.com/sennett-lau/oratype/blob/main/docs/guides/ai-polish.md" target="_blank" rel="noopener">Learn more</a></div>
             <div class="group"><div class="row"><div class="l">Your server or API key<small>Ollama on my PC · qwen3:4b-instruct</small></div></div></div>
-            <div class="ghead"><span class="glabel">Translation</span><a class="link" href="https://github.com/sennett-lau/typelite/blob/main/docs/guides/ai-polish.md#language-presets" target="_blank" rel="noopener">About language presets</a></div>
+            <div class="ghead"><span class="glabel">Translation</span><a class="link" href="https://github.com/sennett-lau/oratype/blob/main/docs/guides/ai-polish.md#language-presets" target="_blank" rel="noopener">About language presets</a></div>
             <div class="group"><div id="slots"></div></div>
             <div class="ghead"><span class="glabel">Polish</span></div>
             <div class="group"><div class="row"><div class="l">Clean up dictation</div></div></div>
@@ -369,7 +369,7 @@
       <li><b>Adding a language</b> opens its sheet; "Browse presets" lists matching presets from GitHub: Official first, then Community, most specific language first. English (UK) shows the shared English preset with its en-GB notes.</li>
       <li><b>Nothing is used before you see it:</b> choosing a preset shows its full text first; "Use this preset" applies it.</li>
       <li><b>Editing</b> keeps a local copy ("Based on … · edited"); "Reset to preset" undoes your edits, "Reset to default" returns to the built-in text.</li>
-      <li><b>Updates:</b> with "Update presets automatically" on, Typelite checks GitHub once a day and applies new versions of presets you haven’t edited; edited text is never replaced (the sheet offers “Use v4 instead”). With it off, a dot on the language and a banner offer Preview / Update.</li>
+      <li><b>Updates:</b> with "Update presets automatically" on, OraType checks GitHub once a day and applies new versions of presets you haven’t edited; edited text is never replaced (the sheet offers “Use v4 instead”). With it off, a dot on the language and a banner offer Preview / Update.</li>
       <li>In Settings, languages are rows (number, name, where its instructions come from, model, Edit, remove, drag to reorder), with “+ Add language” as the last row until there are 3. The one-row slots stay in onboarding only.</li>
       <li>The Translation section no longer explains itself inline; “About language presets” links to the guide, and each language sheet says what the instructions are for.</li>
       <li><b>Recognition (polish only):</b> the router chooses one of your languages or Other. 1) A hint character/word matches → that language. 2) Else the language speech recognition reported matches one of your languages → that one (a preset can require a hint, e.g. Cantonese, so plain Chinese does not get Cantonese rules). 3) Else plain polish, no extra instructions. Hints and codes come from the preset; you can add your own. Nothing language-specific is built into the app.</li>
@@ -503,10 +503,10 @@
         '<div class="foot3">' + (st.src === 'edited' ? '<button class="link" type="button">Reset to preset</button>' : '') + (st.src !== 'builtin' ? '<button class="link muted" type="button">Reset to default</button>' : '') + '<span class="grow"></span><button class="btn ghost" type="button" data-close>Cancel</button><button class="btn" type="button" data-close>Save</button></div>';
     }
     if (st.scr === 'browse') {
-      var h = '<div class="sh-head"><h3>Presets for ' + x.name + '</h3><a class="link" href="https://github.com/sennett-lau/typelite/tree/main/presets/languages" target="_blank" rel="noopener">Library on GitHub</a></div>';
+      var h = '<div class="sh-head"><h3>Presets for ' + x.name + '</h3><a class="link" href="https://github.com/sennett-lau/oratype/tree/main/presets/languages" target="_blank" rel="noopener">Library on GitHub</a></div>';
       if (st.net === 'off') h += '<div class="banner warn"><span class="grow">Can’t reach the preset library. Showing downloaded presets and the built-in default.</span><button class="btn ghost xs" type="button">Try again</button></div>';
       h += '<div class="plist" role="radiogroup" aria-label="Presets">';
-      h += '<button class="pitem" type="button" role="radio" aria-checked="' + (st.pick === -1) + '" data-pick="-1"><span class="t">Built-in default <span class="tier c">Built in</span></span><span class="d">Ships with Typelite; always available offline.</span></button>';
+      h += '<button class="pitem" type="button" role="radio" aria-checked="' + (st.pick === -1) + '" data-pick="-1"><span class="t">Built-in default <span class="tier c">Built in</span></span><span class="d">Ships with OraType; always available offline.</span></button>';
       x.list.forEach(function (p, i) {
         if (st.net === 'off' && i > 0) return;
         h += '<button class="pitem" type="button" role="radio" aria-checked="' + (st.pick === i) + '" data-pick="' + i + '"><span class="t">' + esc(p.name) + ' <span class="tier ' + p.tier + '">' + (p.tier === 'o' ? 'Official' : 'Community') + '</span>' + (i === 0 && st.src !== 'builtin' ? '<span class="badge2">Downloaded</span>' : '') + '</span><span class="d">' + esc(p.sum) + '</span><span class="m">' + esc(p.langs) + ' · v' + p.v + ' · by ' + p.by + (p.hint ? ' · ' + esc(p.hint) : '') + '</span></button>';

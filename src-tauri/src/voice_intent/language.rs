@@ -288,8 +288,8 @@ pub fn resolve_selection_translation_target(
 ///
 /// The instruction must start with a translate verb, after optional openings ("please",
 /// "can you", "请", "帮我把这段"), so "don't translate this" or "why is this translated so
-/// badly" stay questions. When it names no language Typelite knows, it must be only the verb
-/// ("translate this", "翻译一下"): "translate this to Klingon" names a language Typelite cannot
+/// badly" stay questions. When it names no language OraType knows, it must be only the verb
+/// ("translate this", "翻译一下"): "translate this to Klingon" names a language OraType cannot
 /// map, so it is not quietly translated into the default language; it stays an Ask answer.
 pub fn is_selection_translation_request(utterance: &str) -> bool {
     let names_language = !find_names(utterance).is_empty();

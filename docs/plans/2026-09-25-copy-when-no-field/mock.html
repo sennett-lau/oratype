@@ -1,4 +1,4 @@
-<title>Typelite Copy Pill</title>
+<title>OraType Copy Pill</title>
 <style>
   :root {
     --page: #eef1f6; --ink: #1d1d1f; --muted: #6e6e73; --line: rgba(0,0,0,.1); --seg: rgba(0,0,0,.05); --seg-on: #fff;
@@ -97,7 +97,7 @@
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Typelite · design iteration</div>
+    <div class="eyebrow">OraType · design iteration</div>
     <h1>When there's nowhere to paste</h1>
     <p class="lead">If no text field has focus when the result is ready, the pill stays up and shows the start of the text with a Copy button instead of pasting into nothing.</p>
   </header>
@@ -146,7 +146,7 @@
     <b>How it behaves</b>
     <ul>
       <li><b>Text field focused:</b> no change. Paste, a short "Done" flash, the pill hides.</li>
-      <li><b>No text field:</b> Typelite doesn't paste. The pill grows, shows the start of the result and a Copy button. It stays 8 s; hovering pauses it, Esc closes it.</li>
+      <li><b>No text field:</b> OraType doesn't paste. The pill grows, shows the start of the result and a Copy button. It stays 8 s; hovering pauses it, Esc closes it.</li>
       <li><b>Countdown options:</b> 1 draws the line only under the text, so it never reaches the button; 2 keeps the full-width line and shrinks the button so they no longer touch; 3 drops the line and runs the countdown around the Copy button's border (recommended: nothing extra in the pill, and the timer sits where your eye already is).</li>
       <li><b>Transitions:</b> the pill's width, height and corners animate together; the old label fades out while the new one fades in (a slight blur, 0.2 s); the working light fades rather than cutting; hiding slides down and fades.</li>
       <li><b>Copy</b> puts the full result on the clipboard, shows "Copied", and the pill hides a moment later. The clipboard is not restored afterwards, since you asked for it.</li>

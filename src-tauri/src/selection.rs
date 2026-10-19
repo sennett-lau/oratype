@@ -5,7 +5,7 @@
 //! all. Only an app that does not tell gets a ⌘C. Then the clipboard is copied as a whole first,
 //! its change count tells whether the app copied anything, and everything that was there is put
 //! back. If the app copied nothing, the clipboard was never written. An app that answers the ⌘C
-//! after Typelite stopped waiting would overwrite the clipboard, so it is watched a little longer
+//! after OraType stopped waiting would overwrite the clipboard, so it is watched a little longer
 //! and put back.
 
 #[cfg(not(target_os = "macos"))]
@@ -103,7 +103,7 @@ fn wait_for_modifier_release() {}
 fn copy_selected_text_to_clipboard() -> bool {
     // The same System Events route as the paste (⌘V) in `output/clipboard.rs`, so it needs no
     // permission the paste does not already need: Accessibility, and Automation of System
-    // Events (asked once, on first use). Marked as Typelite's own, so its ⌘ cannot fire a
+    // Events (asked once, on first use). Marked as OraType's own, so its ⌘ cannot fire a
     // shortcut on a bare Command key (plan `own-keystrokes`).
     let _own = crate::native_hotkey::OwnKeystroke::begin();
     match std::process::Command::new("/usr/bin/osascript")
@@ -118,7 +118,7 @@ fn copy_selected_text_to_clipboard() -> bool {
             let stderr = String::from_utf8_lossy(&output.stderr);
             if is_permission_error(&stderr) {
                 tracing::warn!(
-                    "Selected text: macOS refused the copy keystroke. Allow Typelite in System \
+                    "Selected text: macOS refused the copy keystroke. Allow OraType in System \
                      Settings → Privacy & Security → Accessibility and → Automation → System Events"
                 );
             } else {
@@ -214,7 +214,7 @@ fn capture_with_copy(started: std::time::Instant) -> Option<String> {
     selected.filter(|text| !text.trim().is_empty())
 }
 
-/// An app that answers the ⌘C after Typelite stopped waiting would leave the selection on the
+/// An app that answers the ⌘C after OraType stopped waiting would leave the selection on the
 /// clipboard. For a short while, a change is taken as that late copy and the clipboard is put
 /// back once.
 fn put_back_a_late_copy(before: i64, saved: pasteboard::Snapshot) {

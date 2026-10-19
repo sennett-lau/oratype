@@ -200,7 +200,7 @@ pub(crate) mod tests {
         // A counter too: tests run in parallel and the clock can give two the same nanosecond.
         static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
         let dir = std::env::temp_dir().join(format!(
-            "typelite-language-presets-{name}-{}-{}-{}",
+            "oratype-language-presets-{name}-{}-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
             std::time::SystemTime::now()

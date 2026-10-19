@@ -120,5 +120,5 @@ test('measures recording, waveform and dictionary work through production compon
   results.push(
     ...dictionaryBenchmarks(WARMUPS, SAMPLES, (key) => bridge.dictionaryRowCalls.get(key) ?? 0),
   )
-  writeFileSync(process.env.TYPELITE_BENCH_OUTPUT!, JSON.stringify(results))
+  writeFileSync(process.env.ORATYPE_BENCH_OUTPUT!, JSON.stringify(results))
 })

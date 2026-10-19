@@ -1,12 +1,12 @@
 # Third-party notices
 
-Typelite includes the following third-party software.
+OraType includes the following third-party software.
 
 ## whisper.cpp, llama.cpp and ggml
 
 whisper.cpp is used for built-in speech recognition (through the `whisper-rs` crate, which is
 released under the Unlicense). llama.cpp's `llama-server` (release b11177) is built from source
-and shipped inside Typelite for Built-in AI polish. Both are released by the ggml authors under
+and shipped inside OraType for Built-in AI polish. Both are released by the ggml authors under
 the MIT License (llama.cpp: Copyright (c) 2023-2026 The ggml authors).
 
 MIT License
@@ -44,11 +44,11 @@ and are released by OpenAI under the MIT License.
 
 The Qwen3-ASR-1.7B model and audio projector files downloaded by Built-in speech (Q8_0 GGUF files
 from ggml-org's Hugging Face repository) are released by the Qwen team under the Apache License
-2.0 (https://www.apache.org/licenses/LICENSE-2.0). They are downloaded, not shipped with Typelite.
+2.0 (https://www.apache.org/licenses/LICENSE-2.0). They are downloaded, not shipped with OraType.
 
 ## AI models
 
 The Qwen3 and Qwen 3.5 model files downloaded by Built-in AI (Qwen3-4B-Instruct-2507, Qwen3-1.7B
 and Qwen3.5-4B, as Q4_K_M GGUF files from Unsloth's Hugging Face repositories) are released by the Qwen team under
 the Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0). They are downloaded, not
-shipped with Typelite.
+shipped with OraType.

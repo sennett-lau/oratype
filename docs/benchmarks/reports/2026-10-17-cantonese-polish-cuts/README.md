@@ -3,7 +3,7 @@
 A user's Cantonese dictations lost the end of the text after updating to 1.1.3. This report finds
 the cause and measures the fix.
 
-## Evidence from the user's log (counts only; Typelite logs no text)
+## Evidence from the user's log (counts only; OraType logs no text)
 
 Polished length against the transcript (transcript bytes ÷ 3 for Chinese), Cantonese runs with
 at least 10 characters, polish on a llama-server with a 4096-token context:
@@ -21,7 +21,7 @@ The prompt and the answer share the server's context. The 1.1.3 polish prompt (p
 `polish-dashes-and-fillers`) is longer, and with the Cantonese (Hong Kong) preset it is about
 3,300 tokens. A 4096-token context then leaves a few hundred tokens for the answer, and a longer
 dictation is cut off mid-sentence (「佢話份合約要改多兩」). The answer said `finish_reason: "length"`,
-and Typelite pasted it anyway. Built-in AI also ran with 4096 tokens.
+and OraType pasted it anyway. Built-in AI also ran with 4096 tokens.
 
 ## Measurements
 

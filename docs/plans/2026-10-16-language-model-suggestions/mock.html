@@ -211,7 +211,7 @@
   <header>
     <div class="eyebrow">Plan language-model-suggestions · UI mock</div>
     <h1>Onboarding with a languages step</h1>
-    <p class="lead">A new “Your languages” step checks whether Typelite has a suggested setup for the languages you speak.
+    <p class="lead">A new “Your languages” step checks whether OraType has a suggested setup for the languages you speak.
       If it does, the Speech recognition and AI polish steps start with those models chosen; the rest of onboarding is unchanged.
       Click through with Next, or jump to a step below.</p>
   </header>
@@ -258,7 +258,7 @@
 
       <section class="set" id="view-set" hidden>
         <nav class="side" aria-label="Settings sections">
-          <div class="brand">Typelite</div>
+          <div class="brand">OraType</div>
           <div class="nav" id="nav-home">Home</div>
           <div class="nav" id="nav-speech">Speech</div>
           <div class="nav" id="nav-ai">AI polish</div>
@@ -317,7 +317,7 @@ const SETUPS = [
 const STEPS = [
   { id: 'welcome', flow: 'Welcome', title: 'Welcome', sub: 'Allow microphone, shortcuts and paste' },
   { id: 'mic', flow: 'Voice input', title: 'Voice input', sub: 'Choose your microphone' },
-  { id: 'langs', flow: 'Your languages', mark: 'New', title: 'Your languages', sub: 'Typelite checks for a setup that suits the languages you speak.' },
+  { id: 'langs', flow: 'Your languages', mark: 'New', title: 'Your languages', sub: 'OraType checks for a setup that suits the languages you speak.' },
   { id: 'speech', flow: 'Speech recognition', mark: 'Changed', title: 'Speech recognition', sub: 'Turns your voice into text. It runs on this computer.', wide: true },
   { id: 'ai', flow: 'AI polish', mark: 'Changed', title: 'AI polish', sub: 'Cleans up what you said: fillers out, corrections applied, punctuation in.', wide: true },
   { id: 'web', flow: 'Web search', title: 'Web search', sub: 'Optional: lets Ask anything look up news, scores and schedules.' },
@@ -408,7 +408,7 @@ function builtinCard(kind) {
   else if (d) status = `<div class="track" role="progressbar" aria-label="Model download" aria-valuenow="${Math.round(d.p)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${d.p}%"></i></div>
       <div class="progress-row"><span>${(m.gb * d.p / 100).toFixed(2)} of ${m.gb} GB</span><span>about ${Math.max(1, Math.round((100 - d.p) / 9))} s left</span></div>`
   else status = `<div class="card-foot"><span class="hw" style="margin-right:auto">${state.mem >= 16 ? 'Apple M1 Pro · 32 GB' : 'Apple M2 · 8 GB'}</span><button class="btn" type="button" data-download="${kind}:${pick}">Download · ${m.gb} GB</button></div>`
-  const body = kind === 'ai' ? 'Runs a small open model inside Typelite on this computer. No other software needed.' : 'Runs inside Typelite on this computer. No other software needed.'
+  const body = kind === 'ai' ? 'Runs a small open model inside OraType on this computer. No other software needed.' : 'Runs inside OraType on this computer. No other software needed.'
   return `<div class="card">
       <div class="card-head"><span class="ic">${icon}</span><div><h3>Built-in</h3><p>${body}</p></div></div>
       <div class="opts" role="radiogroup" aria-label="Model">${opts}</div>
@@ -419,10 +419,10 @@ function builtinCard(kind) {
 
 function stepContent(step) {
   switch (step.id) {
-    case 'welcome': return `<p class="intro">Welcome to Typelite. Press a shortcut, speak, and polished text lands wherever you type. First, allow the three things Typelite needs.</p>
+    case 'welcome': return `<p class="intro">Welcome to OraType. Press a shortcut, speak, and polished text lands wherever you type. First, allow the three things OraType needs.</p>
       <div class="list">${[['Microphone', 'Hear your voice while you hold or tap a shortcut.'], ['Accessibility', 'Global shortcuts and typing into other apps.'], ['Automation', 'Control System Events to paste and to see which app is in front.']]
         .map(([a, b]) => `<div class="perm"><div><b>${a}</b><span>${b}</span></div><span class="badge">Granted</span></div>`).join('')}</div>`
-    case 'mic': return `<p class="intro">Pick the microphone Typelite should use. Speak and watch the meter move.</p>
+    case 'mic': return `<p class="intro">Pick the microphone OraType should use. Speak and watch the meter move.</p>
       <div class="select"><span>MacBook Pro Microphone</span><span aria-hidden="true">⌄</span></div>
       <div class="meter" aria-hidden="true">${[30, 55, 80, 60, 95, 70, 45, 85, 65, 40, 75, 50, 30, 20, 12, 8].map((h) => `<i style="height:${h}%"></i>`).join('')}</div>`
     case 'langs': return `${langPicker()}<span class="from-mac">Filled in from your Mac’s preferred languages.</span>${suggestionBox()}`
@@ -477,7 +477,7 @@ function renderSettings() {
       <button class="btn" type="button" data-download="${kind}:${sug}">Download · ${sm.gb} GB</button><button class="link muted" type="button" data-dismiss="${kind}">Not now</button></div>` : ''}
     <div class="group-label">Built-in models</div>
     <div class="list">${rows}</div>
-    <div class="foot-note">${kind === 'ai' ? 'Built-in AI runs in Typelite’s own AI server on this Mac.' : 'Whisper runs inside Typelite. Qwen3-ASR runs in Typelite’s built-in AI server.'}</div>`
+    <div class="foot-note">${kind === 'ai' ? 'Built-in AI runs in OraType’s own AI server on this Mac.' : 'Whisper runs inside OraType. Qwen3-ASR runs in OraType’s built-in AI server.'}</div>`
 }
 
 /* ---------- Home ---------- */

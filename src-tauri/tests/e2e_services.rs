@@ -8,25 +8,25 @@
 //! ```
 //!
 //! Servers are chosen with environment variables (defaults in brackets):
-//! - `TYPELITE_E2E_SPEECH_URL` [`http://127.0.0.1:8178/v1`], `TYPELITE_E2E_SPEECH_MODEL`
+//! - `ORATYPE_E2E_SPEECH_URL` [`http://127.0.0.1:8178/v1`], `ORATYPE_E2E_SPEECH_MODEL`
 //! [`large-v3-turbo`]
-//! - `TYPELITE_E2E_AI_URL` [`http://127.0.0.1:11434/v1`], `TYPELITE_E2E_AI_MODEL`
-//! [`qwen3:4b-instruct-2507-q4_K_M`], `TYPELITE_E2E_AI_KEY` [empty: no `Authorization` header]
+//! - `ORATYPE_E2E_AI_URL` [`http://127.0.0.1:11434/v1`], `ORATYPE_E2E_AI_MODEL`
+//! [`qwen3:4b-instruct-2507-q4_K_M`], `ORATYPE_E2E_AI_KEY` [empty: no `Authorization` header]
 //!
-//! - `TYPELITE_E2E_BUILTIN_MODEL` [`~/.local/share/whisper/ggml-large-v3-turbo-q5_0.bin`]: model
+//! - `ORATYPE_E2E_BUILTIN_MODEL` [`~/.local/share/whisper/ggml-large-v3-turbo-q5_0.bin`]: model
 //!   file for the in-process (built-in) speech test; the test is skipped when it is missing.
-//! - `TYPELITE_E2E_LLAMA_MODEL`: a Qwen3 GGUF file for the built-in AI test (plan
+//! - `ORATYPE_E2E_LLAMA_MODEL`: a Qwen3 GGUF file for the built-in AI test (plan
 //! `ai-polish-setup`); it also   needs `src-tauri/binaries/llama-server-<triple>` from
 //! `scripts/build-llama-server.sh`.
-//! - `TYPELITE_E2E_DOWNLOAD=1`: also run the Quick setup download test (190 MB from Hugging Face).
-//! - `TYPELITE_E2E_QWEN_KEY`: a Qwen Cloud Token Plan key for the Qwen Cloud speech tests
-//!   (plan `qwen-cloud-speech`); they are skipped without it. `TYPELITE_E2E_QWEN_URL` overrides
+//! - `ORATYPE_E2E_DOWNLOAD=1`: also run the Quick setup download test (190 MB from Hugging Face).
+//! - `ORATYPE_E2E_QWEN_KEY`: a Qwen Cloud Token Plan key for the Qwen Cloud speech tests
+//!   (plan `qwen-cloud-speech`); they are skipped without it. `ORATYPE_E2E_QWEN_URL` overrides
 //!   the address.
-//! - `TYPELITE_E2E_ELEVENLABS_KEY`: an ElevenLabs API key with the Speech to Text permission for
+//! - `ORATYPE_E2E_ELEVENLABS_KEY`: an ElevenLabs API key with the Speech to Text permission for
 //!   the ElevenLabs Scribe tests (plan `elevenlabs-speech`); they are skipped without it.
-//!   `TYPELITE_E2E_ELEVENLABS_URL` and `TYPELITE_E2E_ELEVENLABS_MODEL` override the address and
+//!   `ORATYPE_E2E_ELEVENLABS_URL` and `ORATYPE_E2E_ELEVENLABS_MODEL` override the address and
 //!   model.
-//! - `TYPELITE_E2E_SEARXNG_URL`: a SearXNG address with JSON output on, for the Ask web search
+//! - `ORATYPE_E2E_SEARXNG_URL`: a SearXNG address with JSON output on, for the Ask web search
 //!   test (plan `ask-web-search`); it is skipped without it.
 //!
 //! Speech tests synthesise their audio with macOS `say`, so they need macOS.
@@ -35,11 +35,11 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::time::{Duration, Instant};
 
-use typelite_lib::app_detector::types::ContextProfile;
-use typelite_lib::llm::{self, LlmConfig, PolishRequest};
-use typelite_lib::storage::{AiPreset, SpeechPreset};
-use typelite_lib::stt::{self, config::build_whisper_config, SttConfig};
-use typelite_lib::voice_intent::{VoiceIntent, VoiceIntentKind, VoiceOutputPlacement};
+use oratype_lib::app_detector::types::ContextProfile;
+use oratype_lib::llm::{self, LlmConfig, PolishRequest};
+use oratype_lib::storage::{AiPreset, SpeechPreset};
+use oratype_lib::stt::{self, config::build_whisper_config, SttConfig};
+use oratype_lib::voice_intent::{VoiceIntent, VoiceIntentKind, VoiceOutputPlacement};
 
 const SAMPLE_RATE: u32 = 16_000;
 /// Same chunk size the recorder sends (100 ms of 16-bit mono audio).
@@ -56,8 +56,8 @@ fn speech_preset() -> SpeechPreset {
     SpeechPreset {
         id: "e2e-speech".into(),
         name: "E2E speech".into(),
-        base_url: env_or("TYPELITE_E2E_SPEECH_URL", "http://127.0.0.1:8178/v1"),
-        model: env_or("TYPELITE_E2E_SPEECH_MODEL", "large-v3-turbo"),
+        base_url: env_or("ORATYPE_E2E_SPEECH_URL", "http://127.0.0.1:8178/v1"),
+        model: env_or("ORATYPE_E2E_SPEECH_MODEL", "large-v3-turbo"),
         language: "auto".into(),
         ..Default::default()
     }
@@ -67,17 +67,17 @@ fn ai_config() -> LlmConfig {
     let preset = AiPreset {
         id: "e2e-ai".into(),
         name: "E2E AI".into(),
-        base_url: env_or("TYPELITE_E2E_AI_URL", "http://127.0.0.1:11434/v1"),
-        model: env_or("TYPELITE_E2E_AI_MODEL", "qwen3:4b-instruct-2507-q4_K_M"),
+        base_url: env_or("ORATYPE_E2E_AI_URL", "http://127.0.0.1:11434/v1"),
+        model: env_or("ORATYPE_E2E_AI_MODEL", "qwen3:4b-instruct-2507-q4_K_M"),
         ..Default::default()
     };
-    LlmConfig::from_preset(&preset, env_or("TYPELITE_E2E_AI_KEY", ""))
+    LlmConfig::from_preset(&preset, env_or("ORATYPE_E2E_AI_KEY", ""))
 }
 
 /// Speak `text` with macOS `say` into a 16 kHz mono WAV and return its PCM samples as bytes.
 fn synthesise(text: &str, voice: Option<&str>) -> Vec<u8> {
     let path: PathBuf = std::env::temp_dir().join(format!(
-        "typelite-e2e-{}-{}.wav",
+        "oratype-e2e-{}-{}.wav",
         std::process::id(),
         text.len()
     ));
@@ -212,7 +212,7 @@ async fn speech_detects_mandarin_without_a_language_hint() {
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "needs a running speech server; see scripts/e2e.sh"]
 async fn speech_returns_nothing_for_silence() {
-    // Whisper invents text such as "Thank you." for silent audio, so Typelite must not send it.
+    // Whisper invents text such as "Thank you." for silent audio, so OraType must not send it.
     let silence = vec![0u8; SAMPLE_RATE as usize * 2];
     let (text, took) = transcribe(&silence).await;
     println!("speech (silence): {took:?} -> {text:?}");
@@ -321,7 +321,7 @@ async fn polish_keeps_one_topic_in_one_paragraph() {
 #[tokio::test(flavor = "multi_thread")]
 #[ignore = "needs a running AI server; see scripts/e2e.sh"]
 async fn ai_classifies_live_and_timeless_questions() {
-    use typelite_lib::llm::live_question::{classify, classify_with_timeout, LiveCheckSource};
+    use oratype_lib::llm::live_question::{classify, classify_with_timeout, LiveCheckSource};
 
     let client = reqwest::Client::new();
     let config = ai_config();
@@ -357,7 +357,7 @@ const REGIONAL_SOURCE: &str = "The meeting has moved to next Tuesday. Please bri
 /// Selected text + Translate with no speech: the built-in instruction, and the active language
 /// as the target.
 async fn translate_selection_into(active_target: &str) -> String {
-    use typelite_lib::voice_intent::language::{
+    use oratype_lib::voice_intent::language::{
         resolve_selection_translation_target, SELECTION_TRANSLATE_INSTRUCTION,
     };
 
@@ -434,7 +434,7 @@ async fn ask_edit_on_a_selection_returns_a_shorter_replacement() {
     // as an edit that replaces the selection, so the AI must return only the shorter text.
     let selected = "Hey, just checking whether you had a chance to look at the draft I sent over last week, no rush at all.";
     let instruction = "Make this shorter.";
-    let intent = typelite_lib::commands::ask::route_ask_intent(
+    let intent = oratype_lib::commands::ask::route_ask_intent(
         instruction,
         true,
         Some("en"),
@@ -458,7 +458,7 @@ async fn ask_edit_on_a_selection_returns_a_shorter_replacement() {
 /// Plan `quick-speech-setup`: the model file for the in-process test. Defaults to the developer's
 /// copy used by the local whisper.cpp server.
 fn builtin_model_path() -> Option<PathBuf> {
-    let path = std::env::var("TYPELITE_E2E_BUILTIN_MODEL")
+    let path = std::env::var("ORATYPE_E2E_BUILTIN_MODEL")
         .ok()
         .filter(|v| !v.trim().is_empty())
         .map(PathBuf::from)
@@ -497,7 +497,7 @@ async fn transcribe_builtin(model: &std::path::Path, pcm: &[u8]) -> (Option<Stri
 }
 
 #[tokio::test(flavor = "multi_thread")]
-#[ignore = "needs a Whisper model file: TYPELITE_E2E_BUILTIN_MODEL, default ~/.local/share/whisper/ggml-large-v3-turbo-q5_0.bin"]
+#[ignore = "needs a Whisper model file: ORATYPE_E2E_BUILTIN_MODEL, default ~/.local/share/whisper/ggml-large-v3-turbo-q5_0.bin"]
 async fn builtin_speech_transcribes_an_english_sentence_in_process() {
     let Some(model) = builtin_model_path() else {
         println!("builtin speech: no model file found, skipping");
@@ -573,7 +573,7 @@ fn clicks_in_a_quiet_room(seconds: f64, clicks_ms: &[u32]) -> Vec<u8> {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-#[ignore = "needs a Whisper model file: TYPELITE_E2E_BUILTIN_MODEL, default ~/.local/share/whisper/ggml-large-v3-turbo-q5_0.bin"]
+#[ignore = "needs a Whisper model file: ORATYPE_E2E_BUILTIN_MODEL, default ~/.local/share/whisper/ggml-large-v3-turbo-q5_0.bin"]
 async fn builtin_speech_ignores_clicks_and_keeps_quiet_speech() {
     let Some(model) = builtin_model_path() else {
         println!("builtin speech: no model file found, skipping");
@@ -607,12 +607,12 @@ async fn builtin_speech_ignores_clicks_and_keeps_quiet_speech() {
 async fn quick_setup_downloads_and_resumes_the_small_model() {
     use stt::models::{self, DownloadError, DownloadRequest};
 
-    if std::env::var("TYPELITE_E2E_DOWNLOAD").ok().as_deref() != Some("1") {
-        println!("quick setup: set TYPELITE_E2E_DOWNLOAD=1 to run the 190 MB download");
+    if std::env::var("ORATYPE_E2E_DOWNLOAD").ok().as_deref() != Some("1") {
+        println!("quick setup: set ORATYPE_E2E_DOWNLOAD=1 to run the 190 MB download");
         return;
     }
     let model = *models::known_model("small").unwrap();
-    let dir = std::env::temp_dir().join(format!("typelite-e2e-models-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("oratype-e2e-models-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     let client = reqwest::Client::new();
     let url = format!("{}/{}", models::MODEL_BASE_URL, model.file_name);
@@ -678,7 +678,7 @@ async fn quick_setup_downloads_and_resumes_the_small_model() {
 
 /// Plan `ai-polish-setup`: the model file for the built-in AI test (a Qwen3 Q4_K_M GGUF).
 fn llama_model_path() -> Option<PathBuf> {
-    let path = std::env::var("TYPELITE_E2E_LLAMA_MODEL")
+    let path = std::env::var("ORATYPE_E2E_LLAMA_MODEL")
         .ok()
         .filter(|v| !v.trim().is_empty())
         .map(PathBuf::from)?;
@@ -686,14 +686,14 @@ fn llama_model_path() -> Option<PathBuf> {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-#[ignore = "needs src-tauri/binaries/llama-server-<triple> (scripts/build-llama-server.sh) and TYPELITE_E2E_LLAMA_MODEL"]
+#[ignore = "needs src-tauri/binaries/llama-server-<triple> (scripts/build-llama-server.sh) and ORATYPE_E2E_LLAMA_MODEL"]
 async fn builtin_ai_server_starts_and_polishes_a_sentence() {
-    use typelite_lib::llm::builtin;
+    use oratype_lib::llm::builtin;
     let Some(model) = llama_model_path() else {
-        println!("builtin AI: TYPELITE_E2E_LLAMA_MODEL is not set to a model file, skipping");
+        println!("builtin AI: ORATYPE_E2E_LLAMA_MODEL is not set to a model file, skipping");
         return;
     };
-    let pid_file = std::env::temp_dir().join(format!("typelite-e2e-{}.pid", std::process::id()));
+    let pid_file = std::env::temp_dir().join(format!("oratype-e2e-{}.pid", std::process::id()));
     builtin::server().set_paths(model.parent().unwrap().to_path_buf(), pid_file);
     assert!(
         builtin::server().binary_available(),
@@ -742,13 +742,13 @@ async fn builtin_ai_server_starts_and_polishes_a_sentence() {
 
 /// Plan `qwen-cloud-speech`: a Qwen Cloud speech preset, or `None` when no key is set.
 fn qwen_preset_and_key() -> Option<(SpeechPreset, String)> {
-    let key = std::env::var("TYPELITE_E2E_QWEN_KEY")
+    let key = std::env::var("ORATYPE_E2E_QWEN_KEY")
         .ok()
         .filter(|v| !v.trim().is_empty())?;
     let preset = SpeechPreset::qwen_cloud(
         "e2e-qwen-cloud",
         "Qwen Cloud",
-        &env_or("TYPELITE_E2E_QWEN_URL", stt::qwen_cloud::DEFAULT_BASE_URL),
+        &env_or("ORATYPE_E2E_QWEN_URL", stt::qwen_cloud::DEFAULT_BASE_URL),
         stt::qwen_cloud::DEFAULT_MODEL,
     );
     Some((preset, key))
@@ -779,10 +779,10 @@ async fn transcribe_qwen(
 }
 
 #[tokio::test(flavor = "multi_thread")]
-#[ignore = "needs TYPELITE_E2E_QWEN_KEY (Qwen Cloud Token Plan)"]
+#[ignore = "needs ORATYPE_E2E_QWEN_KEY (Qwen Cloud Token Plan)"]
 async fn qwen_cloud_transcribes_english_and_cantonese() {
     let Some((preset, key)) = qwen_preset_and_key() else {
-        println!("qwen cloud: TYPELITE_E2E_QWEN_KEY not set, skipping");
+        println!("qwen cloud: ORATYPE_E2E_QWEN_KEY not set, skipping");
         return;
     };
 
@@ -816,10 +816,10 @@ async fn qwen_cloud_transcribes_english_and_cantonese() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-#[ignore = "needs TYPELITE_E2E_QWEN_KEY (Qwen Cloud Token Plan)"]
+#[ignore = "needs ORATYPE_E2E_QWEN_KEY (Qwen Cloud Token Plan)"]
 async fn qwen_cloud_connection_test_passes_and_rejects_a_wrong_key() {
     let Some((preset, key)) = qwen_preset_and_key() else {
-        println!("qwen cloud: TYPELITE_E2E_QWEN_KEY not set, skipping");
+        println!("qwen cloud: ORATYPE_E2E_QWEN_KEY not set, skipping");
         return;
     };
     let config = stt::config::build_qwen_cloud_config(&preset).expect("valid preset");
@@ -838,7 +838,7 @@ async fn qwen_cloud_connection_test_passes_and_rejects_a_wrong_key() {
 
 // ─── Polish fidelity corpus: code words, requests in dictation, repeated-structure corrections ───
 //
-// These failures are occasional, so every case runs `TYPELITE_E2E_REPEAT` times (default 5)
+// These failures are occasional, so every case runs `ORATYPE_E2E_REPEAT` times (default 5)
 // and the test prints a pass rate per case before it fails on any miss.
 
 /// One corpus case: the raw transcript and a check that says why an output is wrong.
@@ -877,7 +877,7 @@ async fn run_dictation_corpus(name: &str, cases: &[FidelityCase]) {
 }
 
 async fn run_corpus(name: &str, cases: &[FidelityCase], guard: bool) {
-    let repeat: usize = env_or("TYPELITE_E2E_REPEAT", "5").parse().unwrap_or(5);
+    let repeat: usize = env_or("ORATYPE_E2E_REPEAT", "5").parse().unwrap_or(5);
     let mut failures = Vec::new();
     for (raw, check) in cases {
         let mut passed = 0;
@@ -925,7 +925,7 @@ async fn polish_writes_spoken_numbers_and_dots() {
             "The point of the story is that one day a dot on the page will matter",
         ),
     ];
-    let repeat: usize = env_or("TYPELITE_E2E_REPEAT", "5").parse().unwrap_or(5);
+    let repeat: usize = env_or("ORATYPE_E2E_REPEAT", "5").parse().unwrap_or(5);
     for (index, (raw, expected)) in cases.iter().enumerate() {
         for _ in 0..repeat {
             let (text, _) = polish(&dictation_request(raw)).await;
@@ -1135,18 +1135,18 @@ async fn polish_writes_a_spelled_name_once() {
 
 /// Plan `elevenlabs-speech`: an ElevenLabs speech preset, or `None` when no key is set.
 fn elevenlabs_preset_and_key() -> Option<(SpeechPreset, String)> {
-    let key = std::env::var("TYPELITE_E2E_ELEVENLABS_KEY")
+    let key = std::env::var("ORATYPE_E2E_ELEVENLABS_KEY")
         .ok()
         .filter(|v| !v.trim().is_empty())?;
     let preset = SpeechPreset::elevenlabs(
         "e2e-elevenlabs",
         "ElevenLabs",
         &env_or(
-            "TYPELITE_E2E_ELEVENLABS_URL",
+            "ORATYPE_E2E_ELEVENLABS_URL",
             stt::elevenlabs::DEFAULT_BASE_URL,
         ),
         &env_or(
-            "TYPELITE_E2E_ELEVENLABS_MODEL",
+            "ORATYPE_E2E_ELEVENLABS_MODEL",
             stt::elevenlabs::DEFAULT_MODEL,
         ),
     );
@@ -1179,10 +1179,10 @@ async fn transcribe_elevenlabs(
 }
 
 #[tokio::test(flavor = "multi_thread")]
-#[ignore = "needs TYPELITE_E2E_ELEVENLABS_KEY (ElevenLabs API key)"]
+#[ignore = "needs ORATYPE_E2E_ELEVENLABS_KEY (ElevenLabs API key)"]
 async fn elevenlabs_transcribes_english_and_cantonese() {
     let Some((preset, key)) = elevenlabs_preset_and_key() else {
-        println!("elevenlabs: TYPELITE_E2E_ELEVENLABS_KEY not set, skipping");
+        println!("elevenlabs: ORATYPE_E2E_ELEVENLABS_KEY not set, skipping");
         return;
     };
 
@@ -1215,10 +1215,10 @@ async fn elevenlabs_transcribes_english_and_cantonese() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-#[ignore = "needs TYPELITE_E2E_ELEVENLABS_KEY (ElevenLabs API key)"]
+#[ignore = "needs ORATYPE_E2E_ELEVENLABS_KEY (ElevenLabs API key)"]
 async fn elevenlabs_connection_test_passes_and_rejects_a_wrong_key() {
     let Some((preset, key)) = elevenlabs_preset_and_key() else {
-        println!("elevenlabs: TYPELITE_E2E_ELEVENLABS_KEY not set, skipping");
+        println!("elevenlabs: ORATYPE_E2E_ELEVENLABS_KEY not set, skipping");
         return;
     };
     let config = stt::config::build_elevenlabs_config(&preset).expect("valid preset");
@@ -1236,15 +1236,15 @@ async fn elevenlabs_connection_test_passes_and_rejects_a_wrong_key() {
 }
 
 /// Plan `ask-web-search`: a live question searched with a real SearXNG
-/// (`TYPELITE_E2E_SEARXNG_URL`, JSON format on), then answered from the results by the AI
+/// (`ORATYPE_E2E_SEARXNG_URL`, JSON format on), then answered from the results by the AI
 /// server. Skipped when the variable is not set.
 #[tokio::test]
 #[ignore = "needs a running SearXNG and AI server; see scripts/e2e.sh"]
 async fn ask_answers_a_live_question_from_searxng_results() {
-    use typelite_lib::web_search::{self, SearchProviderKind, WebSearchConfig};
+    use oratype_lib::web_search::{self, SearchProviderKind, WebSearchConfig};
 
-    let Ok(base_url) = std::env::var("TYPELITE_E2E_SEARXNG_URL") else {
-        println!("TYPELITE_E2E_SEARXNG_URL is not set; skipping");
+    let Ok(base_url) = std::env::var("ORATYPE_E2E_SEARXNG_URL") else {
+        println!("ORATYPE_E2E_SEARXNG_URL is not set; skipping");
         return;
     };
     let search_config = WebSearchConfig {
@@ -1313,10 +1313,10 @@ async fn ask_answers_a_live_question_from_searxng_results() {
 async fn schedule_answer(
     config: &LlmConfig,
     question: &str,
-    results: &[typelite_lib::web_search::SearchResult],
+    results: &[oratype_lib::web_search::SearchResult],
     today: chrono::NaiveDate,
 ) -> Option<String> {
-    use typelite_lib::web_search::schedule;
+    use oratype_lib::web_search::schedule;
     let client = reqwest::Client::new();
     let body = llm::protocol::build_chat_body(
         &config.model,
@@ -1345,7 +1345,7 @@ async fn schedule_answer(
 #[tokio::test]
 #[ignore = "needs the configured AI server"]
 async fn ask_upcoming_schedule_requires_supported_future_date() {
-    use typelite_lib::web_search::SearchResult;
+    use oratype_lib::web_search::SearchResult;
     let config = ai_config();
     let today = chrono::NaiveDate::from_ymd_opt(2026, 10, 1).unwrap();
     let mut result = SearchResult {
@@ -1371,9 +1371,9 @@ async fn ask_upcoming_schedule_requires_supported_future_date() {
 #[tokio::test]
 #[ignore = "needs a running SearXNG and AI server"]
 async fn ask_upcoming_schedule_from_live_search() {
-    use typelite_lib::web_search::{self, SearchProviderKind, WebSearchConfig};
-    let Ok(base_url) = std::env::var("TYPELITE_E2E_SEARXNG_URL") else {
-        println!("TYPELITE_E2E_SEARXNG_URL is not set; skipping");
+    use oratype_lib::web_search::{self, SearchProviderKind, WebSearchConfig};
+    let Ok(base_url) = std::env::var("ORATYPE_E2E_SEARXNG_URL") else {
+        println!("ORATYPE_E2E_SEARXNG_URL is not set; skipping");
         return;
     };
     let search_config = WebSearchConfig {
@@ -1415,9 +1415,9 @@ async fn ask_upcoming_schedule_from_live_search() {
 #[tokio::test]
 #[ignore = "needs a running SearXNG and AI server; see scripts/e2e.sh"]
 async fn ask_answers_in_the_question_language_whatever_the_sources() {
-    use typelite_lib::web_search::{self, SearchProviderKind, WebSearchConfig};
-    let Ok(base_url) = std::env::var("TYPELITE_E2E_SEARXNG_URL") else {
-        println!("TYPELITE_E2E_SEARXNG_URL is not set; skipping");
+    use oratype_lib::web_search::{self, SearchProviderKind, WebSearchConfig};
+    let Ok(base_url) = std::env::var("ORATYPE_E2E_SEARXNG_URL") else {
+        println!("ORATYPE_E2E_SEARXNG_URL is not set; skipping");
         return;
     };
     let search_config = WebSearchConfig {
@@ -1485,7 +1485,7 @@ async fn ask_answers_in_the_question_language_whatever_the_sources() {
         }
         // As the app does: the question's Chinese script.
         if let Some(script) = llm::question_language::answer_script(question, check.language) {
-            answer = typelite_lib::stt::chinese_script::convert(&answer, script);
+            answer = oratype_lib::stt::chinese_script::convert(&answer, script);
         }
         let japanese_sources = outcome
             .results

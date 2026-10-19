@@ -4,7 +4,7 @@
 //!
 //! Models come from the official whisper.cpp repository on Hugging Face and are checked
 //! against a SHA-256 written into this file. They live in `<app data>/models/` (on macOS
-//! `~/Library/Application Support/dev.typelite.mac/models/`). A download goes to
+//! `~/Library/Application Support/dev.oratype.mac/models/`). A download goes to
 //! `<file>.part` first, resumes with an HTTP `Range` request when the server allows it, and is
 //! renamed into place only after the checksum matches.
 
@@ -260,7 +260,7 @@ pub enum DownloadError {
     /// The file is in place but the engine (whisper.cpp, or llama-server for AI) could not
     /// load or run it (the automatic test after the download).
     Load { reason: String },
-    /// Plan `ai-polish-setup`: this copy of Typelite was built without the `llama-server` program,
+    /// Plan `ai-polish-setup`: this copy of OraType was built without the `llama-server` program,
     /// so Built-in AI cannot run.
     ServerMissing,
 }
@@ -713,7 +713,7 @@ mod tests {
 
     fn temp_dir(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!(
-            "typelite-models-{name}-{}-{}",
+            "oratype-models-{name}-{}-{}",
             std::process::id(),
             uuid::Uuid::new_v4()
         ));

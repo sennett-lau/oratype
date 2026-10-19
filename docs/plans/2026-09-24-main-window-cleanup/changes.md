@@ -13,7 +13,7 @@ screen (description, UI language, licence, GitHub link, framework), moved out of
 
 ## Home
 
-- **Header:** "Welcome to Typelite".
+- **Header:** "Welcome to OraType".
 - **Shortcuts panel** directly under it, replacing the single "Use … to start voice recording"
   sentence: one row per feature, each with its name, what it does in a few words, and its
   current keys drawn as key caps (for example Dictate — "Speak and paste polished text" —
@@ -23,7 +23,7 @@ screen (description, UI language, licence, GitHub link, framework), moved out of
   active AI preset and model, AI polish on/off, text output mode. Each row links to the setting
   that changes it.
 - **What's New:** the changes in the current version, newest first, from a small list shipped
-  with the app. First entry, version 0.1.0: Typelite rename, speech and AI presets, microphone
+  with the app. First entry, version 0.1.0: OraType rename, speech and AI presets, microphone
   picker, press-keys shortcut recording, live waveform, three translation languages, new setup
   tutorial, Native Glass look, no history.
 - Removed: total recordings, today's count.
@@ -31,7 +31,7 @@ screen (description, UI language, licence, GitHub link, framework), moved out of
 ## History (removed)
 
 - The History tab, its page and route.
-- Stored history: the history table in `typelite.db` is dropped at startup; no code writes
+- Stored history: the history table in `oratype.db` is dropped at startup; no code writes
   dictation text, audio or metadata to disk.
 - Settings → General → "Save history" toggle and its config field.
 - History commands and events, and features built only on history (for example "Create
@@ -72,10 +72,10 @@ icon offers the same items.
 
 Renamed from "Microphone". Contains the microphone picker with its level meter, plus:
 
-- **Mute other audio while recording** (off by default). When a recording starts, Typelite
+- **Mute other audio while recording** (off by default). When a recording starts, OraType
   mutes the Mac's sound output if it is not already muted; when the recording ends (stopped,
   cancelled or failed) it unmutes it again. It never unmutes sound the user had muted
   themselves.
 - macOS cannot mute single apps without an audio driver, so this mutes all output (music,
   video, calls).
-- If Typelite quits or crashes while it has sound muted, it unmutes on the next launch.
+- If OraType quits or crashes while it has sound muted, it unmutes on the next launch.

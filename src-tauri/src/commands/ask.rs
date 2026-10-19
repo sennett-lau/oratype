@@ -76,7 +76,7 @@ pub enum AskResultOutput {
     OpenedSearch,
     InsertedText,
     CopiedFallback,
-    /// Plan `ask-translate-and-live-questions`: the question needs live information and Typelite
+    /// Plan `ask-translate-and-live-questions`: the question needs live information and OraType
     /// could not look it up (no search provider, or the search failed; see `live_search`). The
     /// panel offers "Answer anyway" (see `answer_ask_anyway`) and Close; `answer` is empty.
     NeedsLiveInfo,
@@ -951,7 +951,7 @@ fn append_final_transcript(transcript: &Arc<Mutex<String>>, text: &str) -> Strin
 }
 
 /// Plan `ai-polish-setup`: the config with the active AI preset's runtime address filled in (for
-/// the Built-in preset, Typelite's own server, started when needed), and the key to send.
+/// the Built-in preset, OraType's own server, started when needed), and the key to send.
 async fn resolved_ai_config(
     config: &storage::AppConfig,
 ) -> Result<(storage::AppConfig, String), AppError> {
@@ -2213,7 +2213,7 @@ mod tests {
 
     #[test]
     fn ask_body_uses_low_output_cap_and_no_web_search() {
-        let body = build_byok_ask_body("What is Typelite?", "test-model").unwrap();
+        let body = build_byok_ask_body("What is OraType?", "test-model").unwrap();
 
         assert_eq!(body["model"], "test-model");
         assert_eq!(body["max_tokens"], ASK_OUTPUT_TOKEN_LIMIT);
@@ -2281,7 +2281,7 @@ mod tests {
             VoiceIntentKind::AskSelection
         );
         assert_eq!(
-            route_ask_intent("What is Typelite?", false, Some("en"), flags).kind,
+            route_ask_intent("What is OraType?", false, Some("en"), flags).kind,
             VoiceIntentKind::OpenQuestion
         );
     }
@@ -2685,8 +2685,7 @@ mod tests {
             .extra_request_fields
             .insert("temperature".to_string(), json!(0.9));
 
-        let body =
-            build_byok_ask_body_for_config(&config, "What is Typelite?", None, None).unwrap();
+        let body = build_byok_ask_body_for_config(&config, "What is OraType?", None, None).unwrap();
 
         assert_eq!(body["model"], "qwen3:4b");
         assert_eq!(body["max_tokens"], ASK_OUTPUT_TOKEN_LIMIT);
@@ -2822,7 +2821,7 @@ mod tests {
     fn pending_ask_message_is_consumed_once() {
         let state = AskDictationState::default();
         state.set_pending_result(AskDictationResult::new(
-            "What is Typelite?".to_string(),
+            "What is OraType?".to_string(),
             "A voice app.".to_string(),
             VoiceIntentKind::OpenQuestion,
             AskDictationResultMetadata::popup(false, false),

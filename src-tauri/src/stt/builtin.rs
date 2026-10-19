@@ -574,7 +574,7 @@ mod tests {
     #[test]
     fn model_paths_stay_inside_the_models_folder() {
         let engine = engine();
-        let dir = std::env::temp_dir().join(format!("typelite-builtin-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("oratype-builtin-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("ggml-x.bin"), b"x").unwrap();
         engine.set_models_dir(dir.clone());
@@ -597,7 +597,7 @@ mod tests {
     #[test]
     fn a_broken_model_file_gives_the_load_error() {
         let engine = engine();
-        let dir = std::env::temp_dir().join(format!("typelite-broken-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("oratype-broken-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("ggml-broken.bin");
         std::fs::write(&path, b"not a model").unwrap();

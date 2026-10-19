@@ -6,8 +6,8 @@ happens offline. Back to [index](index.md).
 ## Address
 
 ```
-https://raw.githubusercontent.com/sennett-lau/typelite/main/presets/languages/index.json
-https://raw.githubusercontent.com/sennett-lau/typelite/main/presets/languages/<path>
+https://raw.githubusercontent.com/sennett-lau/oratype/main/presets/languages/index.json
+https://raw.githubusercontent.com/sennett-lau/oratype/main/presets/languages/<path>
 ```
 
 - The base address is one constant in the app (`LIBRARY_BASE_URL` in `llm/language_library/mod.rs`),
@@ -85,7 +85,7 @@ pick preset ─> GET <path> ─> check bytes + SHA-256 ─> parse + validate (sa
   **Update this preset automatically** on uses a preset (off by default). With auto-update off
   everywhere the app goes online only when the user browses.
 - Every request is a plain HTTPS GET with no query string, no cookies, no identifiers and a
-  fixed `User-Agent: Typelite`. Nothing about the user, their languages or their text is sent.
+  fixed `User-Agent: OraType`. Nothing about the user, their languages or their text is sent.
   GitHub sees the IP address, as with any download; the guide says so.
 - The log records the URL, status, bytes and duration, as for other downloads.
 

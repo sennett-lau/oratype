@@ -1,6 +1,6 @@
 ---
 name: add-language-preset
-description: Add or update a language preset (presets/languages/<id>/preset.md), the instructions that tell Typelite's AI how to write one language. Use when someone wants to improve how Typelite writes their language, or a language guide needs a preset.
+description: Add or update a language preset (presets/languages/<id>/preset.md), the instructions that tell OraType's AI how to write one language. Use when someone wants to improve how OraType writes their language, or a language guide needs a preset.
 ---
 
 # Add a language preset

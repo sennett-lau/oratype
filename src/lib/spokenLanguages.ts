@@ -29,7 +29,7 @@ export function spokenLanguage(code: string): SpokenLanguage | undefined {
 /**
  * The spoken language a macOS language tag stands for: `zh-Hant-HK`, `zh-HK`, `zh-MO` and `yue`
  * are Cantonese, any other Chinese is Mandarin, the rest is their primary code. `null` for a
- * language Typelite does not list.
+ * language OraType does not list.
  */
 export function spokenCodeFor(tag: string): string | null {
   const lower = tag.trim().toLowerCase().replace(/_/g, '-')

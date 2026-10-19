@@ -141,7 +141,7 @@ vi.mock('../../../lib/tauri', () => ({
   startAskFlow: vi.fn().mockResolvedValue(undefined),
   startAskDictation: vi.fn().mockResolvedValue(undefined),
   stopAskDictation: vi.fn().mockResolvedValue({
-    question: 'What is Typelite?',
+    question: 'What is OraType?',
     answer: 'A concise answer.',
   }),
   abortAskDictation: vi.fn().mockResolvedValue(undefined),

@@ -6,7 +6,7 @@ What Home shows, top to bottom, and how the Insights numbers are made. Back to
 ## Sidebar
 
 The brand row at the top of the sidebar: the app icon (28 × 28 pt, 7 pt corner radius) and
-"Typelite" in 18 pt bold, 9 pt apart. The icon is decorative (`alt=""`); the name is the text.
+"OraType" in 18 pt bold, 9 pt apart. The icon is decorative (`alt=""`); the name is the text.
 
 ## Page, top to bottom
 

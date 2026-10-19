@@ -591,7 +591,7 @@ mod tests {
     /// A fresh, empty folder for one test.
     fn temp_dir(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!(
-            "typelite-timing-{name}-{}-{:?}",
+            "oratype-timing-{name}-{}-{:?}",
             std::process::id(),
             Instant::now()
         ));

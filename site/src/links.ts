@@ -1,5 +1,5 @@
 /** Every outbound link on the site, in one place. */
-export const REPO = 'sennett-lau/typelite'
+export const REPO = 'sennett-lau/oratype'
 export const REPO_URL = `https://github.com/${REPO}`
 const BLOB = `${REPO_URL}/blob/main`
 const TREE = `${REPO_URL}/tree/main`

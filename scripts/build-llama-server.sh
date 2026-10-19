@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Builds llama.cpp's `llama-server` for Typelite's Built-in AI (plan `ai-polish-setup`).
+# Builds llama.cpp's `llama-server` for OraType's Built-in AI (plan `ai-polish-setup`).
 #
 # The binary is built from source at one pinned llama.cpp release, with Metal on and the Metal
 # shaders embedded, linked statically (no libllama/libggml dylibs, no OpenSSL, no curl), so the
-# one file runs on its own inside Typelite.app. It is written to
+# one file runs on its own inside OraType.app. It is written to
 #
 #   src-tauri/binaries/llama-server-<target-triple>
 #

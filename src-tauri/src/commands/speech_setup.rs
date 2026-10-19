@@ -115,7 +115,7 @@ pub async fn get_speech_hardware(
             .map(|model| model.id)
             .collect();
         let mut offer = crate::stt::hardware::offer_models(&hardware, &installed);
-        // Plan `language-model-suggestions`: Qwen3-ASR runs in llama-server; a copy of Typelite
+        // Plan `language-model-suggestions`: Qwen3-ASR runs in llama-server; a copy of OraType
         // built without it cannot offer it.
         if !crate::llm::builtin::speech_server().binary_available() {
             offer

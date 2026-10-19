@@ -14,7 +14,7 @@ Median seconds. "Cache miss" is the short transcript with the prompt processed f
 
 | File | What it is |
 |---|---|
-| [`polish-system-prompt.txt`](data/polish-system-prompt.txt) | Typelite's polish prompt with default settings (about 8,000 characters). A test keeps it identical to the app's. |
+| [`polish-system-prompt.txt`](data/polish-system-prompt.txt) | OraType's polish prompt with default settings (about 8,000 characters). A test keeps it identical to the app's. |
 | [`polish-short-en.txt`](data/polish-short-en.txt) | 14 words with a filler and a self-correction ("3 no actually 4 pm"). |
 | [`polish-long-en.txt`](data/polish-long-en.txt) | A 166-word spoken project update with fillers and a correction at the end. |
 
@@ -36,7 +36,7 @@ thinking model measures its reasoning, not polish.
 
 ## Reading the numbers
 
-- **Prompt caching matters.** Typelite sends the same prompt every time, so after the first
+- **Prompt caching matters.** OraType sends the same prompt every time, so after the first
   request most of it comes from the server's cache. A server that does not cache prompts behaves
   like the cache-miss column.
 - **Output length dominates** once the prompt is cached: the long transcript takes longer.

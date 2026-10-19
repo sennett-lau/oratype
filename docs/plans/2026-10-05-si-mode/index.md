@@ -1,7 +1,7 @@
 # SI mode
 
 A small joke setting: Settings → System → "Super intelligence mode" shows every "AI" in
-Typelite's interface as "SI", and "artificial intelligence" as "super intelligence" (Chinese:
+OraType's interface as "SI", and "artificial intelligence" as "super intelligence" (Chinese:
 人工智能 → 超级智能). It is off by default and changes nothing but interface text.
 
 Status: building (2026-10-05)
@@ -15,7 +15,7 @@ Status: building (2026-10-05)
 ## Non-goals
 
 - Changing prompts sent to models, logs, the tray menu, What's New history in the repo, or any
-  text Typelite pastes.
+  text OraType pastes.
 - Renaming code, settings keys or files.
 
 ## Key decisions

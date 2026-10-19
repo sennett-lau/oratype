@@ -11,7 +11,7 @@ export function Hero({ stats }: { stats: RepoStats | null }) {
       <HeroBackdrop />
       <div className="container">
         <span className="hero-badge hero-rise">
-          <b>MIT</b> Free and open source · macOS
+          <b>MIT</b> Free and open source · macOS · formerly Typelite
         </span>
         {/* Each word blurs into focus in turn (CSS only, so the pre-rendered page animates too);
             the text content is still "Just say it." for search engines and screen readers. */}

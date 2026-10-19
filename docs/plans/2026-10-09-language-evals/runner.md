@@ -26,7 +26,7 @@ filters. It frees the Whisper model before exit (Metal aborts otherwise).
 
 ## Servers
 
-Built-in AI starts Typelite's own llama-server (`--llama-model`) and stops it at the end; any
+Built-in AI starts OraType's own llama-server (`--llama-model`) and stops it at the end; any
 OpenAI-compatible endpoint works with `--ai-url`/`--ai-model`. Nothing is sent elsewhere.
 
 ## Outputs

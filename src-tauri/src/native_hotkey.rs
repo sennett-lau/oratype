@@ -29,7 +29,7 @@
 //!
 //! The `platform` modules only talk to the OS and call these functions.
 //!
-//! Typelite's own ⌘C (reading a highlight) and ⌘V (pasting) go through System Events, so the
+//! OraType's own ⌘C (reading a highlight) and ⌘V (pasting) go through System Events, so the
 //! tap sees them like the user's keys. [`OwnKeystroke`] marks them, and while one is sent the
 //! tap matches only key releases (plan `own-keystrokes`).
 #![cfg_attr(not(target_os = "macos"), allow(dead_code))]
@@ -77,18 +77,18 @@ impl NativeChord {
     }
 }
 
-/// How long after one of Typelite's own keystrokes the tap still ignores key presses. The
+/// How long after one of OraType's own keystrokes the tap still ignores key presses. The
 /// keystroke's events reach the tap a little after the call that sent them returns.
 const OWN_KEYSTROKE_TAIL: Duration = Duration::from_millis(250);
 
 /// Keystrokes being sent now, and when the last one ended.
 static OWN_KEYSTROKES: Mutex<(usize, Option<Instant>)> = Mutex::new((0, None));
 
-/// Plan `own-keystrokes`: marks a keystroke Typelite sends itself (the ⌘C that reads a
+/// Plan `own-keystrokes`: marks a keystroke OraType sends itself (the ⌘C that reads a
 /// highlight, the ⌘V that pastes) for as long as this value lives.
 ///
 /// System Events posts these keys like a keyboard would, so the tap sees the Command key go
-/// down. A shortcut on a bare modifier (Dictate on Left Command) then fired on Typelite's own
+/// down. A shortcut on a bare modifier (Dictate on Left Command) then fired on OraType's own
 /// ⌘C: while Ask was starting, that "Dictate" press stopped Ask before it recorded anything.
 /// While a keystroke is marked, and for [`OWN_KEYSTROKE_TAIL`] after, the tap matches only key
 /// releases ([`TapLogic::process_mac_event_during`]).
@@ -109,7 +109,7 @@ impl Drop for OwnKeystroke {
     }
 }
 
-/// Whether one of Typelite's own keystrokes is being sent, or was a moment ago.
+/// Whether one of OraType's own keystrokes is being sent, or was a moment ago.
 pub fn own_keystroke_in_flight() -> bool {
     let (sending, until) = *OWN_KEYSTROKES.lock().unwrap_or_else(|e| e.into_inner());
     sending > 0 || until.is_some_and(|until| Instant::now() < until)
@@ -737,7 +737,7 @@ impl TapLogic {
         self.process_mac_event_during(event, false)
     }
 
-    /// [`Self::process_mac_event`] while Typelite may be sending its own ⌘C or ⌘V
+    /// [`Self::process_mac_event`] while OraType may be sending its own ⌘C or ⌘V
     /// (`own_keystroke`, see [`OwnKeystroke`]). Then new key presses are not matched and reach
     /// the app untouched; releases still are, so no held key is left stuck.
     pub fn process_mac_event_during(
@@ -1038,7 +1038,7 @@ mod platform {
             let thread_handles = Arc::clone(&handles);
             let (status_tx, status_rx) = mpsc::channel();
             thread::Builder::new()
-                .name("typelite-native-hotkey-mac".to_string())
+                .name("oratype-native-hotkey-mac".to_string())
                 .spawn(move || {
                     run_event_tap_loop(logic, handler, keystrokes, thread_handles, status_tx)
                 })
@@ -1221,7 +1221,7 @@ mod platform {
             .unwrap_or_else(|e| e.into_inner())
             .process_mac_event_during(mac_event, super::own_keystroke_in_flight());
         let swallow = output.swallow;
-        // Plan `typing-speed-and-nudge`: count the keystroke (never which key), unless Typelite
+        // Plan `typing-speed-and-nudge`: count the keystroke (never which key), unless OraType
         // posted the event itself (Type-directly output).
         if output.typed {
             if let Some(observer) = context.keystrokes.as_ref() {
@@ -1260,7 +1260,7 @@ mod platform {
     };
 
     const STARTUP_TIMEOUT: Duration = Duration::from_secs(3);
-    const ACCEPT_SYNTHETIC_EVENTS_ENV: &str = "TYPELITE_ACCEPT_SYNTHETIC_HOTKEY_EVENTS";
+    const ACCEPT_SYNTHETIC_EVENTS_ENV: &str = "ORATYPE_ACCEPT_SYNTHETIC_HOTKEY_EVENTS";
 
     const WM_KEYDOWN: usize = 0x0100;
     const WM_KEYUP: usize = 0x0101;
@@ -1315,7 +1315,7 @@ mod platform {
             let startup = Arc::new(WindowsStartupState::new());
             let thread_startup = Arc::clone(&startup);
             let thread = thread::Builder::new()
-                .name("typelite-native-hotkey-win".to_string())
+                .name("oratype-native-hotkey-win".to_string())
                 .spawn(move || run_keyboard_hook_loop(matcher, handler, thread_startup, status_tx))
                 .map_err(|error| {
                     format!("Failed to spawn Windows native hotkey monitor thread: {error}")
@@ -2331,7 +2331,7 @@ mod tests {
 
     #[test]
     fn own_copy_keystroke_does_not_fire_a_bare_command_shortcut() {
-        // Plan `own-keystrokes`: Dictate on bare Left Command, and Typelite sends ⌘C through
+        // Plan `own-keystrokes`: Dictate on bare Left Command, and OraType sends ⌘C through
         // System Events: Command down, C down and up, Command up.
         let mut logic = TapLogic::Hotkeys(ChordMatcher::new(vec![binding(
             HotkeyRole::Dictation,
@@ -2364,7 +2364,7 @@ mod tests {
 
     #[test]
     fn a_release_during_an_own_keystroke_still_counts() {
-        // The user lets go of End (hold to talk) while Typelite sends ⌘C: the release is not
+        // The user lets go of End (hold to talk) while OraType sends ⌘C: the release is not
         // lost.
         let mut logic = TapLogic::Hotkeys(ChordMatcher::new(vec![binding(
             HotkeyRole::Dictation,
@@ -2750,7 +2750,7 @@ mod tests {
     fn gated_shortcuts_fire_nothing_and_pass_through() {
         let (mut matcher, _gate, _active) = gated_matcher();
         // End alone, End + Right Control, End + Right Shift: nothing fires and nothing is
-        // swallowed, so End moves the cursor in the focused app as if Typelite were not there.
+        // swallowed, so End moves the cursor in the focused app as if OraType were not there.
         let (events, swallows) = run(
             &mut matcher,
             &[

@@ -39,7 +39,7 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) =>
       ({
-        'app.name': 'Typelite',
+        'app.name': 'OraType',
         'app.tagline': 'AI Voice Input',
         'nav.home': 'Home',
         'nav.ask': 'Ask',

@@ -1,6 +1,6 @@
 # Guides
 
-Typelite works in three steps:
+OraType works in three steps:
 
 ```
 your voice ──> speech recognition ──> AI polish ──> pasted into the app you are typing in

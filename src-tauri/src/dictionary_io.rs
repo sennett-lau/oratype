@@ -8,7 +8,16 @@ use std::fmt;
 
 pub const MAX_IMPORT_BYTES: usize = 1024 * 1024;
 pub const MAX_IMPORT_ROWS: usize = 10_000;
-const CSV_MARKER: &str = "# typelite_dictionary";
+const CSV_MARKER: &str = "# oratype_dictionary";
+/// Plan `rename-oratype`: files exported by Typelite (before 1.2.0) carry the old name; they are
+/// read as before. New files use the new name.
+const LEGACY_CSV_MARKER: &str = "# typelite_dictionary";
+const JSON_FORMAT: &str = "oratype_dictionary";
+const LEGACY_JSON_FORMAT: &str = "typelite_dictionary";
+
+fn is_csv_marker(value: &str) -> bool {
+    matches!(value, CSV_MARKER | LEGACY_CSV_MARKER)
+}
 const CSV_HEADER: [&str; 6] = [
     "type",
     "word",
@@ -134,12 +143,14 @@ fn parse_csv(text: &str) -> Result<ParsedDictionaryImport, DictionaryImportError
         .map_err(|_| DictionaryImportError::InvalidStructure)?;
 
     let marked = first.len() == 2
-        && first.get(0).is_some_and(|value| value.trim() == CSV_MARKER)
+        && first
+            .get(0)
+            .is_some_and(|value| is_csv_marker(value.trim()))
         && first.get(1).is_some_and(|value| value.trim() == "1");
-    if first
-        .get(0)
-        .is_some_and(|value| value.trim().starts_with(CSV_MARKER))
-        && !marked
+    if first.get(0).is_some_and(|value| {
+        let value = value.trim();
+        value.starts_with(CSV_MARKER) || value.starts_with(LEGACY_CSV_MARKER)
+    }) && !marked
     {
         return Err(DictionaryImportError::InvalidStructure);
     }
@@ -208,7 +219,7 @@ fn parse_json(text: &str) -> Result<ParsedDictionaryImport, DictionaryImportErro
         .as_object()
         .ok_or(DictionaryImportError::InvalidStructure)?;
     if let Some(format) = object.get("format") {
-        if format.as_str() != Some("typelite_dictionary")
+        if !matches!(format.as_str(), Some(JSON_FORMAT | LEGACY_JSON_FORMAT))
             || object.get("version").and_then(serde_json::Value::as_u64) != Some(1)
         {
             return Err(DictionaryImportError::InvalidStructure);
@@ -628,7 +639,7 @@ pub fn export_dictionary_json(
                 word: &entry.word,
             })
             .collect(),
-        format: "typelite_dictionary",
+        format: JSON_FORMAT,
         version: 1,
     })
     .map_err(|_| DictionaryImportError::InvalidStructure)
@@ -701,7 +712,7 @@ mod tests {
             .unwrap()
             .as_nanos();
         let path = std::env::temp_dir().join(format!(
-            "typelite-dictionary-io-{name}-{}-{nonce}.sqlite",
+            "oratype-dictionary-io-{name}-{}-{nonce}.sqlite",
             std::process::id()
         ));
         DictionaryStore::new(path).unwrap()
@@ -712,7 +723,7 @@ mod tests {
         let input = concat!(
             "\u{feff}type,word,pronunciation,wrong_phrase,corrected_phrase,enabled\r\n",
             "dictionary,\"Type,Lite\",\"type\r\nlite\",,,true\r\n",
-            "correction,,,\"type, light\",Typelite,true\r\n"
+            "correction,,,\"type, light\",OraType,true\r\n"
         );
 
         let parsed = parse_dictionary_import(input.as_bytes(), ImportFormat::Csv).unwrap();
@@ -730,10 +741,27 @@ mod tests {
             parsed.rows[1],
             ParsedDictionaryRow::Correction {
                 pattern: "type, light".to_string(),
-                replacement: "Typelite".to_string(),
+                replacement: "OraType".to_string(),
                 enabled: true,
             }
         );
+    }
+
+    #[test]
+    fn files_exported_by_typelite_still_import() {
+        // Plan `rename-oratype`: the CSV marker and the JSON format of before 1.2.0.
+        let csv = concat!(
+            "# typelite_dictionary,1\n",
+            "type,word,pronunciation,wrong_phrase,corrected_phrase,enabled\n",
+            "dictionary,Qwen,,,,true\n"
+        );
+        let parsed = parse_dictionary_import(csv.as_bytes(), ImportFormat::Csv).unwrap();
+        assert_eq!(parsed.rows.len(), 1);
+        let json = r#"{"format":"typelite_dictionary","version":1,"dictionary":[{"word":"Qwen"}]}"#;
+        let parsed = parse_dictionary_import(json.as_bytes(), ImportFormat::Json).unwrap();
+        assert_eq!(parsed.rows.len(), 1);
+        let other = r#"{"format":"other_dictionary","version":1,"dictionary":[{"word":"Qwen"}]}"#;
+        assert!(parse_dictionary_import(other.as_bytes(), ImportFormat::Json).is_err());
     }
 
     #[test]
@@ -759,7 +787,7 @@ mod tests {
 
     #[test]
     fn parser_reports_mixed_valid_and_invalid_rows_without_mutation() {
-        let input = format!("Typelite\n{}\n# ignored", "x".repeat(101));
+        let input = format!("OraType\n{}\n# ignored", "x".repeat(101));
 
         let parsed = parse_dictionary_import(input.as_bytes(), ImportFormat::Txt).unwrap();
 
@@ -772,10 +800,10 @@ mod tests {
     #[test]
     fn json_parser_accepts_standalone_and_backup_subset_shapes() {
         let standalone = br#"{
-            "format":"typelite_dictionary",
+            "format":"oratype_dictionary",
             "version":1,
-            "dictionary":[{"word":"Typelite","pronunciation":"type light"}],
-            "correctionRules":[{"pattern":"type light","replacement":"Typelite","enabled":false}]
+            "dictionary":[{"word":"OraType","pronunciation":"type light"}],
+            "correctionRules":[{"pattern":"type light","replacement":"OraType","enabled":false}]
         }"#;
         let backup = br#"{"dictionary":[{"id":7,"word":"TalkMore","pronunciation":null}]}"#;
 
@@ -809,7 +837,7 @@ mod tests {
         }];
 
         let exported = export_dictionary_csv(&dictionary, &corrections).unwrap();
-        assert!(exported.starts_with("# typelite_dictionary,1"));
+        assert!(exported.starts_with("# oratype_dictionary,1"));
         assert!(exported.contains("'  =HYPERLINK"));
         assert!(exported.contains("'+cmd"));
         assert!(exported.contains("'-danger"));
@@ -841,7 +869,7 @@ dictionary,'=literal,,,,true\n";
             },
             DictionaryEntry {
                 id: 3,
-                word: "Typelite".into(),
+                word: "OraType".into(),
                 pronunciation: None,
             },
         ];
@@ -849,7 +877,7 @@ dictionary,'=literal,,,,true\n";
             CorrectionRule {
                 id: 8,
                 pattern: "type light".into(),
-                replacement: "Typelite".into(),
+                replacement: "OraType".into(),
                 enabled: false,
             },
             CorrectionRule {
@@ -860,14 +888,14 @@ dictionary,'=literal,,,,true\n";
             },
         ];
         let expected = serde_json::json!({
-            "format": "typelite_dictionary",
+            "format": "oratype_dictionary",
             "version": 1,
             "dictionary": [
                 {"word": "詞語\"quoted\"", "pronunciation": "line\none\t\\two"},
-                {"word": "Typelite", "pronunciation": null},
+                {"word": "OraType", "pronunciation": null},
             ],
             "correctionRules": [
-                {"pattern": "type light", "replacement": "Typelite", "enabled": false},
+                {"pattern": "type light", "replacement": "OraType", "enabled": false},
                 {"pattern": "wrong\"word", "replacement": "正確\nword", "enabled": true},
             ],
         });
@@ -878,7 +906,7 @@ dictionary,'=literal,,,,true\n";
         assert_eq!(
             export_dictionary_json(&[], &[]).unwrap(),
             serde_json::to_string_pretty(&serde_json::json!({
-                "format": "typelite_dictionary", "version": 1,
+                "format": "oratype_dictionary", "version": 1,
                 "dictionary": [], "correctionRules": [],
             }))
             .unwrap(),
@@ -888,15 +916,12 @@ dictionary,'=literal,,,,true\n";
     #[tokio::test]
     async fn preview_and_commit_dedupe_nfkc_case_and_pairs() {
         let store = temp_store("dedupe");
-        store.add("Typelite", None).await.unwrap();
-        store
-            .add_correction("type light", "Typelite")
-            .await
-            .unwrap();
+        store.add("OraType", None).await.unwrap();
+        store.add_correction("type light", "OraType").await.unwrap();
         let parsed = ParsedDictionaryImport {
             rows: vec![
                 ParsedDictionaryRow::Dictionary {
-                    word: "ＴＹＰＥＬＩＴＥ".to_string(),
+                    word: "ＯＲＡＴＹＰＥ".to_string(),
                     pronunciation: None,
                 },
                 ParsedDictionaryRow::Dictionary {
@@ -905,7 +930,7 @@ dictionary,'=literal,,,,true\n";
                 },
                 ParsedDictionaryRow::Correction {
                     pattern: " TYPE LIGHT ".to_string(),
-                    replacement: "typelite".to_string(),
+                    replacement: "oratype".to_string(),
                     enabled: true,
                 },
             ],

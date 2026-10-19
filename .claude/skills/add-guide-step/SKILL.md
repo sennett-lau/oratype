@@ -1,6 +1,6 @@
 ---
 name: add-guide-step
-description: Create the guide folder for a new part of Typelite's pipeline (a new "step" with its own models and services, beside speech recognition and AI polish), in the step format the docs check enforces. Use when a new kind of system is added and needs user guides.
+description: Create the guide folder for a new part of OraType's pipeline (a new "step" with its own models and services, beside speech recognition and AI polish), in the step format the docs check enforces. Use when a new kind of system is added and needs user guides.
 ---
 
 # Add a guide step

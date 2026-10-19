@@ -1,6 +1,6 @@
 # Built-in models suggested by language
 
-Typelite asks which languages the user speaks and checks whether it has a suggested setup for
+OraType asks which languages the user speaks and checks whether it has a suggested setup for
 that combination. If it has, the speech and AI steps start with those built-in models chosen;
 otherwise the standard ones are used. The built-in lists also grow beyond a larger and a smaller
 model, so a Cantonese speaker can install Qwen3-ASR 1.7B and Qwen 3.5 4B on the Mac, the pair
@@ -14,7 +14,7 @@ Status: building - 2026-10-16.
 - A "Your languages" onboarding step (also in Settings) that looks up a suggested setup for the
   chosen language combination.
 - Run Qwen3-ASR built in, so spoken Cantonese no longer needs a self-hosted server.
-- Not a goal: rating every model for every language. Typelite cannot benchmark every language,
+- Not a goal: rating every model for every language. OraType cannot benchmark every language,
   so it shows no per-language quality labels.
 - Not a goal: a new runtime, cloud models, or a different default for combinations without a
   suggested setup.
@@ -22,7 +22,7 @@ Status: building - 2026-10-16.
 ## Key decisions
 
 - **Suggestions are per language combination, not per language.** A short table lists the
-  combinations Typelite has a setup for; each entry needs eval results behind it. Reason: we can
+  combinations OraType has a setup for; each entry needs eval results behind it. Reason: we can
   test a few combinations well, not every language.
 - **No quality labels.** Model lists show name and size only; the one tag is "Suggested for
   your languages", on the model from a matching setup. Reason: labels would claim results we
@@ -34,7 +34,7 @@ Status: building - 2026-10-16.
   Whisper writes Cantonese speech as standard written Chinese (about 44 % character error on the
   eval clips), which polish cannot undo.
 - **Qwen3-ASR runs in a second built-in llama-server** on its own port. Reason: llama-server
-  already ships with Typelite and serves `/v1/audio/transcriptions`, so the existing
+  already ships with OraType and serves `/v1/audio/transcriptions`, so the existing
   OpenAI-compatible speech client (with its `language X<asr_text>` handling) can use it. It is
   still the one "Built-in" speech preset, with Qwen3-ASR as its model; the provider picks
   whisper.cpp or the speech server by model. The server gets 12288 tokens of context (a ten-minute

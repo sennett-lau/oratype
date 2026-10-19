@@ -10,7 +10,7 @@ correctly from it. Back to [index](index.md).
   engines.
 - Queries through `GET /search?q=…&format=json` with `language=en`, as the user would say them.
 - AI: an OpenAI-compatible llama.cpp server on a GPU computer on the network running Qwen 3.5 4B
-  (Q4_K_M) with thinking off, the size of model Typelite recommends for polish.
+  (Q4_K_M) with thinking off, the size of model OraType recommends for polish.
 - Prompt: answer from the results only, cite `[n]`, results marked untrusted (the prompt in
   [architecture.md](architecture.md)). Date of the run: 2026-09-29.
 

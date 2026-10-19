@@ -200,16 +200,16 @@ mod tests {
     #[test]
     fn validate_dictionary_inputs_counts_unicode_scalars_and_normalizes_optional_value() {
         let (word, pronunciation) = validate_dictionary_inputs(
-            "  Typelite  ".to_string(),
+            "  OraType  ".to_string(),
             Some("  type light  ".to_string()),
         )
         .unwrap();
-        assert_eq!(word, "Typelite");
+        assert_eq!(word, "OraType");
         assert_eq!(pronunciation.as_deref(), Some("type light"));
 
         assert!(validate_dictionary_inputs("你".repeat(100), None).is_ok());
         assert!(validate_dictionary_inputs("你".repeat(101), None).is_err());
-        assert!(validate_dictionary_inputs("Typelite".to_string(), Some(" ".to_string())).is_ok());
+        assert!(validate_dictionary_inputs("OraType".to_string(), Some(" ".to_string())).is_ok());
     }
 
     #[test]

@@ -2,14 +2,14 @@ import { BUILTIN_WHISPER_PRESET_ID, isBuiltinSpeech, type SpeechPreset } from '.
 
 /**
  * Plan `two-tab-speech`: speech recognition runs on one of two engines, Built-in (whisper.cpp
- * inside Typelite) or "your server or API key" (any OpenAI-compatible speech service). The engine
+ * inside OraType) or "your server or API key" (any OpenAI-compatible speech service). The engine
  * in use follows from the active preset's kind.
  */
 export type SpeechEngine = 'builtin' | 'server'
 
 /** The speech services guide on GitHub, opened by "Learn more". */
 export const SPEECH_SERVICES_GUIDE_URL =
-  'https://github.com/sennett-lau/typelite/blob/main/docs/guides/speech/README.md'
+  'https://github.com/sennett-lau/oratype/blob/main/docs/guides/speech/README.md'
 
 /** Placeholders of the server form: the OpenAI example. */
 export const SERVER_PLACEHOLDERS = {

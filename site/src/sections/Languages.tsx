@@ -204,7 +204,7 @@ export function Languages() {
             data-reveal
           >
             <h4>Your language?</h4>
-            <p>If you speak a language well, you can make Typelite write it better.</p>
+            <p>If you speak a language well, you can make OraType write it better.</p>
             <span className="inline-link">
               Contribute a preset <IconArrowRight size={15} />
             </span>

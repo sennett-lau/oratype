@@ -9,7 +9,7 @@ import {
   searchState,
   type EndpointState,
 } from '../../lib/connectionStatus'
-import appIcon from '../../assets/typelite-icon.png'
+import appIcon from '../../assets/oratype-icon.png'
 import { AccessibilityBanner } from './AccessibilityBanner'
 
 interface NavItem {

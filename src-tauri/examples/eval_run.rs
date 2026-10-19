@@ -9,7 +9,7 @@
 //!
 //! Polish input lines: `{"id", "input", "sample"}`. It builds the same request as a plain
 //! dictation with the default settings (General app, "clean" style, Chinese script "preserve"),
-//! routes the transcript to a language the way the pipeline does (`TYPELITE_EVAL_LANGUAGES`, a
+//! routes the transcript to a language the way the pipeline does (`ORATYPE_EVAL_LANGUAGES`, a
 //! comma list, stands in for the user's languages; default: the app's default list), calls
 //! `LlmProvider::polish` (which applies the app's clean-up of the answer) and then the dictation
 //! language guard (`llm::output_guard`).
@@ -19,24 +19,24 @@
 //! hallucination filters included).
 //!
 //! Environment:
-//! - AI: `TYPELITE_EVAL_LLAMA_MODEL` (a GGUF file: start the built-in llama-server, which needs
-//!   `src-tauri/binaries/llama-server-<triple>`), or `TYPELITE_EVAL_AI_URL`,
-//!   `TYPELITE_EVAL_AI_MODEL`, `TYPELITE_EVAL_AI_KEY` for any OpenAI-compatible server.
-//! - Speech: `TYPELITE_EVAL_WHISPER_MODEL` (a ggml model file: built-in whisper.cpp), or
-//!   `TYPELITE_EVAL_SPEECH_URL`, `TYPELITE_EVAL_SPEECH_MODEL` for an OpenAI-compatible server.
+//! - AI: `ORATYPE_EVAL_LLAMA_MODEL` (a GGUF file: start the built-in llama-server, which needs
+//!   `src-tauri/binaries/llama-server-<triple>`), or `ORATYPE_EVAL_AI_URL`,
+//!   `ORATYPE_EVAL_AI_MODEL`, `ORATYPE_EVAL_AI_KEY` for any OpenAI-compatible server.
+//! - Speech: `ORATYPE_EVAL_WHISPER_MODEL` (a ggml model file: built-in whisper.cpp), or
+//!   `ORATYPE_EVAL_SPEECH_URL`, `ORATYPE_EVAL_SPEECH_MODEL` for an OpenAI-compatible server.
 //!
 //! Nothing is sent anywhere except the configured server.
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
+use oratype_lib::app_detector::types::ContextProfile;
+use oratype_lib::llm::{self, LlmConfig, PolishLanguageNotes, PolishRequest};
+use oratype_lib::storage::{AiPreset, AppConfig, SpeechPreset};
+use oratype_lib::stt::chinese_script::{convert, ChineseScript};
+use oratype_lib::stt::{self, config::build_whisper_config, SttConfig};
+use oratype_lib::voice_intent::{VoiceIntent, VoiceIntentKind, VoiceOutputPlacement};
 use serde_json::{json, Value};
-use typelite_lib::app_detector::types::ContextProfile;
-use typelite_lib::llm::{self, LlmConfig, PolishLanguageNotes, PolishRequest};
-use typelite_lib::storage::{AiPreset, AppConfig, SpeechPreset};
-use typelite_lib::stt::chinese_script::{convert, ChineseScript};
-use typelite_lib::stt::{self, config::build_whisper_config, SttConfig};
-use typelite_lib::voice_intent::{VoiceIntent, VoiceIntentKind, VoiceOutputPlacement};
 
 const SAMPLE_RATE: u32 = 16_000;
 /// Same chunk size the recorder sends (100 ms of 16-bit mono audio).
@@ -85,11 +85,11 @@ async fn main() -> Result<(), BoxError> {
 
 /// The AI settings, starting the built-in llama-server when a GGUF file is given.
 async fn ai_config() -> Result<(LlmConfig, bool), BoxError> {
-    if let Some(model) = env("TYPELITE_EVAL_LLAMA_MODEL") {
-        use typelite_lib::llm::builtin;
+    if let Some(model) = env("ORATYPE_EVAL_LLAMA_MODEL") {
+        use oratype_lib::llm::builtin;
         let model = PathBuf::from(model);
         let pid_file =
-            std::env::temp_dir().join(format!("typelite-eval-{}.pid", std::process::id()));
+            std::env::temp_dir().join(format!("oratype-eval-{}.pid", std::process::id()));
         builtin::server().set_paths(model.parent().ok_or("model path")?.to_path_buf(), pid_file);
         if !builtin::server().binary_available() {
             return Err("build llama-server first: bash scripts/build-llama-server.sh".into());
@@ -110,49 +110,49 @@ async fn ai_config() -> Result<(LlmConfig, bool), BoxError> {
     let preset = AiPreset {
         id: "eval-ai".into(),
         name: "Eval AI".into(),
-        base_url: env("TYPELITE_EVAL_AI_URL")
-            .ok_or("set TYPELITE_EVAL_LLAMA_MODEL (built-in) or TYPELITE_EVAL_AI_URL (a server)")?,
-        model: env("TYPELITE_EVAL_AI_MODEL").unwrap_or_default(),
+        base_url: env("ORATYPE_EVAL_AI_URL")
+            .ok_or("set ORATYPE_EVAL_LLAMA_MODEL (built-in) or ORATYPE_EVAL_AI_URL (a server)")?,
+        model: env("ORATYPE_EVAL_AI_MODEL").unwrap_or_default(),
         ..Default::default()
     };
     Ok((
-        LlmConfig::from_preset(&preset, env("TYPELITE_EVAL_AI_KEY").unwrap_or_default()),
+        LlmConfig::from_preset(&preset, env("ORATYPE_EVAL_AI_KEY").unwrap_or_default()),
         false,
     ))
 }
 
-/// The user's language list: `TYPELITE_EVAL_LANGUAGES` or the app's default. With
-/// `TYPELITE_EVAL_PRESETS=1` each language uses its preset from `presets/languages/`, as in an
+/// The user's language list: `ORATYPE_EVAL_LANGUAGES` or the app's default. With
+/// `ORATYPE_EVAL_PRESETS=1` each language uses its preset from `presets/languages/`, as in an
 /// app that downloaded it from the library (its instructions and routing hints), instead of the
 /// built-in instructions.
 fn app_config() -> AppConfig {
     let mut config = AppConfig::default();
-    if let Some(list) = env("TYPELITE_EVAL_LANGUAGES") {
+    if let Some(list) = env("ORATYPE_EVAL_LANGUAGES") {
         config.translation.targets = list
             .split(',')
             .map(|code| code.trim().to_string())
             .filter(|code| !code.is_empty())
             .collect();
     }
-    if env("TYPELITE_EVAL_PRESETS").is_some() {
+    if env("ORATYPE_EVAL_PRESETS").is_some() {
         use_library_presets(&mut config);
     }
     config
 }
 
 /// The preset store [`use_library_presets`] filled, for routing.
-static PRESET_STORE: std::sync::OnceLock<typelite_lib::llm::language_library::store::LibraryStore> =
+static PRESET_STORE: std::sync::OnceLock<oratype_lib::llm::language_library::store::LibraryStore> =
     std::sync::OnceLock::new();
 
 fn use_library_presets(config: &mut AppConfig) {
-    use typelite_lib::llm::language_library::{find_presets_for, parse_index, store::LibraryStore};
-    use typelite_lib::storage::{LibraryPresetRef, TranslationLanguageSettings};
+    use oratype_lib::llm::language_library::{find_presets_for, parse_index, store::LibraryStore};
+    use oratype_lib::storage::{LibraryPresetRef, TranslationLanguageSettings};
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../presets/languages");
     let index = std::fs::read(root.join("index.json"))
         .map_err(|error| error.to_string())
         .and_then(|bytes| parse_index(&bytes))
         .expect("presets/languages/index.json");
-    let dir = std::env::temp_dir().join(format!("typelite-eval-presets-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("oratype-eval-presets-{}", std::process::id()));
     let store = LibraryStore::new(dir);
     for code in config.translation.targets.clone() {
         let (matches, _) = find_presets_for(&index.presets, &code);
@@ -181,7 +181,7 @@ fn use_library_presets(config: &mut AppConfig) {
 
 /// A plain dictation with default settings, as `pipeline.rs` builds it.
 fn dictation_request(config: &AppConfig, raw_text: &str) -> (PolishRequest, Option<String>) {
-    use typelite_lib::llm::language_router::{language_profiles, route};
+    use oratype_lib::llm::language_router::{language_profiles, route};
     let mut profiles = language_profiles(config, PRESET_STORE.get());
     let routed = route(&profiles, raw_text, None)
         .index()
@@ -250,7 +250,7 @@ async fn run_polish(cases: &[Value], out: &mut std::fs::File) -> Result<(), BoxE
     }
     eprintln!();
     if builtin {
-        typelite_lib::llm::builtin::server().stop();
+        oratype_lib::llm::builtin::server().stop();
     }
     result
 }
@@ -284,7 +284,7 @@ fn pcm_from_wav(wav: &[u8]) -> Result<Vec<u8>, BoxError> {
 }
 
 async fn run_speech(clips: &[Value], out: &mut std::fs::File) -> Result<(), BoxError> {
-    let builtin_model = env("TYPELITE_EVAL_WHISPER_MODEL").map(PathBuf::from);
+    let builtin_model = env("ORATYPE_EVAL_WHISPER_MODEL").map(PathBuf::from);
     let preset = match &builtin_model {
         Some(model) => {
             stt::builtin::engine()
@@ -298,10 +298,10 @@ async fn run_speech(clips: &[Value], out: &mut std::fs::File) -> Result<(), BoxE
         None => SpeechPreset {
             id: "eval-speech".into(),
             name: "Eval speech".into(),
-            base_url: env("TYPELITE_EVAL_SPEECH_URL").ok_or(
-                "set TYPELITE_EVAL_WHISPER_MODEL (built-in) or TYPELITE_EVAL_SPEECH_URL (a server)",
+            base_url: env("ORATYPE_EVAL_SPEECH_URL").ok_or(
+                "set ORATYPE_EVAL_WHISPER_MODEL (built-in) or ORATYPE_EVAL_SPEECH_URL (a server)",
             )?,
-            model: env("TYPELITE_EVAL_SPEECH_MODEL").unwrap_or_else(|| "whisper-1".into()),
+            model: env("ORATYPE_EVAL_SPEECH_MODEL").unwrap_or_else(|| "whisper-1".into()),
             language: "auto".into(),
             ..Default::default()
         },

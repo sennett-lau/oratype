@@ -2,7 +2,7 @@
 
 Evidence for the first suggested setup of plan `language-model-suggestions`: any combination of
 spoken languages with Cantonese gets Qwen3-ASR 1.7B for speech recognition and Qwen 3.5 4B for
-AI polish, both run by the `llama-server` that ships with Typelite.
+AI polish, both run by the `llama-server` that ships with OraType.
 
 ## Provenance
 

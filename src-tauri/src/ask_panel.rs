@@ -17,7 +17,7 @@ const CAPSULE_WINDOW_LABEL: &str = "capsule";
 /// Sent to the Ask window when the panel closes (Escape, a new run), so it drops its content.
 pub const PANEL_CLOSED_EVENT: &str = "ask:panel_closed";
 /// Plan `ask-hover`: the cursor over the panel, in window points (`{x, y}`), or `null` when it
-/// leaves. The window is never key and Typelite stays in the background, so WebKit sends the page
+/// leaves. The window is never key and OraType stays in the background, so WebKit sends the page
 /// no mouse moves and `:hover` never applies; the page applies hover from this instead.
 pub const POINTER_EVENT: &str = "ask:pointer";
 
@@ -559,7 +559,7 @@ pub fn set_ask_cursor(app: tauri::AppHandle, pointer: bool) {
 }
 
 /// Plan `ask-panel-select-text`: the page asks for key when the user presses in its text or
-/// highlights some, so ⌘C reaches the page. Typelite is never activated (non-activating panel).
+/// highlights some, so ⌘C reaches the page. OraType is never activated (non-activating panel).
 #[tauri::command]
 pub fn focus_ask_panel(app: tauri::AppHandle) {
     if !is_open(&app) {
@@ -607,7 +607,7 @@ pub fn set_ask_panel_hit_rect(app: tauri::AppHandle, x: f64, y: f64, width: f64,
     });
 }
 
-/// The panel's Copy buttons and ⌘C on a highlight (plan `ask-panel-select-text`). Typelite is
+/// The panel's Copy buttons and ⌘C on a highlight (plan `ask-panel-select-text`). OraType is
 /// never the active app, so the page does not use the browser clipboard or the Edit menu; the
 /// text goes on the clipboard here and stays there (the user asked for it).
 #[tauri::command]

@@ -28,7 +28,7 @@ const CANDIDATES = [
 ]
 
 const PREVIEW: ImportPreview = {
-  fileName: 'shared.typelite-presets.json',
+  fileName: 'shared.oratype-presets.json',
   entries: [
     { index: 0, name: 'Groq', host: 'api.groq.com', model: 'llama', hasKey: true },
     { index: 1, name: 'Office PC', host: 'office-pc.example:11434', model: 'qwen', hasKey: false },
@@ -211,7 +211,7 @@ describe('import flow', () => {
     invokeMock.mockRejectedValue({ code: 'newer_version', version: 2 })
     render(<PresetShareButtons service="speech" />)
     fireEvent.click(screen.getByRole('button', { name: 'Import…' }))
-    expect(await screen.findByRole('status')).toHaveTextContent('newer version of Typelite')
+    expect(await screen.findByRole('status')).toHaveTextContent('newer version of OraType')
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 })

@@ -4,13 +4,13 @@ Ask anything answers most questions from the AI model alone. Questions about new
 schedules, prices or anything recent need the web. With a search server set up, Ask searches
 for such a question, answers from the top results and shows the pages it used as numbered links.
 
-Web search is **off** until you set it up. Typelite uses
+Web search is **off** until you set it up. OraType uses
 [SearXNG](https://github.com/searxng/searxng), a free, open-source search engine that asks
 several search engines at once. There are two ways to get one:
 
-- **Built-in (recommended):** Settings → Search → Built-in → **Set up**. Typelite downloads
+- **Built-in (recommended):** Settings → Search → Built-in → **Set up**. OraType downloads
   SearXNG with its own copy of Python (about 230 MB, from GitHub) and runs it on this Mac only,
-  while Typelite is open. Nothing else to install. **Check for updates** brings SearXNG up to
+  while OraType is open. Nothing else to install. **Check for updates** brings SearXNG up to
   date; **Remove** deletes it.
 - **Your own SearXNG:** run it yourself (below), for example to share one server between
   computers, and enter its address.
@@ -31,7 +31,7 @@ The rest of this guide is for **Your own SearXNG**.
 ## Run SearXNG
 
 SearXNG is a metasearch engine: it asks several search engines at once and returns their
-results. Typelite reads its JSON answer, which is off in SearXNG's default settings, so you give
+results. OraType reads its JSON answer, which is off in SearXNG's default settings, so you give
 it a small settings file.
 
 ### 1. Write the settings file
@@ -45,7 +45,7 @@ server:
   secret_key: "change-me-to-a-long-random-string"
   limiter: false
 search:
-  # Typelite needs json; the default is html only.
+  # OraType needs json; the default is html only.
   formats: [html, json]
 ```
 
@@ -78,7 +78,7 @@ You should see JSON that starts with `{"query": "weather"`. An HTML page that sa
   use that computer's address. Do not open it to the internet: with the limiter off, anyone who
   reaches it can use it.
 
-## Set it up in Typelite
+## Set it up in OraType
 
 1. Open **Settings → Search** (or the **Web search** step during setup, which you can skip).
 2. Choose **Your own SearXNG**, enter the address (`http://127.0.0.1:8888`) and press **Test**. Test
@@ -101,13 +101,13 @@ deletes it, and **Turn off web search** removes the address and the key.
   cite them as `[1]`, `[2]`. **N sources** under the answer opens a column beside it with a card
   per page (site, title and a short snippet). Hover a card for **Open**, which opens the page in
   your browser, and **Copy link**. A citation in the answer opens the column on its page.
-- For “next event” questions, the AI copies event names and dates from the snippets. Typelite
+- For “next event” questions, the AI copies event names and dates from the snippets. OraType
   checks that both appear together in the source, rejects past or unreadable dates, and shows
   the earliest supported event in the source’s original wording. It preserves date ranges and
   does not infer a race day, weekday or local time. If the snippets cannot support an answer,
   Ask says that it did not find enough information. Search snippets can still be incomplete or
   outdated; the source links let you check the full schedule.
-- Search results are text from web pages. Typelite gives them to the AI marked as untrusted data,
+- Search results are text from web pages. OraType gives them to the AI marked as untrusted data,
   not instructions.
 - The log records how many results came back and how long each step took, never the question or
   the results.

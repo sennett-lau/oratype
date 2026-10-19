@@ -92,7 +92,7 @@ pub fn build_form(
     Ok(form.part("file", file))
 }
 
-/// ISO 639-3 (and 639-2) codes Scribe reports, as the ISO 639-1 codes the rest of Typelite
+/// ISO 639-3 (and 639-2) codes Scribe reports, as the ISO 639-1 codes the rest of OraType
 /// uses. Chinese varieties other than Cantonese become `zh`, as whisper reports them.
 const ISO_639_3_TO_1: &[(&str, &str)] = &[
     ("afr", "af"),
@@ -162,7 +162,7 @@ const ISO_639_3_TO_1: &[(&str, &str)] = &[
     ("yue", "yue"),
 ];
 
-/// The language code of a Scribe answer as Typelite's short code: `eng` → `en`, `cmn` → `zh`,
+/// The language code of a Scribe answer as OraType's short code: `eng` → `en`, `cmn` → `zh`,
 /// `yue` stays `yue`. Two-letter codes pass through; other three-letter codes are kept as they
 /// are. Anything that is not a language code gives `None`.
 pub fn normalize_language_code(raw: &str) -> Option<String> {

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } fro
  * Every demo on the page is a pure function of a time `t` (seconds). On the site a
  * requestAnimationFrame loop advances `t` while the demo is on screen; the media capture
  * script (scripts/capture-media.mjs) instead sets `t` frame by frame through
- * `window.__typeliteCapture.setTime`, so GIF frames are exact and repeatable.
+ * `window.__oratypeCapture.setTime`, so GIF frames are exact and repeatable.
  */
 
 type Listener = () => void
@@ -17,14 +17,14 @@ const capture = {
 
 declare global {
   interface Window {
-    __typeliteCapture?: { setTime: (t: number) => Promise<void> }
+    __oratypeCapture?: { setTime: (t: number) => Promise<void> }
   }
 }
 
 /** Turns on capture mode: demos stop their own clocks and follow `setTime`. */
 export function enableCaptureClock() {
   capture.enabled = true
-  window.__typeliteCapture = {
+  window.__oratypeCapture = {
     setTime(t: number) {
       capture.time = t
       capture.listeners.forEach((fn) => fn())

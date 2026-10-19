@@ -72,7 +72,7 @@ function askResult(
   overrides: Partial<Awaited<ReturnType<typeof stopAskDictation>>> = {},
 ): AskDictationResult {
   return {
-    question: 'What is Typelite?',
+    question: 'What is OraType?',
     answer: 'It turns speech into useful text.',
     intent: 'open_question' as const,
     output: 'popupAnswer' as const,
@@ -146,7 +146,7 @@ describe('AskPanel', () => {
     act(() => tauriEventMock.emit('ask:result', askResult()))
 
     await waitFor(() => {
-      expect(screen.getByText('What is Typelite?')).toBeDefined()
+      expect(screen.getByText('What is OraType?')).toBeDefined()
       expect(screen.getByText('It turns speech into useful text.')).toBeDefined()
     })
     expect(screen.getByTestId('ask-floating-note')).toBeDefined()
@@ -217,7 +217,7 @@ describe('AskPanel', () => {
     await emitWhenListening('ask:result', askResult({ usedSelectedText: true }))
 
     const question = await screen.findByTestId('ask-panel-question')
-    expect(question.textContent).toBe('About the highlight · What is Typelite?')
+    expect(question.textContent).toBe('About the highlight · What is OraType?')
   })
 
   it('closes the panel through the app from its close button', async () => {
@@ -370,7 +370,7 @@ describe('AskPanel', () => {
 
     expect(abortAskDictation).not.toHaveBeenCalled()
     resolveStop({
-      question: 'What is Typelite?',
+      question: 'What is OraType?',
       answer: 'It turns speech into useful text.',
       intent: 'open_question',
       output: 'popupAnswer',

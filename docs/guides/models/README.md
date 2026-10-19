@@ -1,6 +1,6 @@
 # Choosing models
 
-Typelite uses two models: a **speech recognition** model turns your voice into text, and an **AI
+OraType uses two models: a **speech recognition** model turns your voice into text, and an **AI
 polish** model cleans that text up. Two questions decide which ones to use:
 
 1. **Does your language need special care?** If you mostly dictate in English, or you are happy

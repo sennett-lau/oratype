@@ -1,5 +1,5 @@
 /*
- * Typelite site styles. The tokens are the app's own (src/styles/globals.css):
+ * OraType site styles. The tokens are the app's own (src/styles/globals.css):
  * light is "Native Glass" (accent #0a84ff), dark is "Aurora" (teal #3fd8c2 with violet
  * #af52de corner glows on near-black glass). The pill is dark glass in both themes.
  */
@@ -1117,7 +1117,7 @@ section {
   }
 }
 
-/* The captions under the hero: what you say, what Typelite types. */
+/* The captions under the hero: what you say, what OraType types. */
 .captions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

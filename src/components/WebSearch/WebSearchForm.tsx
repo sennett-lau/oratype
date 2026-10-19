@@ -16,7 +16,7 @@ import { recordSearchTest } from '../../lib/connectionStatus'
 
 /** The web search guide on GitHub, opened by "How to run SearXNG". */
 export const WEB_SEARCH_GUIDE_URL =
-  'https://github.com/sennett-lau/typelite/blob/main/docs/guides/web-search.md'
+  'https://github.com/sennett-lau/oratype/blob/main/docs/guides/web-search.md'
 
 /** A provider with an address the user runs (not off, not Built-in). */
 type OwnProvider = Exclude<SearchProviderKind, 'none' | 'builtin'>

@@ -1,6 +1,6 @@
-# Translating Typelite
+# Translating OraType
 
-Typelite's interface text lives in one string table per language, in `src/i18n/locales/`:
+OraType's interface text lives in one string table per language, in `src/i18n/locales/`:
 
 | File           | Language                                          |
 | -------------- | ------------------------------------------------- |
@@ -20,9 +20,9 @@ machine translations, so corrections from people who speak the language are very
 1. Find the text: search the language's file for the wrong words, or search `en.json` for the
    English text and look up the same key.
 2. Change only the value on the right of the colon. Keep the key, the quotes and the comma.
-3. Keep every `{{placeholder}}` exactly as it is (`{{version}}`, `{{error}}` …). Typelite fills
+3. Keep every `{{placeholder}}` exactly as it is (`{{version}}`, `{{error}}` …). OraType fills
    it in; you may move it within the sentence.
-4. Leave names as they are: Typelite, macOS, Whisper, Ollama, file names, URLs and key names.
+4. Leave names as they are: OraType, macOS, Whisper, Ollama, file names, URLs and key names.
 5. Run `npx vitest run src/i18n` and open a pull request. You can also edit the file on GitHub
    in the browser; CI runs the same check.
 

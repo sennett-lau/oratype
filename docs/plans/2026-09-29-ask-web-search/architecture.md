@@ -17,7 +17,7 @@ Modules, the prompt, commands, storage and tests. Back to [index](index.md).
 
 - `AppConfig.web_search = { provider: "none" | "searxng", base_url }` in the settings file,
   default off. Saving with provider `none` clears the address.
-- The optional key: Keychain, service `Typelite`, account `search.<provider>.api_key`, through
+- The optional key: Keychain, service `OraType`, account `search.<provider>.api_key`, through
   `SystemCredentialVault` like the preset keys.
 - The Settings form applies the returned config to both the edited and the saved config in the
   store, so the Save bar never shows it as unsaved and a later Save keeps it.
@@ -70,4 +70,4 @@ http(s).
 - Frontend: the form (empty, Test ok and failed, Save with key, keep key, Remove key, Turn off),
   the panel (Set up web search, failed state, source chips).
 - Live: `ask_answers_a_live_question_from_searxng_results` in `tests/e2e_services.rs`, run when
-  `TYPELITE_E2E_SEARXNG_URL` is set.
+  `ORATYPE_E2E_SEARXNG_URL` is set.

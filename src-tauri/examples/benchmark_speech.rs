@@ -3,8 +3,8 @@ use std::io::{self, BufRead};
 use std::path::Path;
 use std::time::Instant;
 
+use oratype_lib::stt::builtin::engine;
 use serde_json::{json, Value};
-use typelite_lib::stt::builtin::engine;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let model = std::env::args().nth(1).ok_or("expected model path")?;

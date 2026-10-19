@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Typelite",
+    "name": "OraType",
     "tagline": "AI 音声入力"
   },
   "nav": {
@@ -89,7 +89,7 @@
     "output_wayland_clipboard_copy_only": "クリップボードにコピーしました。Wayland では手動でペーストしてください。",
     "mic_fallback_default": "選択したマイク「{{details}}」が接続されていないため、システムのデフォルトを使用しました。",
     "stt_unreachable": "音声サーバに接続できませんでした（{{details}}）。設定 → 音声 のアドレスと、サーバが起動しているかを確認してください。",
-    "output_held_no_accessibility": "アクセシビリティの許可がないため、Typelite は入力できません。結果は「コピー」ピルにあります。システム設定 → プライバシーとセキュリティ → アクセシビリティで Typelite を許可してください。"
+    "output_held_no_accessibility": "アクセシビリティの許可がないため、OraType は入力できません。結果は「コピー」ピルにあります。システム設定 → プライバシーとセキュリティ → アクセシビリティで OraType を許可してください。"
   },
   "home": {
     "headline": "話すだけ。",
@@ -120,7 +120,7 @@
       "editSelectionDesc": "選択したテキストの直し方を話す",
       "switchScene": "プロンプトプリセットを切り替え",
       "switchSceneDesc": "次のプロンプトプリセットへ移動",
-      "openApp": "Typelite を開く",
+      "openApp": "OraType を開く",
       "openAppDesc": "メインウインドウを表示"
     },
     "subtitle": "どこでもショートカットを押して話せば、整ったテキストが入力中の場所に入ります。",
@@ -178,7 +178,7 @@
   },
   "onboarding": {
     "welcome": {
-      "intro": "Typelite へようこそ。ショートカットを押して話すと、整ったテキストが入力中の場所に入ります。まず、Typelite に必要な 3 つを許可してください。",
+      "intro": "OraType へようこそ。ショートカットを押して話すと、整ったテキストが入力中の場所に入ります。まず、OraType に必要な 3 つを許可してください。",
       "skipForNow": "今はスキップ"
     },
     "permissions": {
@@ -197,7 +197,7 @@
       }
     },
     "microphone": {
-      "intro": "Typelite で使うマイクを選んでください。話してメーターが動くか確認しましょう。"
+      "intro": "OraType で使うマイクを選んでください。話してメーターが動くか確認しましょう。"
     },
     "shortcut": {
       "notLive": "ショートカットが有効になっていません：{{error}}"
@@ -250,7 +250,7 @@
       "listeningHold": "聞き取り中… 終わったら {{key}} を離してください。",
       "listeningStop": "聞き取り中… {{stop}} で停止します。",
       "listeningTranslate": "聞き取り中… {{stop}} で停止、{{switch}} で言語を切り替えます。",
-      "writing": "Typelite が書いています…",
+      "writing": "OraType が書いています…",
       "thinking": "考え中…",
       "miss": "期待した結果と少し違います。",
       "noSpeech": "聞き取れませんでした。",
@@ -312,7 +312,7 @@
       "webSearch": "Web 検索",
       "webSearchSub": "任意：なんでも質問でニュース、スコア、予定を調べられます。",
       "languages": "話す言語",
-      "languagesSub": "話す言語に合った構成があるかどうかを Typelite が確認します。"
+      "languagesSub": "話す言語に合った構成があるかどうかを OraType が確認します。"
     },
     "layout": {
       "back": "戻る",
@@ -537,7 +537,7 @@
     "showInDock": "Dock に表示",
     "showInDockHint": "オフにすると Dock にアイコンが表示されません。メニューバーのアイコンから開いてください。",
     "siMode": "超知能モード",
-    "siModeHint": "Typelite の中の「人工」の知能をすべて「超」の知能に格上げします。画面の文字だけが変わる、ちょっとした遊びです。",
+    "siModeHint": "OraType の中の「人工」の知能をすべて「超」の知能に格上げします。画面の文字だけが変わる、ちょっとした遊びです。",
     "audio": "オーディオ",
     "muteOutputWhileRecording": "録音中は他の音を消音",
     "sections": "設定のセクション",
@@ -874,7 +874,7 @@
       "resetToPreset": "プリセットに戻す",
       "resetToDefault": "デフォルトに戻す",
       "defaultsFailed": "内蔵の指示を読み込めませんでした。内蔵の指示を使うには空のままにしてください。",
-      "contractNote": "Typelite は常に独自のルールをこの前後に加えるため、動作や出力言語が変わることはありません。",
+      "contractNote": "OraType は常に独自のルールをこの前後に加えるため、動作や出力言語が変わることはありません。",
       "recognitionHelp": "整形でこの指示を使うタイミングを決めます。翻訳では翻訳先を自分で選ぶため、常に使います。",
       "hears": "音声認識の判定",
       "fromThePreset": "プリセットから",
@@ -894,7 +894,7 @@
       "loading": "プリセットを読み込み中…",
       "builtinItem": "内蔵のデフォルト",
       "builtinTag": "内蔵",
-      "builtinSummary": "Typelite に同梱。オフラインでも常に使えます。",
+      "builtinSummary": "OraType に同梱。オフラインでも常に使えます。",
       "downloaded": "ダウンロード済み",
       "notesFor": "{{variant}} 向けのメモ",
       "byAuthors": "作成：{{authors}}",
@@ -915,7 +915,7 @@
   "presetShare": {
     "import": "読み込む…",
     "export": "書き出す…",
-    "fileType": "Typelite プリセット",
+    "fileType": "OraType プリセット",
     "exportTitle": "プリセットを書き出す",
     "exportHelp": "ファイルに含める保存済みプリセットを選んでください。内蔵のプリセットはこのコンピュータに残ります。",
     "exportListLabel": "書き出すプリセット",
@@ -931,16 +931,16 @@
     "importNone": "このファイルにはこのページ用のプリセットがありません。",
     "importConfirm": "追加（{{count}}）",
     "keyIncluded": "API キー",
-    "skippedUnknown": "このバージョンの Typelite が認識できない種類の {{count}} 件をスキップしました。",
+    "skippedUnknown": "このバージョンの OraType が認識できない種類の {{count}} 件をスキップしました。",
     "otherService": "このファイルには {{page}} 用の {{count}} 件も含まれています。追加するにはそちらで読み込んでください。",
     "pageSpeech": "設定 → 音声",
     "pageAi": "設定 → AI",
     "imported": "{{count}} 件を追加しました。使う前にテストしてください。",
     "keysFailed": "{{count}} 件の API キーをキーチェーンに保存できませんでした。もう一度入力してください。",
     "errors": {
-      "not_json": "このファイルは Typelite のプリセットファイルではありません（有効な JSON ではありません）。",
-      "wrong_format": "このファイルは Typelite のプリセットファイルではありません。",
-      "newer_version": "このファイルは新しいバージョンの Typelite で作成されています（形式 {{version}}）。読み込むには Typelite をアップデートしてください。",
+      "not_json": "このファイルは OraType のプリセットファイルではありません（有効な JSON ではありません）。",
+      "wrong_format": "このファイルは OraType のプリセットファイルではありません。",
+      "newer_version": "このファイルは新しいバージョンの OraType で作成されています（形式 {{version}}）。読み込むには OraType をアップデートしてください。",
       "invalid_version": "このプリセットファイルには有効な形式バージョンがありません。",
       "too_large": "プリセットファイルとしてはサイズが大きすぎます。",
       "too_many_entries": "このファイルにはプリセットが多すぎます。",
@@ -965,12 +965,13 @@
     "failed": "ショートカットの記録を開始できませんでした：{{error}}"
   },
   "whatsNew": {
+    "renamed": "Typelite は OraType になりました。設定・モデル・辞書はそのまま引き継がれます。アクセシビリティとマイクの許可をもう一度だけ与えてください（システム設定 → プライバシーとセキュリティ）。macOS がキーチェーンの「Typelite」の使用を OraType に許可するか尋ねたら「常に許可」を選んでください。保存した API キーです。",
     "handsFree": "ハンズフリーモード：「Hey Sam」と言って少し間を置き、話すだけ。ショートカットは不要です。話した内容がアプリに入力され、「ask …」と言うと質問になります。「Thanks, Sam」か 3 秒の間で終わります。設定 → 一般 → ハンズフリーでオンにします。小さなモデル（60 MB）が Mac 上で聞き取るので、ウェイクフレーズの前に何も送信されません。",
     "pillAfterIdle": "しばらく使わなかった後もピルが表示されます。約 8 分間ディクテーションしないと、ディクテーションは動くのにピルが表示されなくなることがありました。",
     "polishCutOff": "長いディクテーション（特に広東語）が整形で途中で切れなくなりました。内蔵 AI の余裕が 2 倍になり、それでも足りない場合は文字起こしがそのまま入力されます。",
-    "ownKeystrokes": "ショートカットを Command キー単体にしている場合でも、Typelite が選択テキストをコピーして読むアプリで「なんでも質問」がすぐに止まらなくなりました。",
-    "languageModels": "話す言語：話す言語を Typelite に伝えられます（初回設定または「設定 → 音声」）。広東語の場合は、ダウンロードできる内蔵モデルを 2 つ提案します。話したとおりに広東語を書く Qwen3-ASR と、整形用の Qwen 3.5 4B です。",
-    "clipboardSafe": "Typelite はクリップボードに手を出さなくなりました。入力できない結果は「コピー」ピルで待機し、貼り付け後はコピーしていた内容がすべて（画像やファイルも）元に戻り、クリップボード管理アプリにも音声入力の内容が残らなくなりました。",
+    "ownKeystrokes": "ショートカットを Command キー単体にしている場合でも、OraType が選択テキストをコピーして読むアプリで「なんでも質問」がすぐに止まらなくなりました。",
+    "languageModels": "話す言語：話す言語を OraType に伝えられます（初回設定または「設定 → 音声」）。広東語の場合は、ダウンロードできる内蔵モデルを 2 つ提案します。話したとおりに広東語を書く Qwen3-ASR と、整形用の Qwen 3.5 4B です。",
+    "clipboardSafe": "OraType はクリップボードに手を出さなくなりました。入力できない結果は「コピー」ピルで待機し、貼り付け後はコピーしていた内容がすべて（画像やファイルも）元に戻り、クリップボード管理アプリにも音声入力の内容が残らなくなりました。",
     "typeAfterSwitch": "アプリをクリックしてすぐに音声入力しても、コピーではなく文字が直接入力されるようになりました。",
     "askReadsPages": "Web 検索を使う質問は上位の結果ページを読むようになり、ニュースやスコア、次の試合についての質問にも答えられます。確認できない日付は明示されます。",
     "translateHighlight": "テキストを選択して質問を押し、「これを英語に翻訳して」と言うと、翻訳が質問パネルに表示され、コピーと置き換えができます。",
@@ -993,9 +994,9 @@
     "sourceIcons": "出典カードの「開く」と「リンクをコピー」が常に表示されるアイコンになり、誤ってクリックしてリンクを開いたりコピーしたりしなくなりました。",
     "whatsNewPaging": "新機能はリリースごとに 1 つずつ表示され、矢印で古いリリースへ移動できます。",
     "lighterApp": "より軽く、より速く：録音中の処理を減らし、音声チェックを軽くし、大きな単語リストでも辞書が速くなりました。",
-    "webSearch": "なんでも質問で、ニュース、スコア、予定、価格など最新の情報を SearXNG で Web 検索できます。Typelite がワンクリックで Mac に設定するか、自分のサーバを使えます。",
+    "webSearch": "なんでも質問で、ニュース、スコア、予定、価格など最新の情報を SearXNG で Web 検索できます。OraType がワンクリックで Mac に設定するか、自分のサーバを使えます。",
     "askSources": "Web からの回答には出典が付きます。回答の横の出典欄を開くと、各ページを確認したり、開いたり、リンクをコピーしたりできます。",
-    "autoUpdate": "GitHub Releases からのアップデート：Typelite が新しいバージョンをバックグラウンドでダウンロードし、再起動を求めます。要求するのはバージョンファイルだけです。設定 → システム でオフにできます。",
+    "autoUpdate": "GitHub Releases からのアップデート：OraType が新しいバージョンをバックグラウンドでダウンロードし、再起動を求めます。要求するのはバージョンファイルだけです。設定 → システム でオフにできます。",
     "keepAccessibility": "1.1.0 以降、アップデートしてもアクセシビリティの許可が保持されます。1.0 からアップデートした場合は、インストール後にもう一度オンにしてください。",
     "copyPill": "手前のアプリにテキストを入力できない場合、ピルに「コピー」ボタンが表示されます。",
     "translateLanguageLive": "設定で追加した翻訳先の言語は、再起動しなくてもすぐに翻訳ピルに表示されます。",
@@ -1006,7 +1007,7 @@
     "polishRequests": "AI 整形は、音声入力した依頼（「日本語でメールを書いて…」）を実行したり言語を切り替えたりせず、そのまま書き起こします。",
     "polishCodeWords": "AI 整形はファイル名、コマンド、短いコードの語をそのまま保ちます：「dot gitignore」は .gitignore になります。",
     "polishSpelledNames": "AI 整形は、1 文字ずつ綴った名前をその綴りで一度だけ書き、綴りの文字は取り除きます。",
-    "installWindow": "インストーラには、大きなアイコンと Typelite をアプリケーションにドラッグする矢印のある、おなじみのウインドウが表示されます。",
+    "installWindow": "インストーラには、大きなアイコンと OraType をアプリケーションにドラッグする矢印のある、おなじみのウインドウが表示されます。",
     "tutorialClose": "セットアップチュートリアルの閉じるボタンがウインドウボタンの横に移り、見つけやすくなりました。",
     "builtin": "最初のリリース。内蔵の音声認識と AI 整形：ワンクリックで設定でき、声とテキストは Mac から出ません。",
     "ownServer": "または自分のサーバや API キーを使えます：OpenAI 互換の音声・チャットサービス、Qwen Cloud、ElevenLabs に対応。",
@@ -1020,7 +1021,7 @@
     "microphonePicker": "入力レベルをリアルタイムで表示するマイク選択。",
     "setupTutorial": "ステップごとのセットアップチュートリアル。",
     "nativeGlass": "ライトモードとダークモードに合わせたネイティブの Glass デザイン。",
-    "noHistory": "履歴なし：Typelite は話した内容を一切記録しません。"
+    "noHistory": "履歴なし：OraType は話した内容を一切記録しません。"
   },
   "status": {
     "label": "接続状況",
@@ -1060,7 +1061,7 @@
     },
     "builtinTitle": "内蔵",
     "recommended": "推奨",
-    "builtinBody": "このコンピュータ上で Typelite 内の音声モデルを実行します。他のソフトウェアは不要です。",
+    "builtinBody": "このコンピュータ上で OraType 内の音声モデルを実行します。他のソフトウェアは不要です。",
     "changeModel": "モデルを変更",
     "download": "ダウンロード",
     "use": "使う",
@@ -1138,7 +1139,7 @@
     "engines": {
       "builtin": {
         "title": "内蔵",
-        "detail": "このコンピュータ上で Typelite 内の音声モデルを実行"
+        "detail": "このコンピュータ上で OraType 内の音声モデルを実行"
       },
       "server": {
         "title": "自分のサーバまたは API キー",
@@ -1168,7 +1169,7 @@
     "skipHint": "音声入力は引き続き使え、文字起こしがそのまま出力されます"
   },
   "aiSetup": {
-    "builtinBody": "このコンピュータ上で Typelite 内の小さなオープンモデルを実行します。他のソフトウェアは不要です。",
+    "builtinBody": "このコンピュータ上で OraType 内の小さなオープンモデルを実行します。他のソフトウェアは不要です。",
     "progressLabel": "AI モデルのダウンロード",
     "testing": "モデルを起動してテスト中…",
     "models": {
@@ -1183,11 +1184,11 @@
     },
     "errors": {
       "load": "{{reason}}",
-      "serverMissing": "この Typelite は内蔵 AI サーバなしでビルドされています。代わりに自分のサーバまたは API キーを使ってください。"
+      "serverMissing": "この OraType は内蔵 AI サーバなしでビルドされています。代わりに自分のサーバまたは API キーを使ってください。"
     },
     "hardware": {
       "none": "このコンピュータでは内蔵 AI モデルを快適に実行できません。代わりに自分のサーバまたは API キーを使ってください。",
-      "serverMissing": "この Typelite は内蔵 AI サーバなしでビルドされています。代わりに自分のサーバまたは API キーを使ってください。",
+      "serverMissing": "この OraType は内蔵 AI サーバなしでビルドされています。代わりに自分のサーバまたは API キーを使ってください。",
       "leftOut": {
         "needs_apple_silicon": "内蔵 AI には Apple シリコン搭載の Mac が必要です。",
         "needs_memory": "大きいモデルには 16 GB のメモリが必要です。",
@@ -1215,12 +1216,12 @@
     "optional": "任意",
     "uses": "検索に使うもの",
     "builtin": "内蔵",
-    "builtinDetail": "Typelite がこの Mac に SearXNG を設定します",
+    "builtinDetail": "OraType がこの Mac に SearXNG を設定します",
     "recommended": "推奨",
     "own": "自分の SearXNG",
     "ownDetail": "ネットワーク上のアドレスと任意のキー",
     "setupTitle": "この Mac に SearXNG を設定",
-    "setupBody": "Typelite は、複数の検索エンジンにまとめて問い合わせる無料の検索エンジン SearXNG を、専用の Python とともにダウンロードします。GitHub から約 230 MB です。この Mac 上で、Typelite が開いている間だけ動作します。",
+    "setupBody": "OraType は、複数の検索エンジンにまとめて問い合わせる無料の検索エンジン SearXNG を、専用の Python とともにダウンロードします。GitHub から約 230 MB です。この Mac 上で、OraType が開いている間だけ動作します。",
     "setupLicence": "SearXNG は別のオープンソースソフトウェア（AGPL）で、「設定」を押したときにダウンロードされます。",
     "setup": "設定",
     "settingUp": "SearXNG を設定中…",
@@ -1261,19 +1262,19 @@
   "updates": {
     "group": "アップデート",
     "auto": "自動でアップデート",
-    "autoHint": "Typelite の起動時と 6 時間ごとに GitHub で新しいバージョンを確認し、バックグラウンドでダウンロードして再起動を求めます。要求するのはバージョンファイルだけで、あなた自身や話した内容に関する情報は一切送信しません。",
-    "version": "Typelite {{version}}",
+    "autoHint": "OraType の起動時と 6 時間ごとに GitHub で新しいバージョンを確認し、バックグラウンドでダウンロードして再起動を求めます。要求するのはバージョンファイルだけで、あなた自身や話した内容に関する情報は一切送信しません。",
+    "version": "OraType {{version}}",
     "check": "アップデートを確認",
     "checking": "アップデートを確認中…",
     "upToDate": "最新のバージョンです。",
-    "availableTitle": "Typelite {{version}} が利用できます。",
+    "availableTitle": "OraType {{version}} が利用できます。",
     "availableBody": "アップデートして最新の修正と機能を入手しましょう。",
     "update": "アップデート",
-    "downloadingTitle": "Typelite {{version}} をダウンロード中…",
+    "downloadingTitle": "OraType {{version}} をダウンロード中…",
     "downloading": "しばらくお待ちください。",
     "downloadingPercent": "{{percent}}%",
-    "readyTitle": "Typelite {{version}} の準備ができました。",
-    "readyBody": "再起動すると使えるようになります。アップデート後にショートカットが動かなくなった場合は、プライバシーとセキュリティ → アクセシビリティ で Typelite をいったんオフにしてから再度オンにしてください。",
+    "readyTitle": "OraType {{version}} の準備ができました。",
+    "readyBody": "再起動すると使えるようになります。アップデート後にショートカットが動かなくなった場合は、プライバシーとセキュリティ → アクセシビリティ で OraType をいったんオフにしてから再度オンにしてください。",
     "restart": "再起動してアップデート",
     "failed": "アップデートできませんでした：{{message}}",
     "disabled": "開発ビルドは自動でアップデートされません。"

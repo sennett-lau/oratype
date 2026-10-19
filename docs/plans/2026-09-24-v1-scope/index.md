@@ -1,6 +1,6 @@
 # v1 scope
 
-Typelite v1 is a Tauri 2 app (React/TypeScript frontend, Rust backend) with a Typeless-style
+OraType v1 is a Tauri 2 app (React/TypeScript frontend, Rust backend) with a Typeless-style
 capsule, the Dictate / Ask / Translate modes, voice-edit and paste. It talks only to
 self-hosted, OpenAI-compatible speech and AI endpoints and has no accounts or cloud services.
 
@@ -34,7 +34,7 @@ The product targets in plan `initial-concept`'s `product.md` and the backend not
 | One provider type each for speech and AI: OpenAI-compatible endpoint + presets | Covers whisper.cpp, Speaches, Ollama and anything else we test, with far less code. |
 | Record shortcuts through the native key listener, not the web view | Only the native side sees Fn, End and left/right modifiers. |
 | No accounts or cloud features | Free, self-hosted and private by design. |
-| No auto-updater yet | Nothing to update from until Typelite has releases. |
+| No auto-updater yet | Nothing to update from until OraType has releases. |
 
 ## Parts
 

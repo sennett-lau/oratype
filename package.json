@@ -1,9 +1,9 @@
 {
-  "name": "typelite",
+  "name": "oratype",
   "private": true,
   "version": "1.2.0",
   "type": "module",
-  "description": "Typelite — press a key, speak, get polished text",
+  "description": "OraType — press a key, speak, get polished text",
   "keywords": [
     "speech-to-text",
     "stt",
@@ -14,10 +14,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/sennett-lau/typelite"
+    "url": "https://github.com/sennett-lau/oratype"
   },
   "bugs": {
-    "url": "https://github.com/sennett-lau/typelite/issues"
+    "url": "https://github.com/sennett-lau/oratype/issues"
   },
   "author": "Sennett Lau",
   "license": "MIT",

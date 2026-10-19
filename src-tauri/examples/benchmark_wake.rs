@@ -14,11 +14,11 @@
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+use oratype_lib::hands_free::gate::synth::noise_frame;
+use oratype_lib::hands_free::matcher::Sensitivity;
+use oratype_lib::hands_free::segment::WakeSegmenter;
+use oratype_lib::hands_free::wake::{WakeCheckOptions, WakeChecker};
 use serde_json::json;
-use typelite_lib::hands_free::gate::synth::noise_frame;
-use typelite_lib::hands_free::matcher::Sensitivity;
-use typelite_lib::hands_free::segment::WakeSegmenter;
-use typelite_lib::hands_free::wake::{WakeCheckOptions, WakeChecker};
 
 fn cpu_time() -> Duration {
     let mut usage: libc::rusage = unsafe { std::mem::zeroed() };

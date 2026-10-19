@@ -1,6 +1,6 @@
 # AI polish
 
-After [speech recognition](../speech/README.md), Typelite sends the text to a language model that
+After [speech recognition](../speech/README.md), OraType sends the text to a language model that
 removes filler words, applies your self-corrections, adds punctuation and fixes grammar. Translate
 and Ask use the same model. Dictation still works without it; you then get the raw transcript.
 
@@ -11,7 +11,7 @@ later in **Settings → AI → AI polish uses**.
 
 | Connection | What it is | Where your text goes | Guide |
 |---|---|---|---|
-| Built-in | llama.cpp's `llama-server`, shipped inside Typelite, with a model it downloads for you (Apple Silicon) | Nowhere; it stays on your computer | [Built-in](built-in.md) |
+| Built-in | llama.cpp's `llama-server`, shipped inside OraType, with a model it downloads for you (Apple Silicon) | Nowhere; it stays on your computer | [Built-in](built-in.md) |
 | OpenAI-compatible | Any chat server that accepts `POST <address>/chat/completions`: Ollama, LM Studio, llama.cpp, or a cloud service | Your server, or the cloud service you chose | [OpenAI-compatible](openai-compatible.md) |
 
 Not sure? Start with Built-in on Apple Silicon. On an Intel Mac, or for faster answers, use a

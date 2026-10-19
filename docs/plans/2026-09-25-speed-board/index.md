@@ -14,7 +14,7 @@ runs are kept in a file, not in memory only).
 
 ## Why it is needed
 
-Speech recognition is not streaming. Typelite records until the user stops, then uploads the
+Speech recognition is not streaming. OraType records until the user stops, then uploads the
 whole clip, waits for the full transcript, and only then runs AI polish. Each step adds to the
 wait, and which one dominates depends on the user's servers and models.
 

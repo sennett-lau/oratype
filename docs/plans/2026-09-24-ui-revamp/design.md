@@ -33,14 +33,14 @@ active chips use the Aurora accent.
 
 - Plan `glass-main-window`: `titleBarStyle: "Overlay"`, hidden title, transparent window, macOS window effect,
   28 pt drag strip, traffic lights inside the sidebar's top padding.
-- Sidebar 208 pt: logo mark (the one-colour mark, accent colour) and "Typelite"; nav items
+- Sidebar 208 pt: logo mark (the one-colour mark, accent colour) and "OraType"; nav items
   Home, Settings, Dictionary with 15 pt line icons; active item = accent-soft background and
   accent text; a status block near the bottom showing a green dot per endpoint ("Speech · <preset
   name>", "AI · <preset name>", red dot when the last test or request failed); About pinned last.
 
 ## Screens
 
-- **Home:** title "Welcome to Typelite" and a one-line subtitle; three tiles (icon in feature
+- **Home:** title "Welcome to OraType" and a one-line subtitle; three tiles (icon in feature
   colour, name, short description, key caps of the live binding); below, two columns: "Your
   setup" grouped rows and "What's new" list.
 - **Settings:** title, then a segmented control with the five sections. Each section is a stack
@@ -61,7 +61,7 @@ active chips use the Aurora accent.
 
 ## Icons
 
-- App icon from `src-tauri/icons/source/typelite-icon.svg` (generate all sizes with
+- App icon from `src-tauri/icons/source/oratype-icon.svg` (generate all sizes with
   `npx tauri icon`).
-- Menu-bar icon: `typelite-tray.svg`, used as a macOS template image.
-- Sidebar and About mark: `typelite-mark.svg` (currentColor).
+- Menu-bar icon: `oratype-tray.svg`, used as a macOS template image.
+- Sidebar and About mark: `oratype-mark.svg` (currentColor).

@@ -22,10 +22,10 @@ describe('Ask Anything Tauri wrappers', () => {
   it('invokes the ask_anything command with the trimmed question', async () => {
     vi.mocked(invoke).mockResolvedValueOnce('A short answer.')
 
-    const answer = await askAnything('  What is Typelite?  ')
+    const answer = await askAnything('  What is OraType?  ')
 
     expect(answer).toBe('A short answer.')
-    expect(invoke).toHaveBeenCalledWith('ask_anything', { question: 'What is Typelite?' })
+    expect(invoke).toHaveBeenCalledWith('ask_anything', { question: 'What is OraType?' })
   })
 
   it('invokes the ask hotkey update command independently from dictation hotkey', async () => {

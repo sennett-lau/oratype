@@ -1,4 +1,4 @@
-# Builds Typelite for macOS (Apple Silicon) and creates a DRAFT GitHub release.
+# Builds OraType for macOS (Apple Silicon) and creates a DRAFT GitHub release.
 # See docs/releasing.md.
 #
 # - Push a tag `vX.Y.Z`: builds the DMG and ZIP, writes SHA256SUMS.txt and creates a draft
@@ -96,7 +96,7 @@ jobs:
 
       # As `npm run build:app`, plus the signed update package (plan `auto-update`):
       # tauri.release.conf.json turns on createUpdaterArtifacts, which writes
-      # Typelite.app.tar.gz and its .sig, signed with the updater key.
+      # OraType.app.tar.gz and its .sig, signed with the updater key.
       - name: Build the app
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -112,7 +112,7 @@ jobs:
       # the window through Finder, which it skips on CI (and which times out without a
       # logged-in Finder), so dmgbuild writes the layout itself (scripts/dmg-settings.py).
       - name: Build the DMG
-        run: bash scripts/build-dmg.sh "$PWD/src-tauri/target/release/bundle/macos/Typelite.app" "$PWD/src-tauri/target/release/bundle/Typelite.dmg"
+        run: bash scripts/build-dmg.sh "$PWD/src-tauri/target/release/bundle/macos/OraType.app" "$PWD/src-tauri/target/release/bundle/OraType.dmg"
 
       - name: Package and checksum
         id: package
@@ -120,14 +120,14 @@ jobs:
           VERSION='${{ steps.version.outputs.version }}'
           BUNDLE=src-tauri/target/release/bundle
           mkdir -p dist-release
-          cp "$BUNDLE/Typelite.dmg" "dist-release/Typelite_${VERSION}_aarch64.dmg"
+          cp "$BUNDLE/OraType.dmg" "dist-release/OraType_${VERSION}_aarch64.dmg"
           # ditto keeps the bundle's symlinks and signature intact.
-          ditto -c -k --keepParent "$BUNDLE/macos/Typelite.app" "dist-release/Typelite_${VERSION}_aarch64.zip"
-          codesign --verify --deep --strict --verbose=2 "$BUNDLE/macos/Typelite.app"
+          ditto -c -k --keepParent "$BUNDLE/macos/OraType.app" "dist-release/OraType_${VERSION}_aarch64.zip"
+          codesign --verify --deep --strict --verbose=2 "$BUNDLE/macos/OraType.app"
           # Plan `auto-update`: the signed update package and latest.json, which points at it.
-          PACKAGE="Typelite_${VERSION}_aarch64.app.tar.gz"
-          cp "$BUNDLE/macos/Typelite.app.tar.gz" "dist-release/$PACKAGE"
-          cp "$BUNDLE/macos/Typelite.app.tar.gz.sig" "dist-release/$PACKAGE.sig"
+          PACKAGE="OraType_${VERSION}_aarch64.app.tar.gz"
+          cp "$BUNDLE/macos/OraType.app.tar.gz" "dist-release/$PACKAGE"
+          cp "$BUNDLE/macos/OraType.app.tar.gz.sig" "dist-release/$PACKAGE.sig"
           node scripts/updater-manifest.mjs "$VERSION" "dist-release/$PACKAGE.sig" \
             "https://github.com/${{ github.repository }}/releases/download/v${VERSION}/$PACKAGE" \
             > dist-release/latest.json
@@ -142,7 +142,7 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v7
         with:
-          name: typelite-${{ steps.version.outputs.version }}-dry-run
+          name: oratype-${{ steps.version.outputs.version }}-dry-run
           path: dist-release/
           retention-days: 7
 
@@ -155,6 +155,6 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             --draft \
             --verify-tag \
-            --title "Typelite ${{ steps.version.outputs.version }}" \
+            --title "OraType ${{ steps.version.outputs.version }}" \
             --notes-file notes.md \
             ./*.dmg ./*.zip ./*.app.tar.gz ./*.app.tar.gz.sig latest.json SHA256SUMS.txt

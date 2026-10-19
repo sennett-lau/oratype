@@ -1,6 +1,6 @@
 # Releasing
 
-How a maintainer cuts a Typelite release. The
+How a maintainer cuts a OraType release. The
 [Release workflow](../.github/workflows/release.yml) builds the app on GitHub Actions and creates
 a **draft** release. Nothing is public until you publish the draft by hand.
 
@@ -32,8 +32,8 @@ a **draft** release. Nothing is public until you publish the draft by hand.
 
 | File | What it is |
 |---|---|
-| `Typelite_X.Y.Z_aarch64.dmg` | Disk image with the app, for Macs with Apple Silicon |
-| `Typelite_X.Y.Z_aarch64.zip` | The same app bundle, zipped with `ditto` |
+| `OraType_X.Y.Z_aarch64.dmg` | Disk image with the app, for Macs with Apple Silicon |
+| `OraType_X.Y.Z_aarch64.zip` | The same app bundle, zipped with `ditto` |
 | `SHA256SUMS.txt` | SHA-256 of the DMG and the ZIP |
 
 It runs on a `macos-14` runner (Apple Silicon). It builds `llama-server`
@@ -42,7 +42,7 @@ then the DMG with `scripts/build-dmg.sh`: a window with large icons, the app on 
 arrow to Applications on the right (`scripts/dmg-settings.py`, background
 `src-tauri/icons/dmg/background.svg`). dmgbuild writes that layout itself; Tauri's own DMG step
 needs Finder for it and skips it on CI. To try it locally:
-`bash scripts/build-dmg.sh "$PWD/src-tauri/target/release/bundle/macos/Typelite.app" /tmp/Typelite.dmg`.
+`bash scripts/build-dmg.sh "$PWD/src-tauri/target/release/bundle/macos/OraType.app" /tmp/OraType.dmg`.
 The release notes come from What's New for that version
 (`node scripts/release-notes.mjs X.Y.Z`), followed by install steps.
 
@@ -64,7 +64,7 @@ The release notes come from What's New for that version
    ```sh
    git switch main && git pull
    git switch -c release/X.Y && git push -u origin release/X.Y
-   git tag -a vX.Y.0 -m "Typelite X.Y.0"
+   git tag -a vX.Y.0 -m "OraType X.Y.0"
    git push origin vX.Y.0
    ```
 
@@ -78,7 +78,7 @@ The release notes come from What's New for that version
 
    ```sh
    git switch release/X.Y && git pull
-   git tag -a vX.Y.Z+1 -m "Typelite X.Y.Z+1"
+   git tag -a vX.Y.Z+1 -m "OraType X.Y.Z+1"
    git push origin vX.Y.Z+1
    ```
 
@@ -97,14 +97,14 @@ Each release gets a 10–15 s video of what is new, made from the app's real UI 
 `promo-video` skill (`.claude/skills/promo-video/SKILL.md`): stills from the capture harness
 (`site/scripts/capture-promo-stills.mjs`), a film recorded frame by frame
 (`site/scripts/record-film.mjs`) and synthesised music (`site/scripts/promo-music.py`). It lives
-in `output/promo-X.Y.Z/` with the video as `typelite-X.Y.Z-promo.mp4`; nothing in `output/` is
+in `output/promo-X.Y.Z/` with the video as `oratype-X.Y.Z-promo.mp4`; nothing in `output/` is
 committed. Make it once the version's What's New is written.
 
 ## Updates
 
 Installed copies update themselves from GitHub Releases (plan `auto-update`). The workflow signs
 the update package with Tauri's updater key and uploads it with `latest.json`; the app reads
-`https://github.com/sennett-lau/typelite/releases/latest/download/latest.json`.
+`https://github.com/sennett-lau/oratype/releases/latest/download/latest.json`.
 
 - **The key.** The public key is in `src-tauri/tauri.conf.json` (`plugins.updater.pubkey`). The
   private key is the repository secret `TAURI_SIGNING_PRIVATE_KEY` (and
@@ -143,7 +143,7 @@ the grant survives updates and rebuilds.
 What it does not do: Gatekeeper does not trust it, and the app is not notarised. So macOS still
 blocks the first launch of a downloaded copy: users right-click the app and choose **Open** (on
 macOS 15 and later: System Settings → Privacy & Security → **Open Anyway**), or run
-`xattr -dr com.apple.quarantine /Applications/Typelite.app`. The release notes and the README
+`xattr -dr com.apple.quarantine /Applications/OraType.app`. The release notes and the README
 say so.
 
 How it is set up:
@@ -158,7 +158,7 @@ How it is set up:
   runtime and `src-tauri/Entitlements.plist`, as before.
 - A local `npm run build:app` or `npm run build:dev-app` signs with the same certificate when
   it is in the login keychain (`scripts/signing-identity.sh`), else ad hoc as before. The first
-  signed Dev build needs one last `tccutil reset Accessibility dev.typelite.mac.dev`; after
+  signed Dev build needs one last `tccutil reset Accessibility dev.oratype.mac.dev`; after
   that, none.
 - The certificate was made with `openssl req -x509 … -addext extendedKeyUsage=codeSigning` and
   exported with `openssl pkcs12 -export … -keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES

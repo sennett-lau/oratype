@@ -1,6 +1,6 @@
 # Reading the highlight
 
-When Typelite reads the highlight, and how. Back to [index](index.md).
+When OraType reads the highlight, and how. Back to [index](index.md).
 
 ## When
 

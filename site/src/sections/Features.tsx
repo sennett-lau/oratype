@@ -94,7 +94,7 @@ export function Features() {
             signal={signals[0]}
             demo={<DictateVignette keys={signals[0]} />}
           >
-            Talk the way you talk. Typelite writes it the way you would have typed it, and pastes it
+            Talk the way you talk. OraType writes it the way you would have typed it, and pastes it
             where your cursor is.
           </Feature>
           <Feature

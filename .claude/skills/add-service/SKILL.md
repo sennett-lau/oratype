@@ -1,6 +1,6 @@
 ---
 name: add-service
-description: Add a speech recognition or AI polish service (a server or a cloud API) to Typelite's guides, in the Services row and server-section format the docs check enforces. Use when someone wants to document a service that already works with Typelite.
+description: Add a speech recognition or AI polish service (a server or a cloud API) to OraType's guides, in the Services row and server-section format the docs check enforces. Use when someone wants to document a service that already works with OraType.
 ---
 
 # Add a service to the guides
@@ -11,7 +11,7 @@ says how to apply them.
 
 1. **Ask** (skip what the user already said): the step (speech or AI polish), the service name and
    project link, where it runs, cost, whether it needs a key, an example address and model, and
-   whether it was tested in Typelite. Do not add a service nobody has tested with the current app.
+   whether it was tested in OraType. Do not add a service nobody has tested with the current app.
 2. **Check it fits an existing connection.** Speech: Built-in, OpenAI-compatible
    (`POST <address>/audio/transcriptions`), Qwen Cloud or ElevenLabs. AI polish: Built-in or
    OpenAI-compatible (`POST <address>/chat/completions`). If it needs its own protocol, stop: that

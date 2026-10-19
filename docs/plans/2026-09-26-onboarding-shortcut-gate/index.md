@@ -1,6 +1,6 @@
 # Shortcut gate during onboarding
 
-Until onboarding is finished, Typelite's shortcuts do nothing and the pill never shows, even
+Until onboarding is finished, OraType's shortcuts do nothing and the pill never shows, even
 when a saved config from an earlier install already has working services. The only exceptions
 are the tutorial's shortcut exercises, where exactly the shortcut being taught works. The
 frontend tells the backend which roles the current onboarding page allows; the backend enforces
@@ -17,11 +17,11 @@ Refines [onboarding-tutorial](../2026-09-24-onboarding-tutorial/index.md) and
 
 - While onboarding is not finished (first run, or the shortcut tour started again from Home or
   the tour prompt), no shortcut starts anything and the pill never shows. This covers every way
-  in: the native key listener, global shortcuts, the `typelite toggle` and `typelite ask`
+  in: the native key listener, global shortcuts, the `oratype toggle` and `oratype ask`
   command-line actions and the tray's Start Recording.
 - On a tutorial shortcut page only that page's roles work: Dictate allows Dictation; Translate
   allows Translate and the Switch language key; Ask allows Ask.
-- A gated key behaves as if Typelite were not running: it is not swallowed and reaches the
+- A gated key behaves as if OraType were not running: it is not swallowed and reaches the
   focused app (End moves the cursor again). A key that is also part of the allowed shortcut
   (End in the user's Ask `End + Right Control`) stays swallowed, as for any live chord. The
   shortcut recorder still captures the key being recorded, as today.

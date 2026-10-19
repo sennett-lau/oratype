@@ -40,7 +40,7 @@ It runs at startup, after the Ask window is recreated, each time the Ask panel s
 Focus is unchanged: both windows were already non-focusable (never the key window), the pill
 sets `focusable` false before every update, and the Ask panel keeps `acceptFirstMouse` so its
 first click reaches its buttons (plans `copy-when-no-field` and `ask-panel-above-pill`). As a
-non-activating panel, a click on either window no longer activates Typelite at all.
+non-activating panel, a click on either window no longer activates OraType at all.
 
 ## Activation policy
 
@@ -65,7 +65,7 @@ the menu bar, so the work area is the whole screen and the pill sits near the bo
 The Space behaviour needs a person; unit tests cover only the flag, level, class and placement
 logic.
 
-First start the app with "Show in Dock" on and check `~/Library/Logs/Typelite/typelite.log`
+First start the app with "Show in Dock" on and check `~/Library/Logs/OraType/oratype.log`
 for "Overlay window capsule: now a non-activating panel" and the same line for `ask`.
 
 1. Built-in screen only: open Safari or Notes, enter full screen (green button or ⌃⌘F), press

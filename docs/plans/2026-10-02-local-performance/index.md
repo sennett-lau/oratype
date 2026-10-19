@@ -1,6 +1,6 @@
 # Local performance benchmarks
 
-Typelite needs reproducible measurements of its own overhead before changing hot paths. A small
+OraType needs reproducible measurements of its own overhead before changing hot paths. A small
 offline suite exercises recording event subscriptions, streamed AI responses and Cantonese
 transcript conversion through the production hooks and public Rust APIs. Baseline and subsequent
 runs use identical fixtures and preserve raw samples so improvements can be checked independently.

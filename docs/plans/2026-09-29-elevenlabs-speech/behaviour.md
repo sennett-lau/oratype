@@ -42,7 +42,7 @@ is never a default and never picked by the Built-in setup. The guide says so pla
 - Kind round-trip in `storage/mod.rs` and a share round-trip in `storage/preset_share.rs`.
 - Frontend: address detection and a Settings form test.
 - `tests/e2e_services.rs`: two ignored tests against the real API, run when
-  `TYPELITE_E2E_ELEVENLABS_KEY` is set (`say`-synthesised English and Cantonese, silence, Test
+  `ORATYPE_E2E_ELEVENLABS_KEY` is set (`say`-synthesised English and Cantonese, silence, Test
   with a wrong key).
 
 ## Docs

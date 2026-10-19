@@ -71,4 +71,4 @@ example dictionary word lists) without mixing them.
 - **A separate repository**: its own issues and permissions, but splits the contribution guide
   and the test from the code that uses the format. Easy to move later, since the app only needs
   a base address.
-- **Under `docs/`**: presets are user-facing data, not documentation about Typelite.
+- **Under `docs/`**: presets are user-facing data, not documentation about OraType.

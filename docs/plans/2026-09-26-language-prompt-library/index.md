@@ -1,8 +1,8 @@
 # Language prompt library
 
-A library of language instructions ("language presets") kept as Markdown files in the Typelite
+A library of language instructions ("language presets") kept as Markdown files in the OraType
 repository. Each language the user chose in **Settings → AI → Translation** can use a preset
-from the library, the built-in default, or the user's own text. Typelite lists the presets that
+from the library, the built-in default, or the user's own text. OraType lists the presets that
 fit the language, downloads the one the user picks straight from GitHub, checks its SHA-256, and
 fills that language's instructions with it. The same instructions are used when translating into
 the language and when polishing speech in it: a small router picks, per dictation, which of the

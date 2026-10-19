@@ -19,7 +19,7 @@ when the large model is left out, why.
 
 - Title "Speech recognition", subtitle "Turns your voice into text. It runs on this Mac."
 - **Built-in card** (fixed height; icon, "Built-in" + "Recommended" tag, one line "Runs Whisper
-  inside Typelite on this Mac. No other software needed."), then the state slot and the action:
+  inside OraType on this Mac. No other software needed."), then the state slot and the action:
 
 | State | Status slot | Action (bottom right) |
 |---|---|---|
@@ -34,7 +34,7 @@ when the large model is left out, why.
 ## Your server or API key (sheet in onboarding)
 
 - Title "Your own server or API key" with **Learn more** at the right (opens
-  `https://github.com/sennett-lau/typelite/blob/main/docs/guides/speech-services.md`).
+  `https://github.com/sennett-lau/oratype/blob/main/docs/guides/speech-services.md`).
 - With saved presets: a list (name + host), **+ Add preset**, **Cancel**, **Test and use**.
 - With none, or after **+ Add preset**: the form, titled "Add your server or API key" (or
   "Add preset"); **← Saved presets** only when there are saved presets, otherwise **Cancel**.
@@ -49,7 +49,7 @@ when the large model is left out, why.
   General (gear), Speech (mic), AI (sparkle), Prompts, System — with a hairline under the bar and
   the current tab in the accent colour. This replaces the segmented section control.
 - **Speech recognition uses**: two option cards (radio) — "Built-in · Runs Whisper inside
-  Typelite on this Mac" and "Your server or API key · OpenAI, Groq, a whisper.cpp server…".
+  OraType on this Mac" and "Your server or API key · OpenAI, Groq, a whisper.cpp server…".
   Selecting one makes it the active engine and shows its details below.
 - Built-in details: "Model" group with the same option cards (hardware note at the top right of
   the group header), then a status row with the same badges: `Not downloaded` + **Download**,

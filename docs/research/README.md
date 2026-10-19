@@ -1,6 +1,6 @@
 # Research and decisions
 
-Investigations into options Typelite might adopt (a runtime, an engine, a model, a library)
+Investigations into options OraType might adopt (a runtime, an engine, a model, a library)
 and what was decided. Each entry keeps its question, decision, evidence and the conditions for
 looking again, so the same idea is not researched twice.
 

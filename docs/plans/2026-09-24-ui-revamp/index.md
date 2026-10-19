@@ -1,6 +1,6 @@
 # UI revamp
 
-Typelite gets its own look: a glass main window without a
+OraType gets its own look: a glass main window without a
 title bar, a new sidebar, tabs across the top of Settings, macOS-style grouped rows, shortcut
 tiles on Home, a new icon, and an "Aurora" dark mode. All features and settings stay.
 

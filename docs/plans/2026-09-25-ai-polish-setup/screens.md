@@ -9,7 +9,7 @@ layout](../2026-09-25-two-tab-speech/layout.md).
 - Title "AI polish", subtitle "Cleans up what you said: fillers out, corrections applied,
   punctuation in."
 - Built-in card (fixed height), "Built-in" + "Recommended", one line "Runs a small open model
-  inside Typelite on this Mac. No other software needed." The states are the speech ones:
+  inside OraType on this Mac. No other software needed." The states are the speech ones:
 
 | State | Status slot | Action |
 |---|---|---|
@@ -26,7 +26,7 @@ layout](../2026-09-25-two-tab-speech/layout.md).
 ## Your server or API key (sheet)
 
 The speech sheet with AI wording: title "Your own server or API key" + **Learn more**
-(`https://github.com/sennett-lau/typelite/blob/main/docs/guides/ai-polish.md`); saved list,
+(`https://github.com/sennett-lau/oratype/blob/main/docs/guides/ai-polish.md`); saved list,
 or the form when there are none. Form: Address (placeholder `https://api.openai.com/v1`), Model
 (placeholder `gpt-4.1-mini`), API key (placeholder "Optional"), Name (auto-filled from the host).
 A collapsed **Advanced** holds Extra fields (JSON, placeholder `{"reasoning_effort": "none"}`).

@@ -1,7 +1,7 @@
 # Guided shortcut tutorial
 
 The three shortcut steps of onboarding become short scripted exercises. The user reads a given
-line, sees what they said next to what Typelite produced, and learns the key behaviours: fillers
+line, sees what they said next to what OraType produced, and learns the key behaviours: fillers
 and self-corrections are cleaned, speech can be translated, highlighted text can be translated,
 and Ask answers questions or edits a selection.
 
@@ -23,7 +23,7 @@ Refines the shortcut steps of [onboarding-tutorial](../2026-09-24-onboarding-tut
 | Decision | Reason |
 |---|---|
 | Scripted lines instead of "say anything" | Shows the value of cleanup and corrections immediately. |
-| "Before / after" panel for every exercise | The user sees exactly what Typelite changed. |
+| "Before / after" panel for every exercise | The user sees exactly what OraType changed. |
 | Success checks are forgiving (key word present, not exact text) | Speech and models vary; the tutorial must not feel like a test. |
 | Scripts shown in the UI language; the user may read them in any language | Works for English and Chinese users. |
 

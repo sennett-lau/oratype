@@ -5,9 +5,9 @@
 //! the target's built-in instructions. Input `{"text": "..."}`; output `{"system": "...", "user": "<transcription>...</transcription>"}`.
 use std::io::{self, BufRead};
 
+use oratype_lib::llm::prompt::{build_system_prompt_with_scene, SystemPromptOptions};
+use oratype_lib::llm::AppType;
 use serde_json::{json, Value};
-use typelite_lib::llm::prompt::{build_system_prompt_with_scene, SystemPromptOptions};
-use typelite_lib::llm::AppType;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     for line in io::stdin().lock().lines() {

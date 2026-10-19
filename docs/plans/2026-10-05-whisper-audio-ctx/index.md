@@ -1,7 +1,7 @@
 # Built-in speech: encoder window sized to the clip
 
 Built-in speech spent about 2 s on every dictation, even a one-second one, because whisper.cpp
-encodes a full 30 s window. Typelite now passes a smaller encoder window (`audio_ctx`) for short
+encodes a full 30 s window. OraType now passes a smaller encoder window (`audio_ctx`) for short
 clips, which halves recognition time for typical dictations without changing transcripts.
 
 Status: building (2026-10-05)

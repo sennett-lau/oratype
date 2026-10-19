@@ -1,6 +1,6 @@
 # Adding a connection
 
-A **connection** is one way Typelite reaches a speech or AI service. Each one is a provider kind
+A **connection** is one way OraType reaches a speech or AI service. Each one is a provider kind
 in the config:
 
 | Side | Kind (config value) | Rust | What it does |

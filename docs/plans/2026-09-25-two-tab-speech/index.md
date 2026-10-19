@@ -1,6 +1,6 @@
 # Speech setup, final design
 
-Speech recognition runs either **Built-in** (whisper.cpp inside Typelite) or through **your
+Speech recognition runs either **Built-in** (whisper.cpp inside OraType) or through **your
 server or API key** (any OpenAI-compatible speech service). Onboarding shows one main button and
 one link; Settings shows the same pieces. The visual reference is [mock.html](mock.html), agreed
 with the user after several iterations.

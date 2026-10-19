@@ -26,7 +26,7 @@ export type SpeechProviderKind = 'openai_compatible' | 'builtin' | 'qwen_cloud' 
 /**
  * A named speech-to-text setup. Usually an OpenAI-compatible
  * `POST {base_url}/audio/transcriptions` server (for example whisper.cpp); with
- * `kind: 'builtin'` a model file that Typelite runs itself.
+ * `kind: 'builtin'` a model file that OraType runs itself.
  * The API key is not stored here; it lives in the macOS Keychain under ('stt', id).
  */
 export interface SpeechPreset {
@@ -51,13 +51,13 @@ export interface SpeechPreset {
 
 /**
  * How an AI preset runs: an OpenAI-compatible chat server, or llama.cpp's `llama-server` that
- * Typelite starts on this Mac with a downloaded model (plan `ai-polish-setup`).
+ * OraType starts on this Mac with a downloaded model (plan `ai-polish-setup`).
  */
 export type AiProviderKind = 'openai_compatible' | 'builtin'
 
 /**
  * A named AI (chat) endpoint: an OpenAI-compatible `POST {base_url}/chat/completions` server
- * (for example Ollama), or with `kind: 'builtin'` a model file that Typelite's own server runs.
+ * (for example Ollama), or with `kind: 'builtin'` a model file that OraType's own server runs.
  * The API key lives in the macOS Keychain under ('llm', id).
  */
 export interface AiPreset {
@@ -91,7 +91,7 @@ export function isBuiltinSpeech(preset: Pick<SpeechPreset, 'kind'>): boolean {
 /** Id of the "Built-in (on-device)" AI preset (plan `ai-polish-setup`). Every config has it. */
 export const BUILTIN_AI_PRESET_ID = 'builtin-ai-this-mac'
 
-/** True when Typelite's own llama-server runs this AI preset. */
+/** True when OraType's own llama-server runs this AI preset. */
 export function isBuiltinAi(preset: Pick<AiPreset, 'kind'>): boolean {
   return preset.kind === 'builtin'
 }

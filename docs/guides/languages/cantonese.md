@@ -24,11 +24,11 @@ preset.
 |---|---|---|
 | Speech recognition | [Qwen3-ASR-1.7B](../speech/openai-compatible.md#qwen3-asr) (Apache-2.0) | Writes what you said in Cantonese (我哋, 聽日, 咗, 緊, 咯) and keeps the English words you mix in. |
 | AI polish | [Huihui-Qwen3.5-4B-abliterated](https://huggingface.co/huihui-ai/Huihui-Qwen3.5-4B-abliterated) (tested) | Given a Cantonese transcript, it only has to clean up: fillers, self-corrections, punctuation. Use an uncensored model: stock instruct models soften or drop Cantonese slang and swear words, so the text stops sounding native. |
-| Language preset | [Cantonese (Hong Kong)](../../../presets/languages/cantonese-hong-kong/preset.md) | Tells polish how Hongkongers write, and lets Typelite recognise that you spoke Cantonese. |
+| Language preset | [Cantonese (Hong Kong)](../../../presets/languages/cantonese-hong-kong/preset.md) | Tells polish how Hongkongers write, and lets OraType recognise that you spoke Cantonese. |
 
 ## Why
 
-Speech recognition decides which words reach polish, and whisper, Typelite's Built-in model,
+Speech recognition decides which words reach polish, and whisper, OraType's Built-in model,
 rewrites Cantonese into formal written Chinese. For the sentence
 
 > 我一直都keep住試緊廣東話，但出嚟嘅效果好似唔係咁好咯
@@ -40,7 +40,7 @@ was said.
 
 ## Set it up
 
-1. **Easiest: Built-in.** Typelite runs Qwen3-ASR itself. Add Cantonese under **Your languages**
+1. **Easiest: Built-in.** OraType runs Qwen3-ASR itself. Add Cantonese under **Your languages**
    (onboarding, or **Settings → Speech**); the Built-in card then has **Qwen3-ASR** chosen.
    Press **Set up** (or **Download**, 2.5 GB) and go on to step 3. Its suggested AI model is
    the stock Qwen 3.5 4B; for slang and swear words use the uncensored one of step 5.
@@ -57,18 +57,18 @@ was said.
    computers, use `--host 0.0.0.0` and allow the port through that computer's firewall for your
    network only.
 
-2. **Add your server in Typelite** (skip this with Built-in): **Settings → Speech → Your server
+2. **Add your server in OraType** (skip this with Built-in): **Settings → Speech → Your server
    or API key**, address
    `http://127.0.0.1:8180/v1` (or that computer's address), model `qwen3-asr`, no API key, and
    leave **Spoken language** on **Auto-detect**. Press **Test**, then **Save**.
 
 3. **Choose the Cantonese preset:** **Settings → Translate**, add Chinese (Traditional,
    Hong Kong) if it is not in your list, press **Edit**, then **Browse presets** and use
-   **Cantonese (Hong Kong)**. Without the preset Typelite cannot tell that you spoke Cantonese, and
+   **Cantonese (Hong Kong)**. Without the preset OraType cannot tell that you spoke Cantonese, and
    neither the Cantonese notes nor the Hong Kong characters (next step) are applied.
 
 4. **Characters:** Qwen3-ASR writes Cantonese in Simplified characters. When a dictation is
-   recognised as Cantonese (Hong Kong), Typelite writes it in Hong Kong Traditional characters,
+   recognised as Cantonese (Hong Kong), OraType writes it in Hong Kong Traditional characters,
    with Cantonese 係 and 覆 where a plain conversion would write 系 or 復. Nothing to set.
 
 5. **AI polish:** [Huihui-Qwen3.5-4B-abliterated](https://huggingface.co/huihui-ai/Huihui-Qwen3.5-4B-abliterated), an
@@ -92,7 +92,7 @@ was said.
 Measured with 11 Cantonese clips and 1 English clip made with the macOS Cantonese voice (Sinji):
 ten everyday sentences with fillers, a self-correction, English words and a swear word, plus the
 13-second sentence above. The error rate is the character error rate against the known text,
-punctuation and spaces ignored, on the text as Typelite writes it; times are medians of 3 runs
+punctuation and spaces ignored, on the text as OraType writes it; times are medians of 3 runs
 after a warm-up. Speed on other hardware: [Benchmarks](../benchmarks/README.md).
 
 | Speech model | Error rate | Cantonese words kept | English words kept |

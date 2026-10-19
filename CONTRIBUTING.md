@@ -1,4 +1,4 @@
-# Contributing to Typelite
+# Contributing to OraType
 
 Thanks for helping. You can contribute in several ways, and most of them need no Rust or
 TypeScript:
@@ -7,7 +7,7 @@ TypeScript:
 |---|---|
 | Fix a bug or build a feature | [Code](#code) |
 | Document a speech or AI service that already works | [Adding a service](#adding-a-service) |
-| Make Typelite write your language better | [Language presets](#language-presets) |
+| Make OraType write your language better | [Language presets](#language-presets) |
 | Recommend models for your language | [Language guides](#language-guides) |
 | Support a service that needs its own protocol | [New connections](#new-connections) |
 | Know the formats the docs check enforces | [Docs formats](#docs-formats) |
@@ -18,7 +18,7 @@ TypeScript:
 
 ### Setup
 
-Typelite is a [Tauri 2](https://v2.tauri.app/) app: a React and TypeScript frontend in `src/`
+OraType is a [Tauri 2](https://v2.tauri.app/) app: a React and TypeScript frontend in `src/`
 and a Rust backend in `src-tauri/`. macOS on Apple Silicon is the main target.
 
 You need:
@@ -40,39 +40,39 @@ npm run tauri dev          # run the app with live reload
 npm run build:app          # build llama-server, then the release app bundle
 ```
 
-`npm run build:app` writes `src-tauri/target/release/bundle/macos/Typelite.app`. Without
+`npm run build:app` writes `src-tauri/target/release/bundle/macos/OraType.app`. Without
 `llama-server` (`npm run build:llama-server`, see `scripts/build-llama-server.sh`) the app still
 builds and runs; the Built-in AI then reports that the server is missing.
 
 macOS asks for Microphone and Accessibility permission. A build signed ad hoc gets a new code
 signature on every build, and macOS may then silently ignore the old Accessibility grant: remove
-Typelite from System Settings → Privacy & Security → Accessibility and add it again.
+OraType from System Settings → Privacy & Security → Accessibility and add it again.
 
 ### A development build next to the release app
 
-To try a branch end to end while you keep using a release, build **Typelite Dev**:
+To try a branch end to end while you keep using a release, build **OraType Dev**:
 
 ```sh
 npm run build:dev-app
-cp -R "src-tauri/target/release/bundle/macos/Typelite Dev.app" /Applications/
+cp -R "src-tauri/target/release/bundle/macos/OraType Dev.app" /Applications/
 ```
 
 It is a separate app, so it never touches the release app's data:
 
 | | Release | Development build |
 |---|---|---|
-| App | `Typelite.app` | `Typelite Dev.app` |
-| Bundle id | `dev.typelite.mac` | `dev.typelite.mac.dev` |
-| Settings, models, run timings | `~/Library/Application Support/dev.typelite.mac/` | `~/Library/Application Support/dev.typelite.mac.dev/` |
-| Keychain keys | service `Typelite` | service `Typelite Dev` |
-| Log | `~/Library/Logs/Typelite/typelite.log` | `~/Library/Logs/Typelite Dev/typelite.log` |
-| Accessibility and Microphone | its own grant | its own grant (reset with `tccutil reset Accessibility dev.typelite.mac.dev`) |
+| App | `OraType.app` | `OraType Dev.app` |
+| Bundle id | `dev.oratype.mac` | `dev.oratype.mac.dev` |
+| Settings, models, run timings | `~/Library/Application Support/dev.oratype.mac/` | `~/Library/Application Support/dev.oratype.mac.dev/` |
+| Keychain keys | service `OraType` | service `OraType Dev` |
+| Log | `~/Library/Logs/OraType/oratype.log` | `~/Library/Logs/OraType Dev/oratype.log` |
+| Accessibility and Microphone | its own grant | its own grant (reset with `tccutil reset Accessibility dev.oratype.mac.dev`) |
 
 The development build starts with a fresh setup and no keys; copy a preset over with the share buttons on its Settings card
 (export it in one app, import it in the other). Both apps listen for the same shortcuts, so **quit the release app
 (or give one of them other shortcuts) while you test**. Drive it without the keyboard with
-`"/Applications/Typelite Dev.app/Contents/MacOS/typelite" toggle`. The menu bar icon has a dot in its
-corner and its tooltip says "Typelite Dev". Its icon is the Typelite icon in amber with a DEV tag (`src-tauri/icons/dev/`, drawn
+`"/Applications/OraType Dev.app/Contents/MacOS/oratype" toggle`. The menu bar icon has a dot in its
+corner and its tooltip says "OraType Dev". Its icon is the OraType icon in amber with a DEV tag (`src-tauri/icons/dev/`, drawn
 from `app-icon.svg` there).
 
 The build uses the Cargo feature `dev-build` (log folder, Keychain service, tooltip) and
@@ -141,7 +141,7 @@ code comments, tests and commit messages. A small fix needs no plan.
 - Keep the code plain and explain macOS-specific APIs when you use them.
 - Hard rules: everything stays free and open source; no telemetry; no cloud service by default
   (a cloud service is only ever used with the user's own key, after they choose it); never log
-  dictated text. Do not copy code from GPL projects: Typelite is MIT.
+  dictated text. Do not copy code from GPL projects: OraType is MIT.
 
 ## Translating the interface
 
@@ -150,7 +150,7 @@ language, see [docs/dev/translating.md](docs/dev/translating.md).
 
 ## Adding a service
 
-The speech and AI guides list the services Typelite works with, one row each in the Services
+The speech and AI guides list the services OraType works with, one row each in the Services
 table of [Speech recognition](docs/guides/speech/README.md#services) or
 [AI polish](docs/guides/ai-polish/README.md#services).
 
@@ -165,7 +165,7 @@ OpenAI-compatible, or for speech Qwen Cloud or ElevenLabs). Test it in the app f
 
 ## Language presets
 
-Language presets tell Typelite's AI how to write one language. Each one is a Markdown file in
+Language presets tell OraType's AI how to write one language. Each one is a Markdown file in
 `presets/languages/<id>/preset.md`; the app downloads them from this repository. The format,
 naming rules, how recognition hints work and how to validate a preset are in
 [presets/languages/README.md](presets/languages/README.md).
@@ -220,7 +220,7 @@ lists, no `|`.
 |---|---|---|
 | `id` | yes | The file name without `.md`. |
 | `language` | yes | The language as readers know it, at most 40 characters: `Cantonese (Hong Kong)`. |
-| `codes` | yes | The language tags it covers, comma-separated, as in Typelite's language list: `zh-Hant-HK, yue`. |
+| `codes` | yes | The language tags it covers, comma-separated, as in OraType's language list: `zh-Hant-HK, yue`. |
 | `speech` | yes | The suggested speech recognition model, at most 60 characters. |
 | `polish` | yes | The suggested AI polish model or kind of model, at most 60 characters. |
 | `tier` | yes | `official` (tested by the maintainers) or `community`. |
@@ -283,14 +283,14 @@ What you measured, and how.
 
 ### Review checklist
 
-- The setup works with the current Typelite, through its existing connections.
+- The setup works with the current OraType, through its existing connections.
 - The front matter passes the check, and the example in **Why** is real, not invented.
 - Numbers say how they were measured; synthetic speech is labelled as such.
 - No private addresses, machine names or keys.
 
 ## Docs formats
 
-The guides follow two formats, so a new service, language or whole new part of Typelite looks
+The guides follow two formats, so a new service, language or whole new part of OraType looks
 like what is already there. `npm run docs:check` enforces them, locally and on every pull request
 that touches the docs (the **Docs** workflow). Claude Code users can let the skills in
 `.claude/skills/` write the files: `add-service`, `add-language-guide`, `add-language-preset`,
@@ -330,7 +330,7 @@ The Services table in the step's `README.md` starts with exactly this header, on
 | Runs | `On your computer`, `Your computer or network`, `Your network` or `Cloud`. |
 | Cost | `Free`, `Free tier` or `Paid`. |
 | API key | `Yes` or `No`; a cloud service always needs one. |
-| Address (example) | As the app's **Address** field wants it, in backticks: `http://` or `https://`, no trailing `/`, stopping before the path Typelite adds (`/audio/transcriptions`, `/chat/completions`). `<computer-address>` for another computer; `—` for Built-in. |
+| Address (example) | As the app's **Address** field wants it, in backticks: `http://` or `https://`, no trailing `/`, stopping before the path OraType adds (`/audio/transcriptions`, `/chat/completions`). `<computer-address>` for another computer; `—` for Built-in. |
 | Model (example) | As the app's **Model** field wants it. |
 | Notes | One short line; may be empty. |
 
@@ -375,7 +375,7 @@ exist.
 
 ## New connections
 
-A connection is a way Typelite talks to a service: its own Rust provider, a config kind, and the
+A connection is a way OraType talks to a service: its own Rust provider, a config kind, and the
 form logic that picks it. Adding one is a code change with a plan. See
 [docs/dev/adding-a-connection.md](docs/dev/adding-a-connection.md), which walks through the
 Qwen Cloud speech connection as an example.
@@ -385,11 +385,11 @@ Qwen Cloud speech connection as an example.
 Open an issue on GitHub with:
 
 - what you did, what you expected and what happened;
-- your macOS version, your chip (for example Apple M1 Pro) and the Typelite version
+- your macOS version, your chip (for example Apple M1 Pro) and the OraType version
   (the About page);
 - which speech and AI connection you use (Built-in, or the kind of server; not your key or private
   addresses);
-- the log file `~/Library/Logs/Typelite/typelite.log`. It holds timings, sizes and errors, never
+- the log file `~/Library/Logs/OraType/oratype.log`. It holds timings, sizes and errors, never
   the text you dictated. Look it over before you attach it.
 
 ## Maintainers

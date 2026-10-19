@@ -47,13 +47,13 @@ export function Compare() {
             Inspired by Typeless. Built to be yours.
           </h2>
           <p className="section-lead">
-            Typeless is a polished commercial product and a great source of ideas. Typelite is for
+            Typeless is a polished commercial product and a great source of ideas. OraType is for
             people who want to own the whole pipeline and tune it for their languages.
           </p>
         </div>
         <div className="card table-wrap" data-reveal>
           <table>
-            <caption className="sr-only">Typeless and Typelite compared</caption>
+            <caption className="sr-only">Typeless and OraType compared</caption>
             <thead>
               <tr>
                 <th scope="col">
@@ -61,7 +61,7 @@ export function Compare() {
                 </th>
                 <th scope="col">Typeless</th>
                 <th scope="col" className="col-us">
-                  Typelite
+                  OraType
                 </th>
               </tr>
             </thead>
@@ -78,7 +78,7 @@ export function Compare() {
         </div>
         <p className="compare-note" data-reveal>
           Based on public information about <a rel="noopener" href={links.typeless}>Typeless</a>; it may change.
-          Typelite is an independent project and not affiliated with Typeless.
+          OraType is an independent project and not affiliated with Typeless.
         </p>
       </div>
     </section>
@@ -88,11 +88,11 @@ export function Compare() {
 /* ─── Open source ─── */
 
 const INSTALL = [
-  'git clone https://github.com/sennett-lau/typelite.git',
-  'cd typelite',
+  'git clone https://github.com/sennett-lau/oratype.git',
+  'cd oratype',
   'npm ci',
   'npm run build:app          # builds llama-server, then the app bundle',
-  'open src-tauri/target/release/bundle/macos/Typelite.app',
+  'open src-tauri/target/release/bundle/macos/OraType.app',
 ]
 
 const CONTRIB = [
@@ -111,7 +111,7 @@ const CONTRIB = [
   {
     icon: <IconLanguages size={18} />,
     title: 'Language presets',
-    body: 'Speak a language well? Teach Typelite how to write it, in a small Markdown file.',
+    body: 'Speak a language well? Teach OraType how to write it, in a small Markdown file.',
     href: links.contributePresets,
   },
   {
@@ -304,7 +304,7 @@ export function Footer() {
                   width={28}
                   height={28}
                 />
-                Typelite
+                OraType
               </a>
               <p style={{ marginTop: 12, maxWidth: 320 }}>
                 A free, open-source voice keyboard for macOS. Press a shortcut, speak, and clean
@@ -367,9 +367,10 @@ export function Footer() {
             </nav>
           </div>
           <p className="footer-legal">
-            © Typelite contributors. Released under the <a rel="noopener" href={links.license}>MIT licence</a>;
+            © OraType contributors. Released under the <a rel="noopener" href={links.license}>MIT licence</a>;
             third-party components are listed in <a rel="noopener" href={links.notices}>THIRD_PARTY_NOTICES</a>.
-            Not affiliated with Typeless. This site uses no cookies, analytics or tracking.
+            OraType was called Typelite until version 1.2.0. Not affiliated with Typeless. This
+            site uses no cookies, analytics or tracking.
           </p>
         </div>
       </footer>

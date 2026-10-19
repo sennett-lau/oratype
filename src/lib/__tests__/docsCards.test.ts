@@ -111,7 +111,7 @@ ${body}`
       )
       expect(
         validateServiceRow(row('Cloud', 'Yes', '`https://api.example.com/v1/chat/completions`')),
-      ).toContain('Example: Address must stop before the path Typelite adds')
+      ).toContain('Example: Address must stop before the path OraType adds')
       expect(validateServiceRow('| a | b |')[0]).toMatch(/needs 7 cells/)
     })
   })

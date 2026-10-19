@@ -140,7 +140,7 @@ export function Speed() {
           </h2>
           <p className="section-lead">
             Most people type around {TYPING_WPM} words a minute and speak around {SPEAKING_WPM}.
-            Typelite turns that speed into finished text, so what you say is ready to send, without
+            OraType turns that speed into finished text, so what you say is ready to send, without
             the ums or the retyping.
           </p>
         </div>
@@ -181,7 +181,7 @@ export function Speed() {
                     caret={!done && Math.floor(t * 2) % 2 === 0}
                   />
                   <Lane
-                    label="Speaking with Typelite"
+                    label="Speaking with OraType"
                     icon={<IconMic size={16} />}
                     wpm={SPEAKING_WPM}
                     words={SPEAKING_WPM * p}
@@ -208,7 +208,7 @@ export function Speed() {
           }}
         </Stage>
         <p className="race-note" data-reveal>
-          Typelite shows your own speaking and typing speeds in Insights, kept on your computer.
+          OraType shows your own speaking and typing speeds in Insights, kept on your computer.
         </p>
         <p className="footnote" data-reveal>
           Rates are rounded down and vary from person to person. Typing: an average of 52 words per

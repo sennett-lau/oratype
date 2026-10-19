@@ -113,7 +113,7 @@ edited its text.
 
 **The detected language** comes from the speech step: built-in whisper.cpp reports the language
 it decoded; an OpenAI-compatible server returns `language` with `response_format=verbose_json`
-(Typelite asks for it when the speech preset auto-detects, and falls back to plain JSON, for the
+(OraType asks for it when the speech preset auto-detects, and falls back to plain JSON, for the
 rest of the session, if the server refuses it). Whisper may report full names (`english`), which
 are turned into codes (`en`). A speech preset with a fixed language (not `auto`) counts as that
 language. Other providers report nothing, and step 2 is skipped.

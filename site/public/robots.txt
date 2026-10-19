@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://typelite.sennettlau.me/sitemap.xml
+Sitemap: https://oratype.sennettlau.me/sitemap.xml

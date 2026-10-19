@@ -38,7 +38,7 @@ Back to [index](index.md).
   the fallback when that request fails.
 - If it does, the Ask panel shows:
   - Title: "Needs live information".
-  - Body: "This question needs up-to-date information from the web. Typelite can't look things up
+  - Body: "This question needs up-to-date information from the web. OraType can't look things up
     yet."
   - Buttons: **Answer anyway** (answers from the model with the note "May be out of date — no web
     search was used") and **Close**. A disabled **Set up web search** placeholder is not shown

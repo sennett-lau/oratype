@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="src-tauri/icons/128x128.png" width="96" height="96" alt="Typelite icon">
+  <img src="src-tauri/icons/128x128.png" width="96" height="96" alt="OraType icon">
 </p>
 
-<h1 align="center">Typelite</h1>
+<h1 align="center">OraType</h1>
 
 <p align="center"><b>Just say it.</b> Press a shortcut in any app, speak, and clean text lands where you're typing.</p>
 
@@ -10,17 +10,19 @@
   Free and open source (MIT) · No account · No telemetry · Runs on your computer or your own servers
 </p>
 
+<p align="center"><i>OraType was called Typelite until version 1.2.0.</i></p>
+
 <p align="center">
-  <a href="https://typelite.sennettlau.me/">Website</a> ·
-  <a href="https://github.com/sennett-lau/typelite/releases">Download</a> ·
+  <a href="https://oratype.sennettlau.me/">Website</a> ·
+  <a href="https://github.com/sennett-lau/oratype/releases">Download</a> ·
   <a href="docs/guides/README.md">Guides</a>
 </p>
 
 <p align="center">
-  <img src="docs/media/hero.gif" width="800" alt="Typelite's pill listening at the bottom of the screen, then clean text is pasted into a chat: fillers and a self-correction are removed">
+  <img src="docs/media/hero.gif" width="800" alt="OraType's pill listening at the bottom of the screen, then clean text is pasted into a chat: fillers and a self-correction are removed">
 </p>
 
-Typelite is a voice keyboard for macOS. Hold or tap a shortcut and speak. Typelite turns your
+OraType is a voice keyboard for macOS. Hold or tap a shortcut and speak. OraType turns your
 speech into text, removes fillers, applies your self-corrections, adds punctuation and pastes the
 result where you are typing. It can also translate what you say, or answer a question about the
 text you have highlighted.
@@ -29,12 +31,12 @@ text you have highlighted.
 
 ### Download
 
-Typelite 1.0 runs on Macs with Apple Silicon (M1 or later).
+OraType 1.0 runs on Macs with Apple Silicon (M1 or later).
 
-1. Download `Typelite_X.Y.Z_aarch64.dmg` from the
-   [latest release](https://github.com/sennett-lau/typelite/releases/latest). To check it,
+1. Download `OraType_X.Y.Z_aarch64.dmg` from the
+   [latest release](https://github.com/sennett-lau/oratype/releases/latest). To check it,
    download `SHA256SUMS.txt` too and run `shasum -a 256 -c SHA256SUMS.txt --ignore-missing`.
-2. Open the DMG and drag **Typelite** to **Applications**.
+2. Open the DMG and drag **OraType** to **Applications**.
 3. Start it once as described in [First launch](#first-launch).
 
 ### Build from source
@@ -43,11 +45,11 @@ You need Rust ([rustup](https://rustup.rs/)), Node.js 20 or later, the Xcode Com
 and CMake.
 
 ```bash
-git clone https://github.com/sennett-lau/typelite.git
-cd typelite
+git clone https://github.com/sennett-lau/oratype.git
+cd oratype
 npm ci
 npm run build:app      # builds llama-server, then the app
-open src-tauri/target/release/bundle/macos/Typelite.app
+open src-tauri/target/release/bundle/macos/OraType.app
 ```
 
 More detail is in the [Contributing guide](CONTRIBUTING.md#setup).
@@ -55,15 +57,15 @@ More detail is in the [Contributing guide](CONTRIBUTING.md#setup).
 ### First launch
 
 1. Downloaded builds are not signed by Apple yet, so macOS blocks the first launch. Right-click
-   Typelite.app and choose **Open** (on macOS 15 and later: **System Settings → Privacy &
-   Security → Open Anyway**), or run `xattr -dr com.apple.quarantine /Applications/Typelite.app`
+   OraType.app and choose **Open** (on macOS 15 and later: **System Settings → Privacy &
+   Security → Open Anyway**), or run `xattr -dr com.apple.quarantine /Applications/OraType.app`
    once.
-2. Allow **Microphone** and **Accessibility** when macOS asks. Accessibility lets Typelite paste.
+2. Allow **Microphone** and **Accessibility** when macOS asks. Accessibility lets OraType paste.
 3. Follow the guided setup: microphone, speech, AI, then a short hands-on tutorial.
 
-Typelite is macOS first and runs best on Apple Silicon.
+OraType is macOS first and runs best on Apple Silicon.
 
-## What makes Typelite different
+## What makes OraType different
 
 ### Language presets and a router
 
@@ -90,21 +92,21 @@ text and press Translate to replace it with its translation.
 On Apple Silicon, both halves can run on your computer with nothing else to install.
 [whisper.cpp](https://github.com/ggml-org/whisper.cpp) handles speech recognition inside the app,
 and [llama.cpp](https://github.com/ggml-org/llama.cpp)'s server handles AI polish. Press
-**Set up** and Typelite picks models that suit your hardware, downloads them and checks each
+**Set up** and OraType picks models that suit your hardware, downloads them and checks each
 download against a SHA-256.
 
 ### Bring your own server or key
 
-Prefer a GPU computer on your network or a cloud key? Typelite works with any OpenAI-compatible
+Prefer a GPU computer on your network or a cloud key? OraType works with any OpenAI-compatible
 speech or chat server (whisper.cpp server, Speaches, Ollama, LM Studio, OpenAI, Groq, OpenRouter
 and more) and with the Qwen Cloud and ElevenLabs speech APIs. Cloud services are opt-in and use your own key. See
 the [Guides](docs/guides/README.md).
 
 ## How it compares with Typeless
 
-Typelite is inspired by [Typeless](https://www.typeless.com/), a polished commercial product.
+OraType is inspired by [Typeless](https://www.typeless.com/), a polished commercial product.
 
-|  | Typeless | Typelite |
+|  | Typeless | OraType |
 |---|---|---|
 | Source | Closed | Open source (MIT) |
 | Price | Free tier and paid plans | Free |
@@ -172,7 +174,7 @@ The images are rendered from the app's own components and the website's demos; s
 - No accounts, no analytics, no telemetry.
 - No history of what you say. Insights keep only timings and a keystroke count (never which keys).
   You can turn typing measurement off, and **Settings → System → Clear insights data** deletes them.
-- Logs (`~/Library/Logs/Typelite/typelite.log`) hold timings and errors, never your text.
+- Logs (`~/Library/Logs/OraType/oratype.log`) hold timings and errors, never your text.
 - Audio goes only where you point it: the built-in models, your own server, or a service you chose.
 
 ## Contributing

@@ -220,7 +220,7 @@ fn route_ask(
 ) -> VoiceIntent {
     if request.has_selected_text {
         // Translation requests were handled in `route` (plan `translate-selection-panel`); a
-        // "translate this into …" that reaches here named a language Typelite cannot map, so it
+        // "translate this into …" that reaches here named a language OraType cannot map, so it
         // stays a nondestructive answer.
         // An edit instruction ("make this shorter", "改短一点", "fix the grammar") replaces the
         // selection too. Questions about it ("what does this mean", "summarise this",
@@ -704,7 +704,7 @@ mod tests {
             );
             assert_eq!(routed.placement, VoiceOutputPlacement::PopupAnswer);
         }
-        // A language Typelite cannot map stays an ordinary answer about the highlight.
+        // A language OraType cannot map stays an ordinary answer about the highlight.
         let routed = VoiceIntentRouter::route(request(
             VoiceMode::Ask,
             "translate this to Klingon",

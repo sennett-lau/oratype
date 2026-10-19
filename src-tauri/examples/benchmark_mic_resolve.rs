@@ -6,8 +6,8 @@
 //!     cargo run --release --example benchmark_mic_resolve -- "<device name>" [samples]
 use std::time::Instant;
 
+use oratype_lib::audio::resolve_input_device;
 use serde_json::json;
-use typelite_lib::audio::resolve_input_device;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     use cpal::traits::DeviceTrait;

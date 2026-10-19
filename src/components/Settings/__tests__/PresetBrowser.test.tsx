@@ -122,7 +122,7 @@ describe('PresetBrowser', () => {
     const { onBack } = renderBrowser()
     fireEvent.click(screen.getByRole('button', { name: 'Library on GitHub' }))
     expect(openUrl).toHaveBeenCalledWith(
-      'https://github.com/sennett-lau/typelite/tree/main/presets/languages',
+      'https://github.com/sennett-lau/oratype/tree/main/presets/languages',
     )
     fireEvent.click(screen.getByRole('button', { name: 'Back' }))
     expect(onBack).toHaveBeenCalled()

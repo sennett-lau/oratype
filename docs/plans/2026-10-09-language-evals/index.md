@@ -1,7 +1,7 @@
 # Language evaluations
 
 An evaluation suite for the two steps that need only text and audio: AI polish and speech
-recognition. It holds Typelite's own dataset per language (fillers, self-corrections, spoken
+recognition. It holds OraType's own dataset per language (fillers, self-corrections, spoken
 numbers, punctuation, line breaks and lists, script and dialect), runs it through the app's real
 code with the built-in or any OpenAI-compatible server, scores the answers deterministically and
 compares them with a saved baseline. It exists so an agent can keep adding cases and tune the

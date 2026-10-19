@@ -1,5 +1,5 @@
 /**
- * Plan `ask-hover`: hover for the Ask panel. The Ask window is never the key window and Typelite
+ * Plan `ask-hover`: hover for the Ask panel. The Ask window is never the key window and OraType
  * stays in the background, so WebKit sends the page no mouse moves: CSS `:hover`, the CSS cursor
  * and React's onMouseEnter never fire. The app sends the cursor position instead
  * (`ask:pointer`), and this marks the element under it and its ancestors with `is-hover` (styled

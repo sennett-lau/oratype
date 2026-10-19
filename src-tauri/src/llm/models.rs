@@ -219,7 +219,7 @@ mod tests {
     #[test]
     fn installed_needs_the_full_file() {
         let dir = std::env::temp_dir().join(format!(
-            "typelite-ai-models-{}-{}",
+            "oratype-ai-models-{}-{}",
             std::process::id(),
             crate::storage::now_unix_ms()
         ));

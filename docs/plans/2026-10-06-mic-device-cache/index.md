@@ -1,7 +1,7 @@
 # Remember the chosen microphone
 
 With a microphone chosen in Settings → General, each recording start searched all audio devices
-for it, about 280 ms after the key press during which nothing was recorded. Typelite now
+for it, about 280 ms after the key press during which nothing was recorded. OraType now
 remembers the device it found and only checks that it is still the same one.
 
 Status: building (2026-10-06)

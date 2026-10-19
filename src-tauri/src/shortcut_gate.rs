@@ -7,7 +7,7 @@
 //!
 //! Every entry point asks the same gate: `hotkey::handle_hotkey_role_event` (native listener
 //! and global shortcuts), the native listener's swallow decision (a gated key passes through to
-//! the focused app), the `typelite toggle` / `typelite ask` command-line actions and the tray.
+//! the focused app), the `oratype toggle` / `oratype ask` command-line actions and the tray.
 //! Escape (`HotkeyRole::Cancel`) is never gated.
 
 use crate::hotkey::HotkeyRole;

@@ -80,7 +80,7 @@ cargo build --manifest-path src-tauri/Cargo.toml --release --example benchmark_s
 cp src-tauri/target/release/examples/benchmark_speech /tmp/before
 # after: on this branch, same command, copy to /tmp/after
 python3 benchmarks/runtime/cpp_speech_ab.py --before /tmp/before --after /tmp/after \
-  --model "$HOME/Library/Application Support/dev.typelite.mac/models/ggml-large-v3-turbo-q5_0.bin" \
+  --model "$HOME/Library/Application Support/dev.oratype.mac/models/ggml-large-v3-turbo-q5_0.bin" \
   --rounds 3 --warm 5 --out output/benchmarks/whisper-audio-ctx.json
 ```
 

@@ -1,17 +1,17 @@
 # Speech recognition
 
-Speech recognition turns your recording into text. Typelite then polishes that text with
+Speech recognition turns your recording into text. OraType then polishes that text with
 [AI polish](../ai-polish/README.md) and pastes it. Choose it in the speech step of the setup, or
 later in **Settings → Speech**.
 
 ## Connections
 
-A connection is how Typelite talks to the service. You never pick it by hand: **Built-in** is
+A connection is how OraType talks to the service. You never pick it by hand: **Built-in** is
 its own option, and in **Your server or API key** the address decides.
 
 | Connection | What it is | Where your audio goes | Guide |
 |---|---|---|---|
-| Built-in | whisper.cpp running inside Typelite, with a model it downloads for you | Nowhere; it stays on your computer | [Built-in](built-in.md) |
+| Built-in | whisper.cpp running inside OraType, with a model it downloads for you | Nowhere; it stays on your computer | [Built-in](built-in.md) |
 | OpenAI-compatible | Any server that accepts `POST <address>/audio/transcriptions`: your own whisper.cpp or Speaches server, or a cloud service | Your server, or the cloud service you chose | [OpenAI-compatible](openai-compatible.md) |
 | Qwen Cloud | Qwen's own speech API, used automatically for a Qwen Cloud address | Qwen Cloud, with your own key | [Qwen Cloud](qwen-cloud.md) |
 | ElevenLabs | ElevenLabs' own speech-to-text API (Scribe), used automatically for an ElevenLabs address | ElevenLabs, with your own key | [ElevenLabs](elevenlabs.md) |

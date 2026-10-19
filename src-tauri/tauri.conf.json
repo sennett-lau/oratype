@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Typelite",
+  "productName": "OraType",
   "version": "../package.json",
-  "identifier": "dev.typelite.mac",
+  "identifier": "dev.oratype.mac",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Typelite",
+        "title": "OraType",
         "width": 900,
         "height": 700,
         "minWidth": 720,
@@ -36,7 +36,7 @@
       },
       {
         "label": "capsule",
-        "title": "Typelite Capsule",
+        "title": "OraType Capsule",
         "width": 80,
         "height": 80,
         "resizable": false,
@@ -54,7 +54,7 @@
       },
       {
         "label": "ask",
-        "title": "Typelite Ask",
+        "title": "OraType Ask",
         "width": 452,
         "height": 192,
         "resizable": false,
@@ -79,7 +79,7 @@
   "plugins": {
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDE0MkI4QzUwMDVCNEVGQ0MKUldUTTc3UUZVSXdyRkd3TzV1d2VWZnk1ejVvYmVEZHo1aCtvTnEzb3FMMUFmdGYrSkZYbzB6SXYK",
-      "endpoints": ["https://github.com/sennett-lau/typelite/releases/latest/download/latest.json"]
+      "endpoints": ["https://github.com/sennett-lau/oratype/releases/latest/download/latest.json"]
     }
   },
   "bundle": {

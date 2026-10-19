@@ -48,7 +48,7 @@ pub fn detect(question: &str, classified: Option<&str>) -> Option<&'static str> 
         return Some(match detect_chinese_script(question) {
             Some(ChineseScript::Traditional) => "zh-Hant",
             Some(ChineseScript::Simplified) => "zh-Hans",
-            // Written Cantonese ("而家有冇落雪？") is read in Traditional, as Typelite writes
+            // Written Cantonese ("而家有冇落雪？") is read in Traditional, as OraType writes
             // Cantonese (Hong Kong Traditional); the classifier often guesses Simplified.
             None if question.contains(CANTONESE_WORDS) => "zh-Hant",
             None => match classified {
@@ -80,7 +80,7 @@ pub fn answer_instruction(question: &str, classified: Option<&str>) -> String {
 
 /// The Chinese characters an answer to `question` is written in: a small model mixes Simplified
 /// into a Traditional answer (or the reverse), so the app converts it (OpenCC, characters only).
-/// Written Cantonese gets Hong Kong Traditional, as Typelite writes Cantonese; `None` for other
+/// Written Cantonese gets Hong Kong Traditional, as OraType writes Cantonese; `None` for other
 /// languages, or Chinese whose script is unknown.
 pub fn answer_script(
     question: &str,

@@ -47,7 +47,7 @@ The transcript is only compared. It is never logged, stored or sent. The log lin
 
 ## Fuzzy matcher
 
-`hands_free/matcher.rs` (`WakePhrase`) is Typelite's own code:
+`hands_free/matcher.rs` (`WakePhrase`) is OraType's own code:
 
 1. Normalise: lower case, punctuation splits words, each CJK character is a word, accents are
    removed, and a few sound-alike spellings are unified (ph→f, z→s, silent "p" in "ps", "lm"→"m"
@@ -75,4 +75,4 @@ A wider High setting (one consonant in "Sam") was tried. It woke on "Hey man" an
 - **No prompt.** It missed 4 of 27 ("Hayson", "HSM").
 - **Whisper tiny (32 MB).** It missed 5 of 27 and repeated text ("Peace, Sam. Peace, Sam. …").
 - **Matching anywhere in the segment.** This was rejected because a conversation about Sam
-  would wake Typelite.
+  would wake OraType.

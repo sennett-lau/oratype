@@ -1,13 +1,13 @@
 # MLX runtime evaluation on M1 Pro
 
-[PR #55](https://github.com/sennett-lau/typelite/pull/55) · branch
+[PR #55](https://github.com/sennett-lau/oratype/pull/55) · branch
 `perf/mlx-runtime-evaluation` · stacked on the test-audit PR #54.
 
 **Decision: retain the shipping C++ engines for now.** MLX speech is promising:
 the 4-bit candidate cuts about a quarter of warm inference time on these short
 synthetic clips with slightly lower sampled process memory. This is a reason to
 evaluate a native speech integration with real recordings, not evidence that all
-of Typelite should switch runtimes. The Python text prototype does not establish
+of OraType should switch runtimes. The Python text prototype does not establish
 a useful latency win on the tested Qwen3-1.7B workloads.
 
 See the [decision and reopening conditions](index.md),
@@ -97,7 +97,7 @@ inference. Additional quality probes run after timing and are recorded separatel
 | Silence, raw engine | 982.6 [982.1, 983.9] | 747.7 [745.6, 757.7] | -23.9% |
 
 Warm speech savings are about **250–285 ms per spoken clip** for the 4-bit
-candidate. Silence is a diagnostic control: Typelite's outer provider rejects
+candidate. Silence is a diagnostic control: OraType's outer provider rejects
 this digital silence before inference, so the silence timing is not a user-facing
 speedup. All raw engines returned `you` on that clip; retaining the existing guard
 is essential.

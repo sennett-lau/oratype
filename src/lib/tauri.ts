@@ -433,7 +433,7 @@ export type SpeechSetupError =
   | { code: 'cancelled' }
   | { code: 'io'; reason: string }
   | { code: 'load'; reason: string }
-  /** Plan `ai-polish-setup`: this copy of Typelite has no llama-server, so Built-in AI cannot run.
+  /** Plan `ai-polish-setup`: this copy of OraType has no llama-server, so Built-in AI cannot run.
   /** */
   | { code: 'server_missing' }
 
@@ -532,7 +532,7 @@ export interface SpeechHardwareCheck {
     /** Set when no model fits on the disk: the free space the smallest one needs. */
     neededBytes: number | null
   }
-  /** AI only (plan `ai-polish-setup`): false when this copy of Typelite has no llama-server. */
+  /** AI only (plan `ai-polish-setup`): false when this copy of OraType has no llama-server. */
   serverAvailable?: boolean
 }
 
@@ -541,7 +541,7 @@ export async function getSpeechHardware(): Promise<SpeechHardwareCheck> {
   return invoke('get_speech_hardware')
 }
 
-// ─── Plan `ai-polish-setup`: Built-in AI setup (llama-server started by Typelite) ───
+// ─── Plan `ai-polish-setup`: Built-in AI setup (llama-server started by OraType) ───
 // Same shapes as the speech setup; progress arrives as `ai-setup:status` events.
 
 export async function getAiSetupStatus(): Promise<SpeechSetupStatus> {
@@ -753,7 +753,7 @@ export async function openAskSource(url: string): Promise<void> {
 
 // Plan `ask-web-search`: the search provider for Ask's live questions.
 
-/** `builtin`: plan `searxng-setup`, the SearXNG Typelite sets up and runs on this Mac. */
+/** `builtin`: plan `searxng-setup`, the SearXNG OraType sets up and runs on this Mac. */
 export type SearchProviderKind = 'none' | 'searxng' | 'builtin'
 
 export interface WebSearchConfig {
@@ -885,7 +885,7 @@ export async function closeAskPanel(): Promise<void> {
 }
 
 /**
- * Plan `ask-panel-select-text`: makes the panel the key window (Typelite stays in the
+ * Plan `ask-panel-select-text`: makes the panel the key window (OraType stays in the
  * background), so ⌘C reaches the page.
  */
 export async function focusAskPanel(): Promise<void> {

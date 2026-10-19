@@ -338,7 +338,7 @@ export function ScenesPane() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `typelite-prompt-presets-${new Date().toISOString().slice(0, 10)}.json`
+    link.download = `oratype-prompt-presets-${new Date().toISOString().slice(0, 10)}.json`
     link.click()
     URL.revokeObjectURL(url)
   }

@@ -156,7 +156,7 @@ function UpdateCheckRow() {
 }
 
 /**
- * Settings → System: how Typelite sits in macOS. "Launch at login" is applied through the
+ * Settings → System: how OraType sits in macOS. "Launch at login" is applied through the
  * autostart plugin when the settings are saved; "Show in Dock" switches the macOS activation
  * policy (see `apply_dock_visibility` in `src-tauri/src/lib.rs`).
  */

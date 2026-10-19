@@ -13,10 +13,10 @@ import type { LibraryPresetRef, TranslationLanguageSettings } from '../../../sto
 
 /** The guide section behind "About language presets": Languages → Language presets. */
 export const LANGUAGE_PRESETS_GUIDE_URL =
-  'https://github.com/sennett-lau/typelite/blob/main/docs/guides/languages/README.md#language-presets'
+  'https://github.com/sennett-lau/oratype/blob/main/docs/guides/languages/README.md#language-presets'
 /** The library folder on GitHub ("Library on GitHub" in Browse). */
 export const LANGUAGE_LIBRARY_URL =
-  'https://github.com/sennett-lau/typelite/tree/main/presets/languages'
+  'https://github.com/sennett-lau/oratype/tree/main/presets/languages'
 /** Emitted by the backend when the library cache or an automatic update changed. */
 export const LIBRARY_CHANGED_EVENT = 'language-library:changed'
 /** How long the "Updated automatically" banner stays. */

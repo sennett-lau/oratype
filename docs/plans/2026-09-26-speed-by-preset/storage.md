@@ -22,7 +22,7 @@ Runs are oldest first, at most 200 (`RUN_TIMING_CAPACITY`).
 - `speechPresetId`, `speechModel`, `aiPresetId`, `aiModel`, and the speech language setting.
 
 Never audio, transcripts, AI answers, pasted text, app names or window titles. This is what the
-"no history" promise means: Typelite keeps no record of what was said; it keeps how long things
+"no history" promise means: OraType keeps no record of what was said; it keeps how long things
 took.
 
 ## Lifecycle

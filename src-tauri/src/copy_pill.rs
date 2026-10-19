@@ -4,7 +4,7 @@
 //! closes on Copy, on Escape, when its countdown runs out, or when a new run starts.
 //!
 //! Plan `clipboard-safety`: the same happens when another app is in front than when the
-//! recording started, or when Typelite may not type (no Accessibility permission). Those results
+//! recording started, or when OraType may not type (no Accessibility permission). Those results
 //! used to be copied to the clipboard on their own, over whatever the user had copied.
 
 use crate::output::focus::FocusDecision;
@@ -73,7 +73,7 @@ pub enum HoldReason {
     NoTextField,
     /// Plan `clipboard-safety`: another app is in front than when the recording started.
     TargetChanged,
-    /// Plan `clipboard-safety`: Typelite may not type or paste (no Accessibility permission).
+    /// Plan `clipboard-safety`: OraType may not type or paste (no Accessibility permission).
     CannotType,
 }
 

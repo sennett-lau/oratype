@@ -43,7 +43,7 @@ process results after each engine and stops only the subprocesses it owns.
 
 ```sh
 output/mlx-evaluation/venv/bin/python scripts/benchmark-runtime.py speech \
-  --cpp-model "$HOME/Library/Application Support/dev.typelite.mac/models/ggml-large-v3-turbo-q5_0.bin" \
+  --cpp-model "$HOME/Library/Application Support/dev.oratype.mac/models/ggml-large-v3-turbo-q5_0.bin" \
   --mlx-model output/mlx-evaluation/models/whisper \
   --output output/mlx-evaluation/speech.json
 ```

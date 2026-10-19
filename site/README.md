@@ -1,7 +1,7 @@
-# Typelite site
+# OraType site
 
-The one-page website for Typelite: Vite, React and TypeScript, deployed to GitHub Pages at
-`https://typelite.sennettlau.me/`. It is a separate project with its own
+The one-page website for OraType: Vite, React and TypeScript, deployed to GitHub Pages at
+`https://oratype.sennettlau.me/`. It is a separate project with its own
 `package.json` and lockfile; nothing here is part of the app.
 
 ## Develop
@@ -46,9 +46,9 @@ changes `site/**` (or the preset index), and on demand from the Actions tab
 1. GitHub Pages needs the repository to be **public** (or a paid plan for private Pages).
 2. Enable it in **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
-The site is served at the root of the custom domain `typelite.sennettlau.me` (Settings → Pages →
-Custom domain, with a DNS `CNAME typelite → sennett-lau.github.io`), so `vite.config.ts` sets
-`base: '/'`. GitHub redirects the old `sennett-lau.github.io/typelite/` address there. To move it,
+The site is served at the root of the custom domain `oratype.sennettlau.me` (Settings → Pages →
+Custom domain, with a DNS `CNAME oratype → sennett-lau.github.io`), so `vite.config.ts` sets
+`base: '/'`. GitHub redirects the old `sennett-lau.github.io/oratype/` address there. To move it,
 change the custom domain, and the absolute URLs in `index.html` (canonical, Open Graph,
 structured data), `public/robots.txt` and `public/sitemap.xml`.
 

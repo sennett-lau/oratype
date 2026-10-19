@@ -4,8 +4,8 @@ use std::cell::Cell;
 use std::hint::black_box;
 use std::time::Instant;
 
+use oratype_lib::stt::silence::VoiceActivity;
 use serde_json::{json, Value};
-use typelite_lib::stt::silence::VoiceActivity;
 
 use super::{SAMPLES, WARMUPS};
 

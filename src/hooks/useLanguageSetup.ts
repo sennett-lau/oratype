@@ -17,7 +17,7 @@ export function currentEngine(service: EngineService, config: AppConfig): Curren
 
 /**
  * Plan `language-model-suggestions`: the languages the user speaks, and the suggested setup for
- * them on this Mac (null when Typelite has none for those languages). Reads both hardware checks.
+ * them on this Mac (null when OraType has none for those languages). Reads both hardware checks.
  */
 export function useLanguageSetup() {
   const chosen = useAppStore((s) => s.config.spoken_languages)

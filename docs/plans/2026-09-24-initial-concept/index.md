@@ -1,6 +1,6 @@
 # Initial concept
 
-typelite is a native macOS menu-bar app that copies the Typeless experience: tap a shortcut,
+oratype is a native macOS menu-bar app that copies the Typeless experience: tap a shortcut,
 speak, and polished text is pasted into whatever app has focus. Speech-to-text runs on the Mac,
 text cleanup runs on the user's own GPU PC, and nothing goes to a paid or cloud service. This
 plan sets the product shape, the stack and the architecture that later feature plans build on.

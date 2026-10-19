@@ -1,4 +1,4 @@
-//! Plan `ai-polish-setup`: Built-in AI. Typelite runs llama.cpp's `llama-server` as a separate
+//! Plan `ai-polish-setup`: Built-in AI. OraType runs llama.cpp's `llama-server` as a separate
 //! program on this Mac and sends it the same OpenAI-compatible chat requests as any other AI
 //! preset.
 //!
@@ -10,9 +10,9 @@
 //!   random API key (passed in the environment, not on the command line), so other programs
 //!   and web pages cannot use it.
 //! - [`ServerManager::ensure`] starts it on demand and waits for `/health`; a server that died
-//!   is started again on the next request. It is stopped when Typelite quits, when another AI
+//!   is started again on the next request. It is stopped when OraType quits, when another AI
 //!   engine is picked, and when its model is deleted.
-//! - Its log goes to the Typelite log filtered to errors, load and timing lines (see
+//! - Its log goes to the OraType log filtered to errors, load and timing lines (see
 //!   [`log_level_for`]); llama-server never prints the prompt or the answer at its default
 //!   verbosity.
 //!
@@ -32,7 +32,7 @@ use crate::storage::{AiPreset, AppConfig};
 
 use super::LlmConfig;
 
-/// The program's name inside `Typelite.app/Contents/MacOS/`.
+/// The program's name inside `OraType.app/Contents/MacOS/`.
 pub const SERVER_BINARY_NAME: &str = "llama-server";
 /// Context size in tokens. The prompt and the answer share it: the polish prompt with a language
 /// preset is about 3,300 tokens, so 4096 left too little room and cut long answers short
@@ -45,7 +45,7 @@ const HEALTH_POLL: Duration = Duration::from_millis(250);
 /// Why the built-in server is not available.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ServerError {
-    /// This copy of Typelite has no `llama-server` program.
+    /// This copy of OraType has no `llama-server` program.
     BinaryMissing,
     /// The model file is not downloaded (or the models folder is unknown).
     ModelMissing,
@@ -64,7 +64,7 @@ impl std::fmt::Display for ServerError {
         match self {
             ServerError::BinaryMissing => write!(
                 f,
-                "The built-in AI server (llama-server) is missing from this copy of Typelite."
+                "The built-in AI server (llama-server) is missing from this copy of OraType."
             ),
             ServerError::ModelMissing => write!(f, "The built-in AI model is not downloaded."),
             ServerError::Spawn(reason) => {
@@ -265,7 +265,7 @@ impl ServerManager {
     }
 
     /// Sets the models folder and the file that remembers the server's process id. A server
-    /// left running by a Typelite that crashed is stopped here.
+    /// left running by a OraType that crashed is stopped here.
     pub fn set_paths(&self, models_dir: PathBuf, pid_file: PathBuf) {
         stop_stale_server(&pid_file);
         *lock(&self.models_dir) = Some(models_dir);
@@ -443,7 +443,7 @@ fn free_port() -> std::io::Result<u16> {
     Ok(listener.local_addr()?.port())
 }
 
-/// Stops a `llama-server` a crashed Typelite left behind (its id is in `pid_file`). Only a
+/// Stops a `llama-server` a crashed OraType left behind (its id is in `pid_file`). Only a
 /// process that really is `llama-server` is stopped.
 fn stop_stale_server(pid_file: &Path) {
     let Ok(text) = std::fs::read_to_string(pid_file) else {
@@ -466,7 +466,7 @@ fn stop_stale_server(pid_file: &Path) {
     }
 }
 
-/// Which level a line of llama-server's log gets in the Typelite log, or `None` to drop it.
+/// Which level a line of llama-server's log gets in the OraType log, or `None` to drop it.
 /// Lines look like `0.02.681.426 I srv  llama_server: model loaded`; the letter is the level.
 /// Errors, the load and listen lines and the per-request timing totals are kept.
 pub fn log_level_for(line: &str) -> Option<tracing::Level> {
@@ -486,14 +486,14 @@ pub fn log_level_for(line: &str) -> Option<tracing::Level> {
 
 /// Where the `llama-server` program is: next to the main executable (the app bundle's
 /// `Contents/MacOS/`, where Tauri puts external binaries), or with the target triple in its
-/// name. `TYPELITE_LLAMA_SERVER` overrides it; debug builds also look in
+/// name. `ORATYPE_LLAMA_SERVER` overrides it; debug builds also look in
 /// `src-tauri/binaries/`, where the build script puts it.
 pub fn find_server_binary() -> Option<PathBuf> {
-    if let Ok(path) = std::env::var("TYPELITE_LLAMA_SERVER") {
+    if let Ok(path) = std::env::var("ORATYPE_LLAMA_SERVER") {
         let path = PathBuf::from(path);
         return path.is_file().then_some(path);
     }
-    let triple_name = format!("{SERVER_BINARY_NAME}-{}", env!("TYPELITE_TARGET_TRIPLE"));
+    let triple_name = format!("{SERVER_BINARY_NAME}-{}", env!("ORATYPE_TARGET_TRIPLE"));
     let mut candidates = Vec::new();
     if let Some(dir) = std::env::current_exe()
         .ok()
@@ -575,7 +575,7 @@ impl Launcher for ProcessLauncher {
     }
 }
 
-/// Copies the kept lines of the server's output into the Typelite log (on its own thread).
+/// Copies the kept lines of the server's output into the OraType log (on its own thread).
 fn forward_log(stream: impl std::io::Read + Send + 'static, last_error: Arc<Mutex<String>>) {
     std::thread::spawn(move || {
         for line in std::io::BufReader::new(stream).lines() {
@@ -816,7 +816,7 @@ mod tests {
 
     fn setup(name: &str, binary: bool, ready_after: usize, exit_after: Option<usize>) -> Setup {
         let dir = std::env::temp_dir().join(format!(
-            "typelite-llama-{name}-{}-{}",
+            "oratype-llama-{name}-{}-{}",
             std::process::id(),
             crate::storage::now_unix_ms()
         ));

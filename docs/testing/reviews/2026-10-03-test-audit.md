@@ -1,6 +1,6 @@
 # Test audit — 2026-10-03
 
-Base: `d9f86b2`, on top of [performance PR #53](https://github.com/sennett-lau/typelite/pull/53).
+Base: `d9f86b2`, on top of [performance PR #53](https://github.com/sennett-lau/oratype/pull/53).
 The review covered the inventory and assertions across all 70 frontend test files, 88 Rust source
 modules containing tests, the real-service integration suite, and the opt-in benchmark fixtures.
 Changes are limited to tests and documentation.

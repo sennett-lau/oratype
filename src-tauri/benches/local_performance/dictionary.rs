@@ -4,13 +4,13 @@ use std::hint::black_box;
 use std::path::PathBuf;
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-use serde_json::{json, Value};
-use tokio::runtime::Runtime;
-use typelite_lib::dictionary_io::{
+use oratype_lib::dictionary_io::{
     commit_dictionary_import, export_dictionary_json, parse_dictionary_import, ImportFormat,
     ParsedDictionaryImport, ParsedDictionaryRow, MAX_IMPORT_BYTES,
 };
-use typelite_lib::storage::{CorrectionRule, DictionaryEntry, DictionaryStore};
+use oratype_lib::storage::{CorrectionRule, DictionaryEntry, DictionaryStore};
+use serde_json::{json, Value};
+use tokio::runtime::Runtime;
 
 use super::{SAMPLES, WARMUPS};
 
@@ -49,7 +49,7 @@ impl Fixture {
             .collect();
         // Keep the input independent of production export formatting and implementation.
         let json = json!({
-            "format": "typelite_dictionary",
+            "format": "oratype_dictionary",
             "version": 1,
             "dictionary": dictionary.iter().map(|entry| json!({
                 "word": entry.word, "pronunciation": entry.pronunciation,
@@ -112,7 +112,7 @@ impl ScratchStore {
             .unwrap()
             .as_nanos();
         let directory = std::env::temp_dir().join(format!(
-            "typelite-dictionary-bench-{}-{nonce}",
+            "oratype-dictionary-bench-{}-{nonce}",
             std::process::id()
         ));
         // Never reuse a pre-existing directory or operate on the user's database.

@@ -24,7 +24,7 @@ check and hallucination guard). It changes none of that plan's decisions.
 ## Non-goals
 
 - Scribe Realtime (WebSocket streaming). Recordings are uploaded when they end.
-- Diarisation, key terms, entity detection or word timestamps. Typelite needs only the text.
+- Diarisation, key terms, entity detection or word timestamps. OraType needs only the text.
 - ElevenLabs text-to-speech or any other ElevenLabs product.
 - A template, menu entry or bundled key. The service is documented in the speech guide.
 
@@ -37,7 +37,7 @@ check and hallucination guard). It changes none of that plan's decisions.
 | The address may be the host, `.../v1` or the full endpoint; the uploader adds what is missing | Users paste what the docs show. |
 | Always send `tag_audio_events=false` | Otherwise "(laughter)" and similar tags would be pasted. |
 | Send `language_code` only for a fixed language | Auto-detect is Scribe's default and handles mixed speech. |
-| Map `language_code` (ISO 639-3) to Typelite's short codes (`eng`→`en`, `cmn`→`zh`, `yue`) | The polish router and Insights use ISO 639-1 codes and `yue`. |
+| Map `language_code` (ISO 639-3) to OraType's short codes (`eng`→`en`, `cmn`→`zh`, `yue`) | The polish router and Insights use ISO 639-1 codes and `yue`. |
 | 401/403 → invalid key; `quota_exceeded` or 429 → quota error; 5xx and timeouts retried twice | Users see the same messages as for other services. |
 | Normal client upload limit (the app's usual recording limit), no service cap | Scribe accepts files far larger than any dictation. |
 | Presets of this kind are shared by export/import, keys only when the user ticks it | Same as Qwen Cloud. |
@@ -53,7 +53,7 @@ check and hallucination guard). It changes none of that plan's decisions.
 ## Open questions
 
 - The request and response were taken from the API reference; no live call has been made yet.
-  The ignored e2e tests (`TYPELITE_E2E_ELEVENLABS_KEY`) confirm them once a key is available.
+  The ignored e2e tests (`ORATYPE_E2E_ELEVENLABS_KEY`) confirm them once a key is available.
 - The exact error bodies for a bad key, used-up credits and rate limits are assumed from
   ElevenLabs' general error format (`{"detail": {"status", "message"}}`).
 - How Scribe writes Cantonese (Traditional, Simplified, colloquial or formal) is not measured.

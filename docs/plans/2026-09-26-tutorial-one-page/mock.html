@@ -1,4 +1,4 @@
-<title>Typelite Shortcut Tutorial</title>
+<title>OraType Shortcut Tutorial</title>
 <style>
   :root {
     --page-bg: #f2f3f6; --page-ink: #1b1d22; --page-muted: #5d6270; --page-line: #dcdfe6; --page-card: #fff;
@@ -358,7 +358,7 @@
 </defs></svg>
 <div class="wrap">
   <header>
-    <div class="eyebrow">Typelite · design iteration · v2</div>
+    <div class="eyebrow">OraType · design iteration · v2</div>
     <h1>Onboarding: one short page at a time</h1>
     <p class="lead">Each shortcut gets a setup page, then one page per exercise. Nothing scrolls: the badge checks every page at the chosen window height.</p>
   </header>
@@ -441,7 +441,7 @@
     <b>What changed from today's design</b>
     <ul>
       <li>The shortcut (and, for Translate, the language) is set on its own page. Each exercise then has its own page: the line to read, one box where the text lands, and one result line.</li>
-      <li>After a run: "Typelite is writing…" while the text is typed into the box; the result appears only once the text has fully arrived. On success, the "Read this" card turns into a green result card that shows what changed (removed words struck through, or before → after).</li>
+      <li>After a run: "OraType is writing…" while the text is typed into the box; the result appears only once the text has fully arrived. On success, the "Read this" card turns into a green result card that shows what changed (removed words struck through, or before → after).</li>
       <li>Next, Skip and Back live in the footer; "Try again" is a link on the result line. Next unlocks after a success (Skip always works).</li>
       <li>Ask's question exercise has no box: the answer opens in the Ask window, shown at the right.</li>
       <li>Title and content are one block, centred between the step dots (top) and the Back/Next footer (bottom), with 22 pt between the title and the content. Try Window height → 900 to see an enlarged window.</li>
@@ -635,7 +635,7 @@
         if (r === 'translate') h += '<p class="status wait">Listening… press ' + kbd([keys[0]]) + ' to stop' + (+st.nl > 1 && st.sw ? ', ' + kbd([st.sw]) + ' to switch language.' : '.') + '</p>';
         else h += '<p class="status wait">Listening… press ' + kbd(keys) + ' again when you finish.</p>';
       }
-      if (st.st === 'writing') h += '<p class="working"><span class="dotsw"><i></i><i></i><i></i></span>' + (x.panel ? 'Thinking…' : 'Typelite is writing…') + '</p>';
+      if (st.st === 'writing') h += '<p class="working"><span class="dotsw"><i></i><i></i><i></i></span>' + (x.panel ? 'Thinking…' : 'OraType is writing…') + '</p>';
       if (done) h += '';
       if (st.st === 'miss') h += '<p class="status bad">' + ic('i-info') + 'Not quite what we expected.<button type="button">Try again</button></p>';
       if (st.st === 'nospeech') h += '<p class="status bad">' + ic('i-info') + 'Didn’t catch that.<button type="button">Try again</button></p>';

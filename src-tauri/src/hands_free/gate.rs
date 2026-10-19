@@ -1,4 +1,4 @@
-//! Plan `hands-free-mode` (listening.md): Typelite's own voice-activity gate.
+//! Plan `hands-free-mode` (listening.md): OraType's own voice-activity gate.
 //!
 //! A streaming version of the voice check in `stt/silence.rs`, so nothing heavier than a few
 //! additions per 20 ms runs while the room is quiet. Each 20 ms frame is voiced when it is

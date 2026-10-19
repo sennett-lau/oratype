@@ -70,7 +70,7 @@ export function Setup() {
             One click, or bring your own.
           </h2>
           <p className="section-lead">
-            Typelite works in two steps, speech recognition and AI polish, and each runs where you
+            OraType works in two steps, speech recognition and AI polish, and each runs where you
             choose. Mix them freely.
           </p>
         </div>
@@ -186,7 +186,7 @@ export function Setup() {
             </span>
             <h3>Your server, or your own key.</h3>
             <p>
-              Prefer a GPU computer on your network, or a cloud key? Typelite talks to any{' '}
+              Prefer a GPU computer on your network, or a cloud key? OraType talks to any{' '}
               <b>OpenAI-compatible</b> speech or chat server, and to the Qwen Cloud and ElevenLabs speech APIs.
             </p>
             <div className="dl">

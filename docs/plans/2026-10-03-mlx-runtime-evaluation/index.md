@@ -1,6 +1,6 @@
 # Evaluate MLX inference on Apple silicon
 
-Compare MLX with Typelite's existing GPU inference paths on the same Mac before
+Compare MLX with OraType's existing GPU inference paths on the same Mac before
 changing the shipping runtime. Keep the experiment and its decision discoverable,
 including a decision to retain the current engines.
 

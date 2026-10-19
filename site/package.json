@@ -1,9 +1,9 @@
 {
-  "name": "typelite-site",
+  "name": "oratype-site",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Typelite's one-page website, deployed to GitHub Pages",
+  "description": "OraType's one-page website, deployed to GitHub Pages",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
