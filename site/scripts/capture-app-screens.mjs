@@ -51,7 +51,8 @@ async function importFromRoot(name) {
   return import(pathToFileURL(join(dirname(pkgPath), entry)).href)
 }
 
-async function startServer() {
+/** Serves the capture harness; also used by capture-promo-stills.mjs. */
+export async function startServer() {
   if (!existsSync(join(repoRoot, 'node_modules/vite'))) {
     throw new Error('Run `npm ci` at the repository root first (the capture uses the app build).')
   }
@@ -89,7 +90,7 @@ async function startServer() {
   return { server, url }
 }
 
-function optimise(path) {
+export function optimise(path) {
   for (const [tool, args] of [
     ['oxipng', ['-o', '3', '--strip', 'safe', '-q', path]],
     ['pngquant', ['--force', '--skip-if-larger', '--quality=80-95', '--output', path, path]],

@@ -77,13 +77,16 @@ body {
   background: #28c840;
 }
 
-/* The Copy pill: the capsule window (pill plus its 12 pt padding) at the bottom centre. */
-[data-screen='copy-pill'] .capture-stage {
+/* The Copy pill: the capsule window (pill plus its 12 pt padding) at the bottom centre. The
+   promo `pill` screen uses the same frame, so every pill state sits in the same place. */
+[data-screen='copy-pill'] .capture-stage,
+[data-screen='pill'] .capture-stage {
   width: 500px;
   height: 150px;
   padding: 0;
 }
-[data-screen='copy-pill'] .capture-frame {
+[data-screen='copy-pill'] .capture-frame,
+[data-screen='pill'] .capture-frame {
   position: absolute;
   left: 50%;
   bottom: 28px;
@@ -97,6 +100,7 @@ body {
   backdrop-filter: none;
   box-shadow: none;
 }
-[data-screen='copy-pill'] .capture-lights {
+[data-screen='copy-pill'] .capture-lights,
+[data-screen='pill'] .capture-lights {
   display: none;
 }

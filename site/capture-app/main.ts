@@ -1,7 +1,7 @@
 // Entry of the app capture page. The Tauri mocks must be installed before any app module runs,
 // so everything from ../../src is imported dynamically afterwards.
 import { mockIPC, mockWindows } from '@tauri-apps/api/mocks'
-import { handleCommand, SCREENS, type Screen } from './mocks'
+import { handleCommand, PILL_SCREENS, SCREENS, type Screen } from './mocks'
 
 // Keep warnings and errors so the capture script can print them.
 const logs: string[] = []
@@ -35,7 +35,7 @@ history.replaceState(
 )
 localStorage.setItem('ui_language', 'en')
 
-mockWindows(screen === 'copy-pill' ? 'capsule' : 'main')
+mockWindows(PILL_SCREENS.includes(screen) ? 'capsule' : 'main')
 mockIPC((cmd, args) => handleCommand(screen, dark, cmd, args as Record<string, unknown>), {
   shouldMockEvents: true,
 })
