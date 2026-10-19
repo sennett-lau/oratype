@@ -91,6 +91,15 @@ The release notes come from What's New for that version
   delete the tag (`git push --delete origin vX.Y.Z` and `git tag -d vX.Y.Z`) and any draft it
   left, fix the release branch, then tag again.
 
+## Promo video
+
+Each release gets a 10–15 s video of what is new, made from the app's real UI with the
+`promo-video` skill (`.claude/skills/promo-video/SKILL.md`): stills from the capture harness
+(`site/scripts/capture-promo-stills.mjs`), a film recorded frame by frame
+(`site/scripts/record-film.mjs`) and synthesised music (`site/scripts/promo-music.py`). It lives
+in `output/promo-X.Y.Z/` with the video as `typelite-X.Y.Z-promo.mp4`; nothing in `output/` is
+committed. Make it once the version's What's New is written.
+
 ## Updates
 
 Installed copies update themselves from GitHub Releases (plan `auto-update`). The workflow signs

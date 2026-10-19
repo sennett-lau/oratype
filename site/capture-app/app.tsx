@@ -4,7 +4,11 @@ import '../../src/i18n'
 import './app.css'
 import './capture.css'
 import App from '../../src/App'
-import { SHORTCUT_TOUR_FIRST_STEP, useAppStore } from '../../src/stores/appStore'
+import {
+  SHORTCUT_TOUR_FIRST_STEP,
+  useAppStore,
+  type PipelineState,
+} from '../../src/stores/appStore'
 import { SHORTCUT_PAGES } from '../../src/components/Onboarding/shortcutConfig'
 import { setBaseConfig, type Screen } from './mocks'
 
@@ -35,6 +39,14 @@ export function mount(screen: Screen) {
 
   const target = document.getElementById('app') as HTMLElement
   createRoot(target).render(<App />)
+
+  if (screen === 'pill') {
+    // The pill in one state, for promo stills: `&state=recording`, `transcribing`,
+    // `polishing`, `outputting`, `ask_recording`, `ask_thinking` (default: recording).
+    const state = (new URLSearchParams(window.location.search).get('state') ??
+      'recording') as PipelineState
+    setTimeout(() => useAppStore.setState({ pipelineState: state, audioVolume: 0.35 }), 600)
+  }
 
   if (screen === 'copy-pill') {
     // The Copy pill appears when a result had nowhere to be pasted.

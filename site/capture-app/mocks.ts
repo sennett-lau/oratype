@@ -5,14 +5,28 @@ import type { AppConfig, AiPreset, SpeechPreset } from '../../src/stores/appStor
 import type { RunTiming } from '../../src/lib/speed'
 import libraryIndex from '../../presets/languages/index.json'
 
-export type Screen = 'home' | 'settings-languages' | 'onboarding' | 'copy-pill'
+export type Screen =
+  | 'home'
+  | 'settings-languages'
+  | 'onboarding'
+  | 'copy-pill'
+  // Promo-video stills (.claude/skills/promo-video): real screens set up for one feature.
+  | 'promo-hands-free'
+  | 'pill'
 
 export const SCREENS: Record<Screen, { hash: string }> = {
   home: { hash: '#/' },
   'settings-languages': { hash: '#/settings?pane=llm' },
   onboarding: { hash: '#/' },
   'copy-pill': { hash: '#capsule' },
+  // Settings → General with Hands-free on (plan `hands-free-mode`).
+  'promo-hands-free': { hash: '#/settings?pane=general' },
+  // The pill alone, in the state given by `&state=` (recording, transcribing, polishing, …).
+  pill: { hash: '#capsule' },
 }
+
+/** Screens that render the pill window instead of the main window. */
+export const PILL_SCREENS: Screen[] = ['copy-pill', 'pill']
 
 const NOW = Date.UTC(2026, 8, 26, 9, 30)
 const OLLAMA_ID = 'capture-ollama'
@@ -113,6 +127,12 @@ function capturedConfig(screen: Screen, dark: boolean): AppConfig {
     },
     shortcut_tour_completed: true,
     shortcut_tour_prompt_dismissed: true,
+    hands_free: {
+      enabled: screen === 'promo-hands-free',
+      wake_name: 'Sam',
+      sensitivity: 'normal',
+      action: 'dictate',
+    },
   }
   return config
 }
@@ -317,7 +337,55 @@ export function handleCommand(
     case 'list_input_devices':
       return [{ name: 'MacBook Pro Microphone', is_default: true }]
     case 'get_stt_recording_capability':
-      return { mode: 'auto', seconds: 600, maxSeconds: 600, source: 'builtin' }
+      // `stt::capabilities::ResolvedRecordingLimit`; the old flat shape crashed the Speech pane.
+      return {
+        capability: {
+          registryVersion: 1,
+          providerId: cfg.speech_presets[0].id,
+          transport: 'fileUpload',
+          recommendedMaxSeconds: 600,
+          hardMaxSeconds: 720,
+          maxUploadBytes: 25_165_824,
+          source: 'clientBuffer',
+          explanationKey: 'clientBuffer',
+        },
+        mode: 'auto',
+        requestedSeconds: 600,
+        effectiveMaxSeconds: 600,
+      }
+    case 'get_hotkey_status':
+      // `HotkeyStatus`: every shortcut installed, no conflict (Settings → General).
+      return {
+        dictation: { value: 'End', valid: true },
+        ask: { value: 'RightControl+End', valid: true },
+        conflict: false,
+        registration_error: null,
+        roles: [],
+        capability: {
+          platform: 'macos',
+          sessionType: 'unknown',
+          supportsGlobalHotkey: true,
+          supportsHoldMode: true,
+          supportsReleasedEdge: true,
+          supportsSideSpecificModifiers: true,
+          requiresAccessibilityPermission: true,
+          statusHint: null,
+        },
+      }
+    case 'get_hands_free_status':
+      return {
+        listener: cfg.hands_free.enabled ? 'listening' : 'off',
+        modelInstalled: true,
+        modelSizeBytes: 59_707_625,
+        setup: {
+          modelId: null,
+          phase: 'idle',
+          downloadedBytes: 0,
+          totalBytes: 0,
+          bytesPerSecond: 0,
+          error: null,
+        },
+      }
     case 'get_latest_mapping_candidate':
     case 'take_pending_ask_message':
       return null
