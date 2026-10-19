@@ -28,12 +28,17 @@
 //!   calls and a swallow decision.
 //!
 //! The `platform` modules only talk to the OS and call these functions.
+//!
+//! Typelite's own ⌘C (reading a highlight) and ⌘V (pasting) go through System Events, so the
+//! tap sees them like the user's keys. [`OwnKeystroke`] marks them, and while one is sent the
+//! tap matches only key releases (plan `own-keystrokes`).
 #![cfg_attr(not(target_os = "macos"), allow(dead_code))]
 
 use crate::native_keys;
 use serde::Serialize;
 use std::collections::BTreeSet;
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 use tauri_plugin_global_shortcut::ShortcutState;
 
 /// Most keys a chord may have: a base key plus two extra keys.
@@ -70,6 +75,44 @@ impl NativeChord {
     fn is_strict_subset_of(&self, other: &NativeChord) -> bool {
         self.keys.len() < other.keys.len() && self.keys.iter().all(|code| other.contains(*code))
     }
+}
+
+/// How long after one of Typelite's own keystrokes the tap still ignores key presses. The
+/// keystroke's events reach the tap a little after the call that sent them returns.
+const OWN_KEYSTROKE_TAIL: Duration = Duration::from_millis(250);
+
+/// Keystrokes being sent now, and when the last one ended.
+static OWN_KEYSTROKES: Mutex<(usize, Option<Instant>)> = Mutex::new((0, None));
+
+/// Plan `own-keystrokes`: marks a keystroke Typelite sends itself (the ⌘C that reads a
+/// highlight, the ⌘V that pastes) for as long as this value lives.
+///
+/// System Events posts these keys like a keyboard would, so the tap sees the Command key go
+/// down. A shortcut on a bare modifier (Dictate on Left Command) then fired on Typelite's own
+/// ⌘C: while Ask was starting, that "Dictate" press stopped Ask before it recorded anything.
+/// While a keystroke is marked, and for [`OWN_KEYSTROKE_TAIL`] after, the tap matches only key
+/// releases ([`TapLogic::process_mac_event_during`]).
+pub struct OwnKeystroke(());
+
+impl OwnKeystroke {
+    pub fn begin() -> Self {
+        OWN_KEYSTROKES.lock().unwrap_or_else(|e| e.into_inner()).0 += 1;
+        Self(())
+    }
+}
+
+impl Drop for OwnKeystroke {
+    fn drop(&mut self) {
+        let mut state = OWN_KEYSTROKES.lock().unwrap_or_else(|e| e.into_inner());
+        state.0 = state.0.saturating_sub(1);
+        state.1 = Some(Instant::now() + OWN_KEYSTROKE_TAIL);
+    }
+}
+
+/// Whether one of Typelite's own keystrokes is being sent, or was a moment ago.
+pub fn own_keystroke_in_flight() -> bool {
+    let (sending, until) = *OWN_KEYSTROKES.lock().unwrap_or_else(|e| e.into_inner());
+    sending > 0 || until.is_some_and(|until| Instant::now() < until)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -691,6 +734,17 @@ impl TapLogic {
     /// drops a modifier whose release was missed. Without this, one lost event would leave a
     /// chord stuck.
     pub fn process_mac_event(&mut self, event: MacKeyEvent) -> TapOutput {
+        self.process_mac_event_during(event, false)
+    }
+
+    /// [`Self::process_mac_event`] while Typelite may be sending its own ⌘C or ⌘V
+    /// (`own_keystroke`, see [`OwnKeystroke`]). Then new key presses are not matched and reach
+    /// the app untouched; releases still are, so no held key is left stuck.
+    pub fn process_mac_event_during(
+        &mut self,
+        event: MacKeyEvent,
+        own_keystroke: bool,
+    ) -> TapOutput {
         let mut output = TapOutput::default();
         let held = self.held_codes();
         for (code, down) in modifier_mismatches(&held, event.flags) {
@@ -698,7 +752,7 @@ impl TapLogic {
                 MacEventKind::FlagsChanged => !down && code != event.keycode,
                 MacEventKind::KeyDown | MacEventKind::KeyUp => down,
             };
-            if allowed {
+            if allowed && !(own_keystroke && down) {
                 let input = KeyInput {
                     code,
                     pressed: down,
@@ -710,7 +764,9 @@ impl TapLogic {
         }
 
         if let Some(input) = mac_key_input(event) {
-            output.swallow = self.feed(input, &mut output);
+            if !(own_keystroke && input.pressed && !input.autorepeat) {
+                output.swallow = self.feed(input, &mut output);
+            }
         } else if matches!(self, Self::Capture(_)) && event.kind != MacEventKind::FlagsChanged {
             output.swallow = true;
         }
@@ -1163,7 +1219,7 @@ mod platform {
             .logic
             .lock()
             .unwrap_or_else(|e| e.into_inner())
-            .process_mac_event(mac_event);
+            .process_mac_event_during(mac_event, super::own_keystroke_in_flight());
         let swallow = output.swallow;
         // Plan `typing-speed-and-nudge`: count the keystroke (never which key), unless Typelite
         // posted the event itself (Type-directly output).
@@ -1537,6 +1593,7 @@ mod tests {
     const END: u16 = 119;
     const RIGHT_SHIFT: u16 = 60;
     const RIGHT_CONTROL: u16 = 62;
+    const LEFT_COMMAND: u16 = 55;
     const RIGHT_COMMAND: u16 = 54;
     const K: u16 = 40;
     const F13: u16 = 105;
@@ -2270,6 +2327,65 @@ mod tests {
                 .process_mac_event(mac(MacEventKind::KeyDown, 0, 0))
                 .typed
         );
+    }
+
+    #[test]
+    fn own_copy_keystroke_does_not_fire_a_bare_command_shortcut() {
+        // Plan `own-keystrokes`: Dictate on bare Left Command, and Typelite sends ⌘C through
+        // System Events: Command down, C down and up, Command up.
+        let mut logic = TapLogic::Hotkeys(ChordMatcher::new(vec![binding(
+            HotkeyRole::Dictation,
+            &[LEFT_COMMAND],
+        )]));
+        let cmd = native_keys::FLAG_DEVICE_LEFT_COMMAND | 0x0010_0000;
+        let copy = [
+            mac(MacEventKind::FlagsChanged, LEFT_COMMAND, cmd),
+            mac(MacEventKind::KeyDown, 8, cmd),
+            mac(MacEventKind::KeyUp, 8, cmd),
+            mac(MacEventKind::FlagsChanged, LEFT_COMMAND, 0),
+        ];
+        for event in copy {
+            let output = logic.process_mac_event_during(event, true);
+            assert!(output.hotkey_events.is_empty(), "{event:?}");
+            assert!(!output.swallow);
+        }
+        // Afterwards the user's own Left Command works as before.
+        let press = logic.process_mac_event(mac(MacEventKind::FlagsChanged, LEFT_COMMAND, cmd));
+        assert_eq!(press.hotkey_events.len(), 1);
+        assert_eq!(press.hotkey_events[0].state, Pressed);
+        // Without the mark, the same ⌘C fires it (what happened before).
+        let mut unmarked = TapLogic::Hotkeys(ChordMatcher::new(vec![binding(
+            HotkeyRole::Dictation,
+            &[LEFT_COMMAND],
+        )]));
+        let fired = unmarked.process_mac_event(copy[0]);
+        assert_eq!(fired.hotkey_events.len(), 1);
+    }
+
+    #[test]
+    fn a_release_during_an_own_keystroke_still_counts() {
+        // The user lets go of End (hold to talk) while Typelite sends ⌘C: the release is not
+        // lost.
+        let mut logic = TapLogic::Hotkeys(ChordMatcher::new(vec![binding(
+            HotkeyRole::Dictation,
+            &[END],
+        )]));
+        let down = logic.process_mac_event(mac(MacEventKind::KeyDown, END, 0));
+        assert_eq!(down.hotkey_events[0].state, Pressed);
+        let up = logic.process_mac_event_during(mac(MacEventKind::KeyUp, END, 0), true);
+        assert_eq!(up.hotkey_events.len(), 1);
+        assert_eq!(up.hotkey_events[0].state, Released);
+        assert!(up.swallow);
+    }
+
+    #[test]
+    fn own_keystroke_mark_lasts_a_moment_after_the_keystroke() {
+        let mark = OwnKeystroke::begin();
+        assert!(own_keystroke_in_flight());
+        drop(mark);
+        assert!(own_keystroke_in_flight());
+        std::thread::sleep(OWN_KEYSTROKE_TAIL + Duration::from_millis(30));
+        assert!(!own_keystroke_in_flight());
     }
 
     #[test]

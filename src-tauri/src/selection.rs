@@ -103,7 +103,9 @@ fn wait_for_modifier_release() {}
 fn copy_selected_text_to_clipboard() -> bool {
     // The same System Events route as the paste (⌘V) in `output/clipboard.rs`, so it needs no
     // permission the paste does not already need: Accessibility, and Automation of System
-    // Events (asked once, on first use).
+    // Events (asked once, on first use). Marked as Typelite's own, so its ⌘ cannot fire a
+    // shortcut on a bare Command key (plan `own-keystrokes`).
+    let _own = crate::native_hotkey::OwnKeystroke::begin();
     match std::process::Command::new("/usr/bin/osascript")
         .args([
             "-e",
