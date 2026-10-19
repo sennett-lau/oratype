@@ -150,6 +150,12 @@ MIT. Keep the required copyright and permission notices in `LICENSE` and
   routes removals of pre-swap observers through the old class (plan `pill-over-full-screen`,
   `kvo.md`). Success logs "Overlay window capsule: now a non-activating panel" (and `ask`);
   "kept as a window" means the swap was skipped.
+- The pill and Ask windows show and place themselves from their own web page
+  (`useCapsuleResize`). WebKit suspends a page that has been hidden for about eight minutes,
+  so after a quiet spell runs still pasted but no pill appeared. Both windows set
+  `"backgroundThrottling": "disabled"` in `tauri.conf.json` (WebKit's `inactiveSchedulingPolicy`
+  none, macOS 14+). The system log shows a suspension: `/usr/bin/log show --predicate 'process ==
+  "typelite" AND subsystem == "com.apple.WebKit"'`, then `sendPrepareToSuspend` for the page.
 - Qwen3.5 in Ollama thinks by default. Through the OpenAI API without a thinking-off flag it
   thinks for about 27 s and returns empty `content`. Use a non-thinking instruct model, or send
   `reasoning_effort: "none"`.

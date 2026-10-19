@@ -49,6 +49,7 @@
         "focusable": false,
         "visible": false,
         "visibleOnAllWorkspaces": true,
+        "backgroundThrottling": "disabled",
         "url": "index.html#capsule"
       },
       {
@@ -67,6 +68,7 @@
         "acceptFirstMouse": true,
         "visible": false,
         "visibleOnAllWorkspaces": true,
+        "backgroundThrottling": "disabled",
         "url": "index.html#ask"
       }
     ],
