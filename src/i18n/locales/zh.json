@@ -575,7 +575,31 @@
     "polishStyleCleanDetail": "默认",
     "polishStyleStructuredDetail": "列表",
     "polishStyleProfessionalDetail": "正式",
-    "search": "搜索"
+    "search": "搜索",
+    "handsFree": {
+      "title": "免提",
+      "enable": "免提模式",
+      "enableHelp": "先说“Hey {{name}}”，再说出你的请求。开启后麦克风会一直打开，所以 macOS 会显示麦克风指示灯。说出唤醒词之前，不会发送任何内容。",
+      "wakeName": "唤醒名字",
+      "wakeNameHelp": "你在“Hey”之后说的名字",
+      "sensitivity": "灵敏度",
+      "sensitivityHelp": "越高越容易唤醒，但也可能误唤醒",
+      "low": "低",
+      "normal": "标准",
+      "high": "高",
+      "needsModel": "免提模式用这台 Mac 上的一个小型语音模型（{{size}} MB）来听“Hey {{name}}”，所以唤醒前不会有任何声音离开这台 Mac。",
+      "download": "下载",
+      "downloading": "正在下载唤醒模型… {{percent}}%",
+      "downloadFailed": "下载失败，请重试。",
+      "cancel": "取消",
+      "listening": "正在聆听“Hey {{name}}”",
+      "micError": "无法打开麦克风。",
+      "action": "说“Hey {{name}}”之后",
+      "actionDictate": "输入我说的话",
+      "actionAsk": "随便问",
+      "requestsDictate": "你说的话会输入到应用。说“问一下 …”改为提问，或说“翻译 …”。说“谢谢 {{name}}”结束，或停止说话 3 秒。",
+      "requestsAsk": "可以提问或说“翻译 …”；说“输入 …”把文字写入应用。说“谢谢 {{name}}”结束，或停止说话 3 秒。"
+    }
   },
   "contextFamilies": {
     "email": "邮件",

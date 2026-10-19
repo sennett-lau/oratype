@@ -575,7 +575,31 @@
     "polishStyleCleanDetail": "標準",
     "polishStyleStructuredDetail": "箇条書き",
     "polishStyleProfessionalDetail": "フォーマル",
-    "search": "検索"
+    "search": "検索",
+    "handsFree": {
+      "title": "ハンズフリー",
+      "enable": "ハンズフリーモード",
+      "enableHelp": "「Hey {{name}}」と言ってから、続けて依頼を話します。オンの間はマイクが開いたままなので、macOS にマイクのインジケータが表示されます。ウェイクフレーズの前は何も送信されません。",
+      "wakeName": "ウェイク名",
+      "wakeNameHelp": "「Hey」の後に言う名前",
+      "sensitivity": "感度",
+      "sensitivityHelp": "高いほど反応しやすくなりますが、誤って反応することがあります",
+      "low": "低",
+      "normal": "標準",
+      "high": "高",
+      "needsModel": "ハンズフリーはこの Mac 上の小さな音声モデル（{{size}} MB）で「Hey {{name}}」を聞き取ります。ウェイクフレーズの前に音声が Mac の外に出ることはありません。",
+      "download": "ダウンロード",
+      "downloading": "ウェイクモデルをダウンロード中… {{percent}}%",
+      "downloadFailed": "ダウンロードに失敗しました。もう一度お試しください。",
+      "cancel": "キャンセル",
+      "listening": "「Hey {{name}}」を待っています",
+      "micError": "マイクを開けませんでした。",
+      "action": "「Hey {{name}}」の後",
+      "actionDictate": "話した内容を入力",
+      "actionAsk": "なんでも質問",
+      "requestsDictate": "話した内容がアプリに入力されます。「ask …」と言うと質問に、「translate …」で翻訳になります。「Thanks, {{name}}」と言うか、3 秒話さないと終わります。",
+      "requestsAsk": "質問するか「translate …」と言います。「type …」と言うとアプリに入力します。「Thanks, {{name}}」と言うか、3 秒話さないと終わります。"
+    }
   },
   "contextFamilies": {
     "email": "メール",

@@ -400,6 +400,16 @@ export function isDefaultLanguageSettings(settings: TranslationLanguageSettings)
   )
 }
 
+/** Plan `hands-free-mode`: Settings → General → Hands-free mode. */
+export interface HandsFreeConfig {
+  enabled: boolean
+  /** The name after "Hey" ("Sam"). */
+  wake_name: string
+  sensitivity: 'low' | 'normal' | 'high'
+  /** What a request does: type it (default) or ask it. "ask …" / "type …" reach the other. */
+  action: 'dictate' | 'ask'
+}
+
 export interface AppConfig {
   speech_presets: SpeechPreset[]
   active_speech_preset_id: string
@@ -452,6 +462,8 @@ export interface AppConfig {
   mute_output_while_recording: boolean
   /** Plan `auto-update`: check for, download and offer updates by itself (on by default). */
   auto_update: boolean
+  /** Plan `hands-free-mode`: say "Hey Sam" instead of pressing a shortcut (off by default). */
+  hands_free: HandsFreeConfig
   /** Version of the built-in preset templates in this config (backend migration marker). */
   builtin_presets_version: number
   /** The three-shortcut tour (onboarding Dictate, Translate, Ask steps) was finished. */
@@ -513,6 +525,12 @@ interface AppState {
    */
   askSelectionPreview: string | null
   setAskSelectionPreview: (preview: string | null) => void
+  /**
+   * Plan `hands-free-mode`: for an Ask run the wake phrase started, what it does by default; null
+   * for a shortcut run. A request that will be typed shows the Dictate pill.
+   */
+  askHandsFreeAction: 'dictate' | 'ask' | null
+  setAskHandsFreeAction: (action: 'dictate' | 'ask' | null) => void
   /** Plan `ask-web-search`: what the Ask thinking pill says (searching the web, or thinking). */
   askStage: 'searching' | 'thinking'
   /**
@@ -1310,6 +1328,7 @@ const defaultConfig: AppConfig = {
   show_in_dock: true,
   mute_output_while_recording: false,
   auto_update: true,
+  hands_free: { enabled: false, wake_name: 'Sam', sensitivity: 'normal', action: 'dictate' },
   builtin_presets_version: 1,
   shortcut_tour_completed: false,
   shortcut_tour_prompt_dismissed: false,
@@ -1326,6 +1345,8 @@ export const useAppStore = create<AppState>((set) => ({
   setActiveVoiceMode: (activeVoiceMode) => set({ activeVoiceMode }),
   askSelectionPreview: null,
   setAskSelectionPreview: (askSelectionPreview) => set({ askSelectionPreview }),
+  askHandsFreeAction: null,
+  setAskHandsFreeAction: (askHandsFreeAction) => set({ askHandsFreeAction }),
   askStage: 'thinking',
   askSearched: false,
   setAskStage: (askStage) =>

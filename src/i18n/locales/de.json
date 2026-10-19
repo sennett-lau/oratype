@@ -575,7 +575,31 @@
     "polishStyleCleanDetail": "Standard",
     "polishStyleStructuredDetail": "Listen",
     "polishStyleProfessionalDetail": "Formell",
-    "search": "Suche"
+    "search": "Suche",
+    "handsFree": {
+      "title": "Freihändig",
+      "enable": "Freihändiger Modus",
+      "enableHelp": "Sag „Hey {{name}}“ und dann deine Anfrage. Solange das an ist, bleibt das Mikrofon offen, daher zeigt macOS die Mikrofonanzeige. Vor dem Aktivierungswort wird nichts gesendet.",
+      "wakeName": "Aktivierungsname",
+      "wakeNameHelp": "Der Name, den du nach „Hey“ sagst",
+      "sensitivity": "Empfindlichkeit",
+      "sensitivityHelp": "Höher reagiert leichter, kann aber versehentlich auslösen",
+      "low": "Niedrig",
+      "normal": "Normal",
+      "high": "Hoch",
+      "needsModel": "Der freihändige Modus hört mit einem kleinen Sprachmodell auf diesem Mac ({{size}} MB) auf „Hey {{name}}“. Vor dem Aktivierungswort verlässt nichts den Mac.",
+      "download": "Laden",
+      "downloading": "Aktivierungsmodell wird geladen … {{percent}} %",
+      "downloadFailed": "Der Download ist fehlgeschlagen. Versuch es noch einmal.",
+      "cancel": "Abbrechen",
+      "listening": "Wartet auf „Hey {{name}}“",
+      "micError": "Das Mikrofon konnte nicht geöffnet werden.",
+      "action": "Nach „Hey {{name}}“",
+      "actionDictate": "Gesagtes tippen",
+      "actionAsk": "Frag alles",
+      "requestsDictate": "Deine Worte werden in die App getippt. Sag „ask …“, um stattdessen zu fragen, oder „translate …“. Beende mit „Thanks, {{name}}“ oder sprich 3 Sekunden nicht.",
+      "requestsAsk": "Stell eine Frage oder sag „translate …“; sag „type …“, um in die App zu schreiben. Beende mit „Thanks, {{name}}“ oder sprich 3 Sekunden nicht."
+    }
   },
   "contextFamilies": {
     "email": "E-Mail",

@@ -899,6 +899,33 @@ struct PolishTextInput<'a> {
     copy_pill: Option<crate::copy_pill::CopyPillRun>,
     /// Plan `language-prompt-library`: the language code the speech step recognised, if any.
     detected_language: Option<String>,
+    /// Plan `hands-free-mode`: the wake name of a hands-free request, so the prompt can ask the
+    /// model to drop a closing "Thanks, Sam" that the matcher did not recognise.
+    hands_free_name: Option<&'a str>,
+}
+
+/// Plan `hands-free-mode` (routing.md): "Thanks, Sam" ends a hands-free request and is cut from
+/// the transcript (`WakePhrase::strip_end_phrase`). Speech recognition can write it in a way the
+/// matcher does not recognise ("Thanks, Sem.", "Danke, Sam"), so the polish prompt also asks the
+/// model to leave a closing thank-you to the wake name out. It goes before the user's own
+/// preferences, which are cut at their maximum length.
+fn with_hands_free_hint(custom_prompt: &str, wake_name: Option<&str>) -> String {
+    let Some(name) = wake_name
+        .map(|name| name.replace(['"', '\n', '\r'], " "))
+        .map(|name| name.trim().to_string())
+        .filter(|name| !name.is_empty())
+    else {
+        return custom_prompt.to_string();
+    };
+    let hint = format!(
+        "This was dictated hands-free to an assistant called \"{name}\". If the text ends with \
+         a thank-you to {name} (\"Thanks, {name}\", \"Thank you, {name}\", \"多謝 {name}\", \
+         \"谢谢 {name}\"), leave that closing out."
+    );
+    match custom_prompt.trim() {
+        "" => hint,
+        own => format!("{hint} {own}"),
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -911,6 +938,13 @@ struct PolishTextOutcome {
     /// Plan `speed-board`: error code of the step that failed, for the Speed board. `None` when the
     /// text reached the app.
     error_code: Option<String>,
+}
+
+/// Plan `hands-free-mode`: a "type …" request dictated into the focused app.
+pub(crate) struct HandsFreeDictation {
+    pub text: String,
+    /// The output report; `None` when AI polish is off (the text was pasted as is).
+    pub execution: Option<crate::voice_intent::executor::VoiceExecutionResult>,
 }
 
 pub(crate) struct AskVoiceDraftOutcome {
@@ -2163,6 +2197,7 @@ impl PipelineHandle {
                 copy_pill: (voice_mode != crate::voice_intent::VoiceMode::Ask)
                     .then(crate::copy_pill::CopyPillRun::default),
                 detected_language,
+                hands_free_name: None,
             })
             .await;
         let final_text = polish_outcome.final_text;
@@ -2345,6 +2380,7 @@ impl PipelineHandle {
             popup_fallback_enabled,
             copy_pill,
             detected_language,
+            hands_free_name,
         } = input;
         let provider_plan =
             crate::voice_intent::plan_voice_provider_work(voice_mode, raw_text, &voice_intent);
@@ -2527,7 +2563,10 @@ impl PipelineHandle {
                 .as_ref()
                 .map(|scene| scene.prompt_template.clone())
                 .unwrap_or_default(),
-            polish_custom_prompt: config.polish_custom_prompt.clone(),
+            polish_custom_prompt: with_hands_free_hint(
+                &config.polish_custom_prompt,
+                hands_free_name,
+            ),
             polish_chinese_script: config.polish_chinese_script.clone(),
             translate_enabled,
             translation_instructions: language.translation_instructions,
@@ -3002,6 +3041,7 @@ impl PipelineHandle {
                 popup_fallback_enabled: false,
                 copy_pill: None,
                 detected_language: None,
+                hands_free_name: None,
             })
             .await;
         self.set_state(PipelineState::Idle);
@@ -3016,6 +3056,68 @@ impl PipelineHandle {
             text: outcome.final_text,
             execution,
             llm_elapsed: outcome.llm_elapsed,
+        })
+    }
+
+    /// Plan `hands-free-mode`: dictates `text` (a hands-free request without its "type" prefix)
+    /// into the app that had focus when the request started, with the same polish and output as
+    /// the Dictate shortcut.
+    pub(crate) async fn run_hands_free_dictation(
+        &self,
+        config: &storage::AppConfig,
+        app_ctx: &RecordingContext,
+        text: &str,
+    ) -> std::result::Result<HandsFreeDictation, String> {
+        let voice_intent = crate::voice_intent::VoiceIntent::from_parts(
+            crate::voice_intent::VoiceIntentKind::DictateInsert,
+            crate::voice_intent::VoiceOutputPlacement::InsertAtCursor,
+            1.0,
+            None,
+            None,
+            None,
+            None,
+        )
+        .map_err(|error| error.to_string())?;
+        if self.current_state() != PipelineState::Idle {
+            return Err("Another voice operation is already active".to_string());
+        }
+        self.abort_flag.store(false, Ordering::SeqCst);
+        let dictionary_store = self.app_handle.state::<storage::DictionaryStore>();
+        let dictionary_words = dictionary_store.words().await;
+        let correction_rules = dictionary_store
+            .enabled_correction_rules()
+            .await
+            .into_iter()
+            .map(|rule| llm::CorrectionRule {
+                id: rule.id,
+                pattern: rule.pattern,
+                replacement: rule.replacement,
+                enabled: rule.enabled,
+            })
+            .collect::<Vec<_>>();
+        let outcome = self
+            .polish_text(PolishTextInput {
+                raw_text: text,
+                voice_mode: crate::voice_intent::VoiceMode::Dictate,
+                config,
+                app_ctx,
+                dictionary_words,
+                correction_rules,
+                selected_text: None,
+                voice_intent,
+                popup_fallback_enabled: false,
+                copy_pill: None,
+                detected_language: None,
+                hands_free_name: Some(&config.hands_free.wake_name),
+            })
+            .await;
+        self.set_state(PipelineState::Idle);
+        if let Some(code) = outcome.error_code {
+            return Err(outcome.output_error.unwrap_or(code));
+        }
+        Ok(HandsFreeDictation {
+            text: outcome.final_text,
+            execution: outcome.voice_execution,
         })
     }
 
@@ -3361,6 +3463,22 @@ impl PipelineHandle {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_hands_free_request_asks_the_model_to_drop_a_closing_thanks() {
+        // Plan `hands-free-mode`: only hands-free runs get the hint, before the user's own
+        // preferences.
+        assert_eq!(with_hands_free_hint("Keep dates.", None), "Keep dates.");
+        let hint = with_hands_free_hint("Keep dates.", Some("Peter"));
+        assert!(hint.starts_with("This was dictated hands-free"));
+        assert!(hint.contains("\"Thanks, Peter\""));
+        assert!(hint.contains("多謝 Peter"));
+        assert!(hint.ends_with("leave that closing out. Keep dates."));
+        assert!(with_hands_free_hint("", Some("Sam")).ends_with("leave that closing out."));
+        // A quote in the name cannot break out of the sentence.
+        assert!(!with_hands_free_hint("", Some("Sa\"m")).contains("Sa\"m"));
+        assert_eq!(with_hands_free_hint("", Some("  ")), "");
+    }
     use std::sync::atomic::{AtomicBool, AtomicU64};
 
     #[test]

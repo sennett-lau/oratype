@@ -26,6 +26,7 @@ vi.mock('../../i18n', () => ({
 
 vi.mock('../../lib/tauri', () => ({
   ASK_SELECTION_PREVIEW_EVENT: 'ask:selection_preview',
+  ASK_HANDS_FREE_EVENT: 'ask:hands_free',
   ASK_STAGE_EVENT: 'ask:stage',
 }))
 
@@ -278,6 +279,32 @@ describe('useTauriEvents', () => {
       eventListeners.get('pipeline:voice_mode')?.({ payload: null })
     })
     expect(useAppStore.getState().activeVoiceMode).toBeNull()
+  })
+
+  it('remembers what a hands-free run does by default until a dictation starts', async () => {
+    // Plan `hands-free-mode`: a request that will be typed shows the Dictate pill.
+    render(<HookHarness />)
+    await waitFor(() => {
+      expect(eventListeners.has('ask:hands_free')).toBe(true)
+    })
+
+    act(() => {
+      eventListeners.get('ask:hands_free')?.({ payload: 'dictate' })
+      eventListeners.get('pipeline:state')?.({ payload: 'ask_recording' })
+    })
+    expect(useAppStore.getState().askHandsFreeAction).toBe('dictate')
+
+    act(() => {
+      eventListeners.get('pipeline:state')?.({ payload: 'recording' })
+    })
+    expect(useAppStore.getState().askHandsFreeAction).toBeNull()
+
+    // A shortcut Ask run says null.
+    act(() => {
+      eventListeners.get('ask:hands_free')?.({ payload: 'ask' })
+      eventListeners.get('ask:hands_free')?.({ payload: null })
+    })
+    expect(useAppStore.getState().askHandsFreeAction).toBeNull()
   })
 
   it('keeps the highlight preview for the Ask pill until a dictation starts', async () => {

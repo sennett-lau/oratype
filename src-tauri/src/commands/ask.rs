@@ -33,6 +33,10 @@ pub const ASK_NO_SPEECH_ERROR: &str = "ask_no_speech";
 /// Plan `ask-panel-above-pill`: event with the start of the highlighted text (or `null`) that
 /// the Ask pill shows as a chip while it listens.
 pub const ASK_SELECTION_PREVIEW_EVENT: &str = "ask:selection_preview";
+/// Plan `hands-free-mode`: sent as an Ask run starts. `null` for a shortcut run; for a run the
+/// wake phrase started, what it does by default ("dictate" or "ask"), so the pill can show the
+/// Dictate pill for a request that will be typed.
+pub const ASK_HANDS_FREE_EVENT: &str = "ask:hands_free";
 /// Plan `searxng-setup`: after each real web search, whether it worked (the sidebar's dot).
 pub const SEARCH_RESULT_EVENT: &str = "search:result";
 
@@ -110,6 +114,9 @@ struct AskDictationStateInner {
     /// Plan `ask-web-search`: the source links of the answer on screen. The panel may open only
     /// these.
     source_links: Vec<String>,
+    /// Plan `hands-free-mode`: this run was started by the wake phrase, so its request is routed
+    /// by meaning ("type …" dictates) before Ask's own routing.
+    hands_free: bool,
 }
 
 impl AskDictationState {
@@ -137,7 +144,18 @@ impl AskDictationState {
         }
         guard.starting = true;
         guard.stop_after_start = false;
+        guard.hands_free = false;
         true
+    }
+
+    /// Plan `hands-free-mode`: marks the run just reserved as started by the wake phrase.
+    pub(crate) fn mark_hands_free(&self) {
+        self.0.lock().unwrap_or_else(|e| e.into_inner()).hands_free = true;
+    }
+
+    /// The current run was started by the wake phrase.
+    fn is_hands_free(&self) -> bool {
+        self.0.lock().unwrap_or_else(|e| e.into_inner()).hands_free
     }
 
     fn clear_starting(&self) {
@@ -454,6 +472,20 @@ impl AskDictationResultMetadata {
             sources: Vec::new(),
             live_search: None,
             unconfirmed: false,
+        }
+    }
+
+    /// Plan `hands-free-mode`: a "type …" request dictated into the focused app. Without AI
+    /// polish there is no execution report; the text went out like a plain dictation.
+    fn dictated(execution: Option<&crate::voice_intent::executor::VoiceExecutionResult>) -> Self {
+        match execution {
+            Some(execution) => Self::from_draft_execution(execution),
+            None => Self {
+                output: AskResultOutput::InsertedText,
+                requested_placement: crate::voice_intent::VoiceOutputPlacement::InsertAtCursor,
+                actual_placement: Some(crate::voice_intent::VoiceOutputPlacement::InsertAtCursor),
+                ..Self::popup(false, false)
+            },
         }
     }
 
@@ -1549,10 +1581,15 @@ pub(crate) async fn start_reserved_ask_dictation(
             return Ok(start_result);
         }
 
-        // Before the state, so the pill opens with the chip (or without a stale one).
+        // Before the state, so the pill opens with the chip (or without a stale one), and as
+        // the Dictate pill when a hands-free request will be typed.
         let _ = app.emit(
             ASK_SELECTION_PREVIEW_EVENT,
             start_result.selected_text_preview.clone(),
+        );
+        let _ = app.emit(
+            ASK_HANDS_FREE_EVENT,
+            state.is_hands_free().then_some(config.hands_free.action),
         );
         emit_capsule_state(&app, PipelineState::AskRecording);
         let _ = app.emit("recording:deadline", recording_deadline.event);
@@ -1755,7 +1792,7 @@ pub async fn stop_ask_dictation(
 ) -> Result<AskDictationResult, String> {
     // Plan `speed-board`: Speed board timing starts when stop is pressed.
     let stop_at = std::time::Instant::now();
-    let (mut session, cancel) = {
+    let (mut session, cancel, hands_free) = {
         let mut guard = state.0.lock().unwrap_or_else(|e| e.into_inner());
         if guard.processing {
             return Err("Ask is already processing".to_string());
@@ -1768,7 +1805,7 @@ pub async fn stop_ask_dictation(
         guard.processing = true;
         let cancel = Arc::new(Notify::new());
         guard.processing_cancel = Some(cancel.clone());
-        (session, cancel)
+        (session, cancel, std::mem::take(&mut guard.hands_free))
     };
     let upload_probe = session.upload_probe.clone();
     let mut transcript_at: Option<std::time::Instant> = None;
@@ -1820,11 +1857,23 @@ pub async fn stop_ask_dictation(
             return Err(message);
         }
 
-        let transcript = session
+        let mut transcript = session
             .transcript
             .lock()
             .unwrap_or_else(|e| e.into_inner())
             .clone();
+        // Plan `hands-free-mode` (routing.md): "Thanks, Sam" ended the request; it is not part
+        // of it. A request that was only that is no request.
+        if hands_free {
+            let hands_free_config = config_state
+                .load()
+                .await
+                .map_err(|e| e.to_string())?
+                .hands_free;
+            transcript =
+                crate::hands_free::matcher::WakePhrase::from_name(&hands_free_config.wake_name)
+                    .strip_end_phrase(&transcript, hands_free_config.sensitivity);
+        }
         if transcript.trim().is_empty() {
             failure_code = "stt_no_speech_detected";
             return Err(ASK_NO_SPEECH_ERROR.to_string());
@@ -1851,6 +1900,53 @@ pub async fn stop_ask_dictation(
             .unwrap_or_else(|e| e.into_inner())
             .clone();
         let (question, answer_language) = route_question(&app, &config, question, &heard);
+        // Plan `hands-free-mode`: a request after the wake phrase is typed or asked, as set in
+        // Settings, unless its first words say otherwise ("ask …", "type …").
+        let question = if hands_free {
+            use crate::hands_free::routing::{self, HandsFreeRoute};
+            let action = config.hands_free.action;
+            let mut route = routing::route(&question, action);
+            if let HandsFreeRoute::VoiceCommand(command) = &route {
+                if routing::run_voice_command(&app, command) {
+                    return Ok(AskDictationResult::new(
+                        question,
+                        String::new(),
+                        VoiceIntentKind::DictateInsert,
+                        AskDictationResultMetadata::dictated(None),
+                    ));
+                }
+                route = routing::fallback(&question, action);
+            }
+            match route {
+                HandsFreeRoute::Dictate(text) => {
+                    failure_code = "llm_failed";
+                    pastes = true;
+                    let started = std::time::Instant::now();
+                    let dictated = app
+                        .state::<crate::pipeline::PipelineHandle>()
+                        .run_hands_free_dictation(&config, &session.recording_context, &text)
+                        .await;
+                    ai_elapsed = Some(started.elapsed());
+                    let execution = dictated?;
+                    return Ok(AskDictationResult::new(
+                        question,
+                        execution.text,
+                        VoiceIntentKind::DictateInsert,
+                        AskDictationResultMetadata::dictated(execution.execution.as_ref()),
+                    ));
+                }
+                HandsFreeRoute::Ask(asked) if !asked.trim().is_empty() => asked,
+                // "Ask" with nothing after it: nothing to ask.
+                HandsFreeRoute::Ask(_) => {
+                    failure_code = "stt_no_speech_detected";
+                    return Err(ASK_NO_SPEECH_ERROR.to_string());
+                }
+                // Not handled above; `fallback` never returns a voice command.
+                HandsFreeRoute::VoiceCommand(_) => question,
+            }
+        } else {
+            question
+        };
         let voice_intent = route_ask_intent(
             &question,
             used_selected_text,
