@@ -965,6 +965,10 @@
     "failed": "Impossible de commencer l’enregistrement du raccourci : {{error}}"
   },
   "whatsNew": {
+    "handsFree": "Mode mains libres : dites « Hey Sam », marquez une pause, puis parlez, sans raccourci. Vos mots sont tapés dans l’app ; dites « ask … » pour poser une question. Terminez par « Thanks, Sam » ou une pause de 3 secondes. Activez-le dans Réglages → Général → Mains libres ; un petit modèle (60 Mo) écoute sur votre Mac, donc rien n’est envoyé avant la phrase d’activation.",
+    "pillAfterIdle": "La pilule réapparaît après un moment d’inactivité. Après environ huit minutes sans dictée, elle pouvait ne plus s’afficher alors que la dictée fonctionnait.",
+    "polishCutOff": "Les longues dictées, surtout en cantonais, ne sont plus coupées par la mise en forme. L’IA intégrée a deux fois plus de place, et une réponse qui dépasse encore est remplacée par votre transcription.",
+    "ownKeystrokes": "Avec un raccourci sur une seule touche Commande, « Demander n’importe quoi » ne s’arrête plus dès le départ dans les apps où Typelite copie votre sélection pour la lire.",
     "languageModels": "Vos langues : indiquez à Typelite les langues que vous parlez (dans la configuration initiale ou Réglages → Voix). Pour le cantonais, il suggère deux modèles intégrés à télécharger : Qwen3-ASR, qui écrit le cantonais tel que vous le dites, et Qwen 3.5 4B pour le polissage.",
     "clipboardSafe": "Typelite ne touche plus à votre presse-papiers : un résultat qu’il ne peut pas taper attend dans la pastille Copier, un collage rend tout ce que vous aviez copié (images et fichiers compris), et les gestionnaires de presse-papiers n’enregistrent plus les dictées.",
     "typeAfterSwitch": "Cliquer dans une app et dicter aussitôt tape désormais le texte au lieu de le copier.",

@@ -11,6 +11,10 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    version: '1.2.0',
+    changeKeys: ['handsFree', 'pillAfterIdle', 'polishCutOff', 'ownKeystrokes'],
+  },
+  {
     version: '1.1.3',
     changeKeys: [
       'languageModels',

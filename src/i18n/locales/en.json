@@ -965,6 +965,10 @@
     "failed": "Could not start recording the shortcut: {{error}}"
   },
   "whatsNew": {
+    "handsFree": "Hands-free mode: say “Hey Sam”, pause, then speak, with no shortcut. Your words are typed into the app; say “ask …” to ask instead. Finish with “Thanks, Sam” or a 3-second pause. Turn it on in Settings → General → Hands-free; a small model (60 MB) listens on your Mac, so nothing is sent before the wake phrase.",
+    "pillAfterIdle": "The pill shows again after a quiet spell. After about eight minutes without dictating, it could stop appearing while dictation still worked.",
+    "polishCutOff": "Long dictations, especially in Cantonese, are no longer cut short by polish. Built-in AI has twice the room, and an answer that still runs out is replaced by your transcript.",
+    "ownKeystrokes": "With a shortcut on a single Command key, Ask no longer stops the moment it starts in apps where Typelite copies your highlight to read it.",
     "languageModels": "Your languages: tell Typelite which languages you speak (in onboarding or Settings → Speech). For Cantonese it suggests two built-in models to download: Qwen3-ASR, which writes Cantonese the way you say it, and Qwen 3.5 4B for polish.",
     "clipboardSafe": "Typelite leaves your clipboard alone: a result it cannot type waits in the Copy pill, a paste brings back everything you had copied (images and files too), and clipboard managers no longer record dictations.",
     "typeAfterSwitch": "Clicking into an app and dictating right away now types the text instead of copying it.",
