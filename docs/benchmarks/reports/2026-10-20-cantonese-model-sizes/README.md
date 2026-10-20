@@ -32,7 +32,8 @@ models** on the same Mac, for speed and quality, and finds where a dictation's t
 | Q8_0 (shipped) | 2.17 GB | 24 / 2% | 2.09 s | 4.41 s | — | 4.1 GB |
 | Q6_K | 1.67 GB | 24 / 2% | 1.98 s | 3.90 s | identical | 3.6 GB |
 | Q5_K_M | 1.47 GB | 24 / 2% | 1.89 s | 4.11 s | identical | 3.5 GB |
-| **Q4_K_M** | **1.28 GB** | 24 / 2% | **1.50 s (−28%)** | **3.48 s (−21%)** | identical | 3.4 GB |
+| **Q4_K_M** | **1.28 GB** | 24 / 2% | **1.50 s (−28%)** | **3.48 s (−21%)** | one comma became a full stop on the 28 s clip | 3.4 GB |
+| Q4_K_M, mradermacher ([below](#addendum-a-published-q4_k_m)) | 1.28 GB | 24 / 2% | 1.77 s | 3.60 s | same as the Q4_K_M above | 3.1 GB |
 
 - Times are the median of 5 requests per clip. Before each one a different clip went through, so
   the server could not reuse the audio from its cache: a real dictation is always new audio.
@@ -41,11 +42,32 @@ models** on the same Mac, for speed and quality, and finds where a dictation's t
   output tokens at 56–58 tokens/s on Q8_0 and 72–81 tokens/s on Q4_K_M. Writing speed follows the
   file size (memory bandwidth), so a smaller file helps directly.
 - Quality did not move on this data: every clip passed with the same error rate in every language,
-  and all four files wrote character-for-character the same long transcripts (216 characters).
+  and all four files wrote the same 240 characters for the 56 s clip. On the 28 s clip (120
+  characters) the Q4_K_M files end one sentence with a full stop where Q8_0 has a comma.
   The data is synthetic and clean; real voices and noise are harder, so the margin a 4-bit file
   leaves on real speech is not measured here.
 - The eval clips' own throughput numbers ([raw/](raw/)) are not a speed measure: each clip gives
   about 17 output tokens, so request overhead dominates.
+
+### Addendum: a published Q4_K_M
+
+The recommendation below needed a 4-bit file we would have to host. `mradermacher/Qwen3-ASR-1.7B-GGUF`
+publishes one, measured afterwards on the same Mac, server and clips (raw:
+[speech-mrad-Q4_K_M.json](raw/speech-mrad-Q4_K_M.json),
+[speech-mrad-Q4_K_M-eval.md](raw/speech-mrad-Q4_K_M-eval.md), `mrad-Q4_K_M` in
+[speech-long.json](raw/speech-long.json)):
+
+- Files: `Qwen3-ASR-1.7B.Q4_K_M.gguf` (1,282,435,552 bytes) and its own
+  `Qwen3-ASR-1.7B.mmproj-Q8_0.gguf` (355,709,472 bytes) at revision 664b960. They were converted
+  from Qwen's original weights, not from ggml-org's bf16, so the model file is not byte-identical
+  to the one made here. The projector is 128 bytes larger than ggml-org's; the difference is
+  metadata, the tensors are the same.
+- Eval clips: 24 of 24 passed, with the same mean error per language as Q8_0 (English 3%,
+  Cantonese 2%, Mandarin 2%).
+- Long clips: median 1.77 s and 3.60 s (fastest 1.58 s and 3.31 s), 69–73 tokens/s, and the same
+  transcripts as the Q4_K_M made here. Its medians are 0.1–0.3 s above that file's; both runs had
+  one slow request of 2.1–2.4 s and 4.9–5.1 s, so the gap is within this Mac's run-to-run spread.
+- Resident memory of the server: 3.1 GB.
 
 ## AI polish (Qwen 3.5 4B)
 
@@ -104,15 +126,18 @@ prompt took about 14.3 s on Q4_K_M and 10.5 s on Q4_0 in the server logs; a warm
 
 ## Recommendation
 
+Plan [`faster-cantonese-models`](../../../plans/2026-10-20-faster-cantonese-models/index.md)
+takes up items 1 and 2.
+
 1. **Polish: switch the Cantonese suggestion to Qwen 3.5 4B Q4_0** (`unsloth`, same revision).
    +36% writing and +22% reading speed, 160 MB smaller, no quality loss in this evaluation.
    A one-line model change (file, size, SHA-256) in `llm/models.rs`.
-2. **Speech: switch to Qwen3-ASR 1.7B Q4_K_M** if a trusted copy can be hosted. 21–28% faster on
-   long dictations, 0.9 GB smaller download and less memory, with no measurable quality change
-   here. ggml-org publishes only Q8_0 and bf16, so the app would download a file made from
-   ggml-org's bf16 with `llama-quantize` (as here), published with the model's Apache-2.0 notice
-   in a repository we control, and pinned by SHA-256. Q6_K is the cautious middle (12% faster on
-   the long clip) if real-voice tests show the 4-bit file slipping.
+2. **Speech: switch to Qwen3-ASR 1.7B Q4_K_M.** 21–28% faster on long dictations, 0.9 GB smaller
+   download and less memory, with no measurable quality change here. ggml-org publishes only Q8_0
+   and bf16; mradermacher's published Q4_K_M with its own projector measured the same (see the
+   addendum), so the app can download that pair, pinned by revision and SHA-256, with no copy of
+   ours to host. Q6_K is the cautious middle (12% faster on the long clip) if real-voice tests show
+   the 4-bit file slipping.
 3. **The larger win is not the file: give each language its own polish slot.** Run the built-in
    polish server with `--parallel 2` and 16,384 tokens of context, and send each request with
    `id_slot` for its language route (and send a short warm-up per language when the server
@@ -123,8 +148,7 @@ prompt took about 14.3 s on Q4_K_M and 10.5 s on Q4_0 in the server logs; a warm
 
 - Real Cantonese recordings and noisy rooms (all speech here is synthetic).
 - Other Macs: 8 and 16 GB machines, and newer chips with more memory bandwidth.
-- Quantized copies published by others (for example `mradermacher/Qwen3-ASR-1.7B-GGUF`); their
-  compatibility with ggml-org's audio projector was not checked.
+- mradermacher's Q4_K_M with ggml-org's projector (it was measured with its own projector only).
 - Memory and speed of the two-slot setup over a long session (its second slot costs about one more
   8,192-token KV cache, which is small for this hybrid model: the whole polish server's own memory
   was 0.7 GB with one slot).
