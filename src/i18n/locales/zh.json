@@ -1065,6 +1065,8 @@
     "changeModel": "更换模型",
     "download": "下载",
     "use": "使用",
+    "update": "更新",
+    "updateAvailable": "有更快的版本（{{size}}）",
     "model": "模型",
     "models": {
       "large-v3-turbo": "最准确",

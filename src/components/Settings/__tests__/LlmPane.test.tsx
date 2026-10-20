@@ -103,12 +103,14 @@ describe('LlmPane', () => {
         fileName: 'Qwen3-4B-Instruct-2507-Q4_K_M.gguf',
         sizeBytes: 2_497_281_120,
         installed: false,
+        updateAvailable: false,
       },
       {
         id: 'qwen3-1.7b',
         fileName: 'Qwen3-1.7B-Q4_K_M.gguf',
         sizeBytes: 1_107_409_472,
         installed: false,
+        updateAvailable: false,
       },
     ])
     vi.mocked(tauri.getAiHardware).mockResolvedValue(
@@ -164,6 +166,7 @@ describe('LlmPane', () => {
           fileName: 'Qwen3-4B-Instruct-2507-Q4_K_M.gguf',
           sizeBytes: 2_497_281_120,
           installed: true,
+          updateAvailable: false,
         },
       ])
       await renderPane()
@@ -174,6 +177,33 @@ describe('LlmPane', () => {
       fireEvent.click(within(status).getByRole('button', { name: 'Delete' }))
       fireEvent.click(within(status).getByRole('button', { name: 'Click again to delete' }))
       await waitFor(() => expect(tauri.deleteAiModel).toHaveBeenCalledWith('qwen3-4b'))
+    })
+
+    it('an earlier version in use offers the faster one as an update (plan `faster-cantonese-models`)', async () => {
+      mockAppStore.config.ai_presets = [
+        { ...installedAiBuiltin('qwen3.5-4b', 7), model_file: 'Qwen3.5-4B-Q4_K_M.gguf' },
+      ]
+      vi.mocked(tauri.listAiModels).mockResolvedValue([
+        {
+          id: 'qwen3.5-4b',
+          fileName: 'Qwen3.5-4B-Q4_K_M.gguf',
+          sizeBytes: 2_740_937_888,
+          installed: true,
+          updateAvailable: true,
+        },
+      ])
+      vi.mocked(tauri.getAiHardware).mockResolvedValue(
+        hardwareCheck(['qwen3.5-4b'], { serverAvailable: true }),
+      )
+      await renderPane()
+
+      const status = await screen.findByTestId('builtin-status')
+      await waitFor(() => expect(within(status).getByText('In use')).toBeInTheDocument())
+      expect(
+        within(status).getByText(/2\.7 GB · faster version available \(2\.6 GB\)/),
+      ).toBeInTheDocument()
+      fireEvent.click(within(status).getByRole('button', { name: 'Update' }))
+      expect(tauri.startAiSetup).toHaveBeenCalledWith('qwen3.5-4b')
     })
 
     it('when no model suits this computer, Built-in is dimmed and the server form shows', async () => {

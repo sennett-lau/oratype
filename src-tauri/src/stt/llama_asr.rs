@@ -44,7 +44,11 @@ pub fn config_for(preset: &SpeechPreset) -> Result<LlamaAsrConfig, String> {
         provider_name: preset.name.clone(),
         model_id: model.file.id.to_string(),
         model_file: preset.model_file.trim().to_string(),
-        projector_file: model.projector.file_name.to_string(),
+        // Plan `faster-cantonese-models`: a preset on an earlier model file keeps its projector.
+        projector_file: model
+            .projector_for(preset.model_file.trim())
+            .file_name
+            .to_string(),
     })
 }
 
@@ -281,8 +285,12 @@ mod tests {
 
     #[test]
     fn a_qwen3_asr_preset_names_both_files() {
-        let config = config_for(&qwen_preset("Qwen3-ASR-1.7B-Q8_0.gguf")).unwrap();
+        let config = config_for(&qwen_preset("Qwen3-ASR-1.7B.Q4_K_M.gguf")).unwrap();
         assert_eq!(config.model_id, "qwen3-asr-1.7b");
+        assert_eq!(config.model_file, "Qwen3-ASR-1.7B.Q4_K_M.gguf");
+        assert_eq!(config.projector_file, "Qwen3-ASR-1.7B.mmproj-Q8_0.gguf");
+        // Plan `faster-cantonese-models`: a preset on the earlier file runs with its projector.
+        let config = config_for(&qwen_preset("Qwen3-ASR-1.7B-Q8_0.gguf")).unwrap();
         assert_eq!(config.model_file, "Qwen3-ASR-1.7B-Q8_0.gguf");
         assert_eq!(config.projector_file, "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf");
         assert_eq!(

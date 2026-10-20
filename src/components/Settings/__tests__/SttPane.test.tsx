@@ -23,8 +23,15 @@ const MODELS: tauri.SpeechModelInfo[] = [
     fileName: 'ggml-large-v3-turbo-q5_0.bin',
     sizeBytes: 574_041_195,
     installed: true,
+    updateAvailable: false,
   },
-  { id: 'small', fileName: 'ggml-small-q5_1.bin', sizeBytes: 190_085_487, installed: false },
+  {
+    id: 'small',
+    fileName: 'ggml-small-q5_1.bin',
+    sizeBytes: 190_085_487,
+    installed: false,
+    updateAvailable: false,
+  },
 ]
 
 function config() {
