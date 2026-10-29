@@ -553,37 +553,75 @@ pub async fn warm_up_builtin_ai(app: tauri::AppHandle) {
         .collect();
     let store = crate::commands::language_presets::library_store(&app).ok();
     let requests = warm_up_requests(&config, store.as_ref(), &dictionary, &correction_rules);
-    let Ok(mut llm_config) = llm::builtin::llm_config(preset, String::new()).await else {
+    let Ok(llm_config) = llm::builtin::llm_config(preset, String::new()).await else {
         return;
     };
-    llm_config.max_tokens = 1;
-    let provider = llm::create_provider(None);
+    send_warm_up(&llm_config, requests).await;
+}
+
+/// Sends the warm-up requests one after the other; returns how many the server took. Each asks
+/// for one token: the server reads the whole prompt and keeps it, the answer is not used, and
+/// stopping at the length limit is expected. Stops at the first failure.
+async fn send_warm_up(
+    llm_config: &llm::LlmConfig,
+    requests: Vec<(Option<u32>, PolishRequest)>,
+) -> usize {
+    let Ok(url) = llm::protocol::chat_endpoint(&llm_config.base_url) else {
+        return 0;
+    };
+    let Ok(client) = reqwest::Client::builder().no_proxy().build() else {
+        return 0;
+    };
+    let mut warmed = 0;
     for (slot, request) in requests {
-        let mut slot_config = llm_config.clone();
+        let mut extra = llm_config.extra_request_fields.clone();
         if let Some(slot) = slot {
-            slot_config
-                .extra_request_fields
-                .insert("id_slot".to_string(), slot.into());
+            extra.insert("id_slot".to_string(), slot.into());
         }
-        let started = std::time::Instant::now();
+        let body = llm::protocol::build_chat_body(
+            &llm_config.model,
+            llm::openai::polish_messages(&request),
+            1,
+            llm_config.temperature,
+            false,
+            &extra,
+        );
         let language = request
             .polish_language_notes
             .as_ref()
             .map(|notes| notes.code.clone())
             .unwrap_or_else(|| "none".to_string());
-        match provider.polish(&slot_config, &request, None).await {
-            Ok(_) => tracing::info!(
-                "Built-in AI warmed up: language {language}, slot {}, {} ms",
-                slot.map(|slot| slot.to_string())
-                    .unwrap_or_else(|| "any".to_string()),
-                started.elapsed().as_millis()
-            ),
+        let started = std::time::Instant::now();
+        let sent =
+            llm::protocol::apply_auth_headers(client.post(url.as_str()), &llm_config.api_key)
+                .json(&body)
+                .timeout(llm::protocol::REQUEST_TIMEOUT)
+                .send()
+                .await;
+        match sent {
+            Ok(response) if response.status().is_success() => {
+                warmed += 1;
+                tracing::info!(
+                    "Built-in AI warmed up: language {language}, slot {}, {} ms",
+                    slot.map(|slot| slot.to_string())
+                        .unwrap_or_else(|| "any".to_string()),
+                    started.elapsed().as_millis()
+                )
+            }
+            Ok(response) => {
+                tracing::warn!(
+                    "Built-in AI warm-up for {language} failed: HTTP {}",
+                    response.status().as_u16()
+                );
+                return warmed;
+            }
             Err(error) => {
                 tracing::warn!("Built-in AI warm-up for {language} failed: {error}");
-                return;
+                return warmed;
             }
         }
     }
+    warmed
 }
 
 /// Plan `language-routing-everywhere`: which of the user's languages `transcript` is in, for
@@ -4527,6 +4565,81 @@ mod tests {
         let requests = warm_up_requests(&config, Some(&store), &words, &[]);
         assert_eq!(requests.len(), 1);
         assert_eq!(requests[0].1.polish_language_notes, None);
+    }
+
+    /// A chat server that records each request body and answers every request with one token
+    /// cut off at the length limit, as llama-server does for `max_tokens: 1`.
+    fn cut_off_chat_server() -> (String, Arc<Mutex<Vec<serde_json::Value>>>) {
+        use std::io::{BufRead, BufReader, Read, Write};
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let bodies = Arc::new(Mutex::new(Vec::new()));
+        let seen = bodies.clone();
+        std::thread::spawn(move || {
+            for stream in listener.incoming() {
+                let mut stream = stream.unwrap();
+                let mut reader = BufReader::new(stream.try_clone().unwrap());
+                let mut length = 0;
+                loop {
+                    let mut line = String::new();
+                    reader.read_line(&mut line).unwrap();
+                    if line.trim().is_empty() {
+                        break;
+                    }
+                    if let Some(value) = line.to_ascii_lowercase().strip_prefix("content-length:") {
+                        length = value.trim().parse().unwrap();
+                    }
+                }
+                let mut body = vec![0; length];
+                reader.read_exact(&mut body).unwrap();
+                seen.lock()
+                    .unwrap()
+                    .push(serde_json::from_slice(&body).unwrap());
+                let answer =
+                    r#"{"choices":[{"message":{"content":"O"},"finish_reason":"length"}]}"#;
+                write!(
+                    stream,
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{answer}",
+                    answer.len()
+                )
+                .unwrap();
+            }
+        });
+        (format!("http://127.0.0.1:{port}/v1"), bodies)
+    }
+
+    #[tokio::test]
+    async fn the_warm_up_sends_each_language_a_one_token_dictation_to_its_slot() {
+        let (mut config, store) = config_with_cantonese_preset();
+        config.translation.targets = vec!["zh-Hant-HK".to_string(), "en".to_string()];
+        let requests = warm_up_requests(&config, Some(&store), &[], &[]);
+        let expected: Vec<Vec<serde_json::Value>> = requests
+            .iter()
+            .map(|(_, request)| llm::openai::polish_messages(request))
+            .collect();
+        let (base_url, bodies) = cut_off_chat_server();
+        let llm_config = llm::LlmConfig {
+            api_key: String::new(),
+            model: "qwen3.5-4b".to_string(),
+            base_url,
+            extra_request_fields: serde_json::Map::new(),
+            max_tokens: 4096,
+            temperature: 0.3,
+        };
+
+        // A one-token answer stops at the length limit; that is the point, not a failure.
+        assert_eq!(send_warm_up(&llm_config, requests).await, 2);
+        let bodies = bodies.lock().unwrap();
+        assert_eq!(bodies.len(), 2);
+        for (slot, body) in bodies.iter().enumerate() {
+            assert_eq!(body["max_tokens"], 1);
+            assert_eq!(body["id_slot"], slot);
+            assert_eq!(body["stream"], false);
+            assert_eq!(
+                body["messages"],
+                serde_json::Value::from(expected[slot].clone())
+            );
+        }
     }
 
     #[test]
