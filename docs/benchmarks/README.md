@@ -13,6 +13,7 @@ with its decision; it does not change the application-overhead baseline.
 | [Baseline data](baseline.json) | Raw samples and provenance, usable with the benchmark runner's `--compare`. |
 | [Methodology](methodology.md) | Workloads, timing boundaries, statistics and limitations. |
 | [Report template](REPORT_TEMPLATE.md) | Standard report for each performance PR. |
+| [Keeping Built-in AI warm](reports/2026-10-29-warm-builtin-ai/README.md) | A 30-dictation session per model: the first dictation and language switches re-read ~4,000 tokens; a warm-up and a slot per language cut Qwen 3.5 4B's session from 171 s to 64 s. |
 | [Polish hesitation sounds](reports/2026-10-09-polish-hesitation-sounds/README.md) | PR #81 measured with `evals/`: dev 70% to 78%, holdout 53% to 55%; lists kept. |
 | [Polish fillers and dashes](reports/2026-10-09-polish-dashes-and-fillers/README.md) | PR #81 with the built-in 4B model: English fillers and final dashes gone; Chinese fillers unchanged. |
 | [Language evaluations](reports/2026-10-09-language-evals/README.md) | First polish and speech quality baseline per language (`evals/`). |
