@@ -8,6 +8,11 @@ that already works well on a llama.cpp server, without setting up a server.
 
 Status: building - 2026-10-16.
 
+Superseded in part by [languages-in-general](../2026-10-29-languages-in-general/index.md)
+(2026-10-29): Your languages moves to Settings → General, stores written-language codes
+(`zh-Hant-HK`, not `yue`) and also decides language routing; the built-in pages keep only the
+suggestion banner.
+
 ## Goals and non-goals
 
 - Offer more built-in models per step than "Best" and "Faster".
