@@ -41,6 +41,16 @@ pub struct LanguageProfile {
     pub polish: bool,
 }
 
+impl LanguageProfile {
+    /// Plan `warm-builtin-ai`: whether [`route`] can ever pick this language. It must be on,
+    /// take part in polish and have something to be recognised by: its preset's speech codes or
+    /// hints. A language without a preset or hints is never picked; its dictations get plain
+    /// polish.
+    pub fn recognisable(&self) -> bool {
+        self.enabled && self.polish && (!self.detect_codes.is_empty() || !self.hints.is_empty())
+    }
+}
+
 /// Resolves every chosen language in list order. `store` is where downloaded presets live; a
 /// missing or damaged preset falls back to the built-in default (and is logged).
 pub fn language_profiles(config: &AppConfig, store: Option<&LibraryStore>) -> Vec<LanguageProfile> {

@@ -43,6 +43,7 @@ function baseConfig() {
     selected_text_enabled: false,
     target_lang: 'en',
     translation: { targets: ['en', 'zh-Hans', 'ja'], active_target: 'en' },
+    builtin_ai_language_slots: true,
   }
 }
 
@@ -364,6 +365,24 @@ describe('LlmPane', () => {
       expect(screen.getByRole('textbox', { name: 'Custom polish instructions' })).toHaveValue(
         'Keep it concise.',
       )
+    })
+  })
+
+  describe('Built-in AI', () => {
+    it('offers fast language switching, on by default, and explains the memory it costs', () => {
+      render(<LlmPane />)
+      const toggle = screen.getByRole('switch', { name: 'Fast language switching' })
+      expect(toggle).toBeChecked()
+      expect(screen.getByText(/1–2 GB more memory for each extra language/)).toBeInTheDocument()
+      fireEvent.click(toggle)
+      expect(mockAppStore.updateConfig).toHaveBeenCalledWith({ builtin_ai_language_slots: false })
+    })
+
+    it('hides it when AI polish runs on a server', () => {
+      mockAppStore.config.ai_presets = [thinkingPreset]
+      mockAppStore.config.active_ai_preset_id = thinkingPreset.id
+      render(<LlmPane />)
+      expect(screen.queryByRole('switch', { name: 'Fast language switching' })).toBeNull()
     })
   })
 
