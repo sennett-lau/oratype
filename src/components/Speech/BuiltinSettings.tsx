@@ -55,6 +55,12 @@ export function BuiltinSettings({ service = SPEECH_SERVICE }: { service?: Engine
   const selected = defaultModelChoice(hardware, choice ?? current)
   const info = (models ?? []).find((model) => model.id === selected)
   const running = isSetupRunning(status)
+  // Plan `faster-cantonese-models`: an earlier version of the model is installed; the download
+  // size of the current one comes from the offer.
+  const updateSize = offered.find((model) => model.id === selected)?.sizeBytes
+  const updateNote = info?.updateAvailable
+    ? t('speechSetup.updateAvailable', { size: formatSize(updateSize ?? info.sizeBytes) })
+    : null
 
   const select = (id: string) => {
     setChoice(id)
@@ -146,13 +152,14 @@ export function BuiltinSettings({ service = SPEECH_SERVICE }: { service?: Engine
           <span className="status-line">
             <span className="badge">{t('speechSetup.badges.inUse')}</span>
             <span className="status-detail">
-              {[modelDetail(selected, t, info.sizeBytes, service), tested]
+              {[modelDetail(selected, t, info.sizeBytes, service), tested, updateNote]
                 .filter(Boolean)
                 .join(' · ')}
             </span>
           </span>
         </div>
         {deleteButton}
+        {info.updateAvailable && button(t('speechSetup.update'), () => service.start(selected))}
       </>
     )
   } else if (selected && info?.installed) {
@@ -163,7 +170,9 @@ export function BuiltinSettings({ service = SPEECH_SERVICE }: { service?: Engine
           <span className="status-line">
             <span className="badge badge-neutral">{t('speechSetup.badges.downloaded')}</span>
             <span className="status-detail">
-              {modelDetail(selected, t, info.sizeBytes, service)}
+              {[modelDetail(selected, t, info.sizeBytes, service), updateNote]
+                .filter(Boolean)
+                .join(' · ')}
             </span>
           </span>
         </div>

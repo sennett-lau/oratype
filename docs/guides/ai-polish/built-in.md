@@ -15,14 +15,19 @@ starts the server and sends one test request.
 |---|---|---|---|
 | Best quality | Qwen3 4B Instruct 2507, Q4_K_M | 2.5 GB | Apple Silicon with 16 GB of memory or more |
 | Faster | Qwen3 1.7B, Q4_K_M | 1.1 GB | Apple Silicon with 8 GB of memory or more |
-| Qwen 3.5 | Qwen 3.5 4B, Q4_K_M | 2.7 GB | Apple Silicon with 16 GB of memory or more |
+| Qwen 3.5 | Qwen 3.5 4B, Q4_0 | 2.6 GB | Apple Silicon with 16 GB of memory or more |
 
-- The models come from Unsloth's Hugging Face repositories (Qwen does not publish Q4_K_M files
-  of these) and are released by Qwen under the Apache-2.0 licence.
+- The models come from Unsloth's Hugging Face repositories (Qwen does not publish quantised GGUF
+  files of these) and are released by Qwen under the Apache-2.0 licence. They are stored in
+  `~/Library/Application Support/dev.oratype.mac/models/`, next to the speech models.
 - Qwen 3.5 4B is the AI half of the setup suggested for Cantonese (see **Your languages** in
   onboarding or Settings). In the polish evaluations it does better than Qwen3 4B on Cantonese
-  and worse on English and Mandarin, so it is suggested only for combinations with Cantonese. They are stored in
-  `~/Library/Application Support/dev.oratype.mac/models/`, next to the speech models.
+  and worse on English and Mandarin, so it is suggested only for combinations with Cantonese.
+- Qwen 3.5 4B is the Q4_0 file because it answers about a third faster than Q4_K_M on a Mac at
+  the same quality ([report](../../benchmarks/reports/2026-10-20-cantonese-model-sizes/README.md)).
+  If you set it up with OraType 1.2.0 or earlier you have the Q4_K_M file: it keeps working, and
+  Settings shows **Update** to download the faster one (the old file is deleted once the new one
+  passes its test).
 - Intel Macs, and Macs with less memory than the table says, get no Built-in option; use an
   [OpenAI-compatible](openai-compatible.md) server or service instead.
 - **Delete** in Settings removes the model file.

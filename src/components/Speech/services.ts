@@ -176,7 +176,7 @@ export const AI_SERVICE: EngineService = {
   cancel: () => cancelAiSetup(),
   deleteModel: (modelId) => deleteAiModel(modelId),
   modelKey: (id) => AI_MODEL_KEYS[id] ?? id,
-  sizes: { 'qwen3-4b': 2_497_281_120, 'qwen3-1.7b': 1_107_409_472, 'qwen3.5-4b': 2_740_937_888 },
+  sizes: { 'qwen3-4b': 2_497_281_120, 'qwen3-1.7b': 1_107_409_472, 'qwen3.5-4b': 2_583_221_408 },
 }
 
 /** The Built-in preset of a service (every config has one). */

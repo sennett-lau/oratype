@@ -5,8 +5,8 @@
 //! Ignored by default so `cargo test` stays offline. Run it with:
 //!
 //! ```sh
-//! ORATYPE_E2E_QWEN3_ASR_DIR=<folder with Qwen3-ASR-1.7B-Q8_0.gguf and
-//! mmproj-Qwen3-ASR-1.7B-Q8_0.gguf> cargo test --test e2e_qwen3_asr -- --ignored --nocapture
+//! ORATYPE_E2E_QWEN3_ASR_DIR=<folder with Qwen3-ASR-1.7B.Q4_K_M.gguf and
+//! Qwen3-ASR-1.7B.mmproj-Q8_0.gguf> cargo test --test e2e_qwen3_asr -- --ignored --nocapture
 //! ```
 //!
 //! It needs `src-tauri/binaries/llama-server-<triple>` from `scripts/build-llama-server.sh` (or
@@ -70,8 +70,9 @@ async fn builtin_qwen3_asr_keeps_spoken_cantonese() {
         builtin::speech_server().binary_available(),
         "build llama-server first: bash scripts/build-llama-server.sh"
     );
+    let model = stt::models::asr_model(stt::models::QWEN3_ASR_MODEL_ID).expect("Qwen3-ASR");
     let preset =
-        SpeechPreset::builtin_whisper(stt::models::QWEN3_ASR_MODEL_ID, "Qwen3-ASR-1.7B-Q8_0.gguf");
+        SpeechPreset::builtin_whisper(stt::models::QWEN3_ASR_MODEL_ID, model.file.file_name);
 
     // The automatic test setup runs; it starts the server.
     let started = Instant::now();

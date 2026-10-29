@@ -1065,6 +1065,8 @@
     "changeModel": "Cambiar modelo",
     "download": "Descargar",
     "use": "Usar",
+    "update": "Actualizar",
+    "updateAvailable": "versión más rápida disponible ({{size}})",
     "model": "Modelo",
     "models": {
       "large-v3-turbo": "Máxima precisión",
