@@ -29,8 +29,11 @@ Where Your languages appear and what reads them. Back to [index](index.md).
 - A chosen language (Your languages, then Translate's) without a settings entry gets the best
   direct official match, as Browse would list it first: `en` → English, `zh-Hant-HK` →
   Cantonese (Hong Kong), `zh-Hant-TW` → Mandarin (Taiwan); `zh-Hans` and `ja` have none today.
-  The file is stored like a download, the language's `library_preset` points to it, and
-  automatic updates are on.
+  The file is stored like a download and the language's `library_preset` points to it.
+  Automatic updates stay off: OraType never goes online for a preset the user did not pick
+  (only the app-update check runs on its own, per `CLAUDE.md`). At startup, an official preset
+  older than the app's built-in copy moves to it, the way an automatic update would, and edited
+  text is still never replaced.
 - It runs when Your languages are saved (General, onboarding) and once at startup, before any
   window loads the config, which covers migrated lists and languages added earlier.
 - A language with settings (another preset, its own text, switched off, its own hints) is never

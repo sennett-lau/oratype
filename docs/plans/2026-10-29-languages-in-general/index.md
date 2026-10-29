@@ -57,7 +57,7 @@ Changes decisions of earlier plans (each has a "Superseded in part" note):
 | A one-time migration builds Your languages from the old spoken languages and the Translate languages | Dictation was routed by the Translate list; keeping those languages keeps every user's routing. |
 | Automatic preset updates cover Your languages and Translate's languages | A language used only for dictation can also follow new versions. |
 | The official presets are built into the app (`include_str!`), checked with the download checks | A language can get its preset with no network request; the hash check is the same as for a download. |
-| A chosen language without settings gets its official built-in preset, with automatic updates on, once | Found in a dev build: with no preset nothing was recognised, so every dictation got plain polish. Updates keep it current; a language the user set up, or moved back to the built-in text, is left alone. |
+| A chosen language without settings gets its official built-in preset once, with automatic updates off; app updates bring newer built-in versions | Found in a dev build: with no preset nothing was recognised, so every dictation got plain polish. No new network traffic the user did not choose; a language the user set up, or moved back to the built-in text, is left alone. |
 | A language without a preset is heard by its own speech code: `zh-Hant-HK` → `yue`, other Chinese → `zh`, else its primary subtag | Every listed language can be recognised; Cantonese without its preset never takes Mandarin's `zh`. |
 | The generic built-in text (translation wording) is not added to polish or Ask | It says how to translate, not how to write; the Chinese built-in texts, presets and edits are added. |
 

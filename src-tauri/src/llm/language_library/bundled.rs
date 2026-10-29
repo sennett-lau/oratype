@@ -1,8 +1,9 @@
 //! Plan `languages-in-general`: the official language presets built into the app, so a language
 //! added to Your languages gets its preset without a download. They are the repository's
 //! `presets/languages/` files at build time, checked against the built-in `index.json` with the
-//! same size, SHA-256 and validation checks as a download (`fetch::verify_file`). Newer versions
-//! still arrive through the automatic update.
+//! same size, SHA-256 and validation checks as a download (`fetch::verify_file`). A newer version
+//! arrives with an app update and is applied at startup; the daily online check runs only for
+//! languages whose automatic updates the user turned on.
 
 use std::sync::OnceLock;
 

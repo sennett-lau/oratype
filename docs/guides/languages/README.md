@@ -188,8 +188,8 @@ to default** goes back to the built-in instructions.
 - Other presets are downloaded with plain requests to `raw.githubusercontent.com`: no account, no
   identifiers, nothing about you, your languages or your text. GitHub sees your IP address, as
   with any download. OraType goes online only when you browse presets, or once a day for
-  languages with automatic updates on (which includes the languages that got a built-in
-  preset; turn it off in the language's settings).
+  languages where you ticked automatic updates. A built-in preset gets newer versions with
+  OraType's own updates, without going online.
 - Every download is checked against the size and SHA-256 hash in the library's index, and
   validated, before it is used. Downloaded presets are kept in OraType's data folder.
 - Offline, the built-in instructions and downloaded presets keep working; Browse shows what is
