@@ -570,6 +570,9 @@
     "switchLanguageReset": "Utiliser Shift (gauche ou droite)",
     "shortcutOff": "Désactivé",
     "enableAiPolishHelp": "Désactivé, colle exactement ce que vous avez dit",
+    "groupBuiltinAi": "IA intégrée",
+    "fastLanguageSwitching": "Changement de langue rapide",
+    "fastLanguageSwitchingHelp": "Garde chacune de vos langues prête : une dictée dans une autre langue n'attend pas que l'IA relise ses instructions (jusqu'à environ 10 secondes). Utilise environ 1 à 2 Go de mémoire en plus par langue supplémentaire, jusqu'à trois.",
     "contextAdaptationHelp": "E-mail, messagerie et documents ont chacun leur ton",
     "polishStyleMinimalDetail": "Corrections seules",
     "polishStyleCleanDetail": "Par défaut",
@@ -820,6 +823,8 @@
     "pillPosition": "Langue {{index}} sur {{count}}",
     "addLanguage": "Ajouter une langue",
     "chooseLanguage": "Choisir une langue",
+    "onlyForTranslate": "Seul le raccourci Traduire utilise cette liste. Les langues que vous parlez sont dans Général → Vos langues.",
+    "openYourLanguages": "Aller à Vos langues",
     "languages": {
       "zhHans": "Chinois (simplifié)",
       "zhHantHK": "Chinois (traditionnel, Hong Kong)",
@@ -965,6 +970,10 @@
     "failed": "Impossible de commencer l’enregistrement du raccourci : {{error}}"
   },
   "whatsNew": {
+    "fasterCantoneseModels": "La configuration intégrée pour le cantonais est plus légère et plus rapide : reconnaissance vocale 21 à 28 % plus rapide sur les longues dictées (1,6 Go au lieu de 2,5 Go), amélioration qui écrit environ un tiers plus vite. Si vous l’aviez déjà, les Réglages affichent Mettre à jour ; vos fichiers fonctionnent jusque-là.",
+    "readyFirstDictation": "L’IA intégrée est prête pour votre première dictée. Au démarrage, elle lit en arrière-plan les instructions de vos langues : la première amélioration prend environ une seconde au lieu de 5 à 11 secondes. Si vous dictez tout de suite, elle s’arrête et ne vous ralentit jamais.",
+    "fastLanguageSwitching": "Changement de langue rapide (Réglages → IA → IA intégrée, activé par défaut) : chacune de vos langues reste prête, et passer de l’une à l’autre prend environ une seconde au lieu de 15 au maximum. Environ 1 à 2 Go de mémoire en plus par langue supplémentaire ; désactivez-le sur un Mac à court de mémoire.",
+    "yourLanguages": "Vos langues sont désormais dans Réglages → Général. Chaque langue arrive avec son préréglage, et OraType utilise celui de la langue parlée avec tous les services d’IA : intégré, votre serveur ou une clé d’API. La liste Traduire ne sert plus qu’à traduire.",
     "renamed": "Typelite s’appelle désormais OraType. Vos réglages, modèles et dictionnaire sont conservés. Accordez encore une fois l’Accessibilité et le Micro (Réglages Système → Confidentialité et sécurité), et si macOS demande d’autoriser OraType à utiliser « Typelite » dans votre trousseau, choisissez Toujours autoriser : ce sont vos clés API enregistrées.",
     "handsFree": "Mode mains libres : dites « Hey Sam », marquez une pause, puis parlez, sans raccourci. Vos mots sont tapés dans l’app ; dites « ask … » pour poser une question. Terminez par « Thanks, Sam » ou une pause de 3 secondes. Activez-le dans Réglages → Général → Mains libres ; un petit modèle (60 Mo) écoute sur votre Mac, donc rien n’est envoyé avant la phrase d’activation.",
     "pillAfterIdle": "La pilule réapparaît après un moment d’inactivité. Après environ huit minutes sans dictée, elle pouvait ne plus s’afficher alors que la dictée fonctionnait.",
@@ -1065,6 +1074,8 @@
     "changeModel": "Changer de modèle",
     "download": "Télécharger",
     "use": "Utiliser",
+    "update": "Mettre à jour",
+    "updateAvailable": "version plus rapide disponible ({{size}})",
     "model": "Modèle",
     "models": {
       "large-v3-turbo": "Meilleure précision",
@@ -1284,9 +1295,10 @@
     "add": "+ Ajouter une langue",
     "addLabel": "Ajouter une langue que vous parlez",
     "remove": "Retirer {{language}}",
-    "hints": {
-      "yue": "Cantonais",
-      "zh": "Mandarin"
+    "names": {
+      "zhHans": "Mandarin (simplifié)",
+      "zhHantHK": "Cantonais (Hong Kong)",
+      "zhHantTW": "Mandarin (traditionnel)"
     },
     "fromMac": "Repris des langues préférées de votre Mac.",
     "list": "{{items}} et {{last}}",
@@ -1306,6 +1318,9 @@
     "homeBodyBoth": "{{speech}} pour la reconnaissance vocale et {{ai}} pour le polissage IA. Ils s’exécutent sur ce Mac ; {{size}} à télécharger.",
     "homeBodySpeech": "{{speech}} pour la reconnaissance vocale. Il s’exécute sur ce Mac ; {{size}} à télécharger.",
     "homeBodyAi": "{{ai}} pour le polissage IA. Il s’exécute sur ce Mac ; {{size}} à télécharger.",
-    "dontShowAgain": "Ne plus afficher"
+    "dontShowAgain": "Ne plus afficher",
+    "generalHelp": "Quand vous dictez ou posez une question, OraType choisit dans cette liste la langue que vous avez parlée et suit son préréglage, avec les modèles intégrés, votre propre serveur ou une clé API. Le préréglage d’une langue s’applique aussi quand vous traduisez vers elle.",
+    "useMac": "Ajouter {{languages}}",
+    "changeLanguages": "Modifier vos langues"
   }
 }

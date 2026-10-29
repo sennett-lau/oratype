@@ -1,12 +1,14 @@
 import { useTranslation } from 'react-i18next'
 import { useLanguageSetup } from '../../hooks/useLanguageSetup'
 import { AI_SERVICE, SPEECH_SERVICE } from '../Speech/services'
-import { SetupSuggestionBox, SpokenLanguagesPicker } from '../Languages/SpokenLanguages'
+import { SetupSuggestionBox, YourLanguagesPicker } from '../Languages/YourLanguages'
 
 /**
  * Plan `language-model-suggestions`: Onboarding → Your languages, between Voice input and Speech
- * recognition. It only looks up a suggested setup for the chosen languages; the next two steps
- * start with its models chosen, and the user downloads each one there.
+ * recognition. It looks up a suggested setup for the chosen languages; the next two steps start
+ * with its models chosen, and the user downloads each one there. Plan `languages-in-general`: the
+ * list is Your languages, which Dictate and Ask also pick from; Next saves the Mac's languages
+ * when the user kept them (see `Onboarding`).
  */
 export function LanguagesStep() {
   const { t } = useTranslation()
@@ -18,7 +20,7 @@ export function LanguagesStep() {
         <span id="spoken-languages-label" className="sr-only">
           {t('languageSetup.yourLanguages')}
         </span>
-        <SpokenLanguagesPicker labelId="spoken-languages-label" />
+        <YourLanguagesPicker labelId="spoken-languages-label" />
         {!chosen && languages.length > 0 && (
           <span className="hardware-note">{t('languageSetup.fromMac')}</span>
         )}

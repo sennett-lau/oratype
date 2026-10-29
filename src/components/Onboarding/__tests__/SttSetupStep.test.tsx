@@ -110,7 +110,7 @@ describe('SttSetupStep', () => {
       vi.mocked(tauri.getSpeechHardware).mockResolvedValue(
         hardwareCheck(['large-v3-turbo', 'small', 'qwen3-asr-1.7b']),
       )
-      useAppStore.getState().setConfig({ ...config(), spoken_languages: ['en', 'yue'] })
+      useAppStore.getState().setConfig({ ...config(), your_languages: ['en', 'zh-Hant-HK'] })
       await renderStep()
 
       const models = within(card()).getByRole('radiogroup', { name: 'Model' })
@@ -118,7 +118,7 @@ describe('SttSetupStep', () => {
       expect(qwen).toHaveAttribute('aria-checked', 'true')
       expect(within(qwen).getByText('Suggested for your languages')).toBeInTheDocument()
       expect(within(models).queryByText('Recommended')).not.toBeInTheDocument()
-      expect(within(qwen).getByText('Qwen3-ASR 1.7B · 2.5 GB')).toBeInTheDocument()
+      expect(within(qwen).getByText('Qwen3-ASR 1.7B · 1.6 GB')).toBeInTheDocument()
 
       fireEvent.click(within(card()).getByRole('button', { name: 'Set up' }))
       expect(tauri.startSpeechSetup).toHaveBeenCalledWith('qwen3-asr-1.7b')
@@ -128,7 +128,7 @@ describe('SttSetupStep', () => {
       vi.mocked(tauri.getSpeechHardware).mockResolvedValue(
         hardwareCheck(['large-v3-turbo', 'small', 'qwen3-asr-1.7b']),
       )
-      useAppStore.getState().setConfig({ ...config(), spoken_languages: ['en', 'ja'] })
+      useAppStore.getState().setConfig({ ...config(), your_languages: ['en', 'ja'] })
       await renderStep()
 
       const models = within(card()).getByRole('radiogroup', { name: 'Model' })

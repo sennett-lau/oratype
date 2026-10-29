@@ -1,6 +1,10 @@
 //! Plan `language-prompt-library`: the user's chosen languages as the prompt sees them
 //! (effective instructions and recognition data), and the polish router that picks at most one
-//! of them for a dictation.
+//! of them for a dictation. Plan `languages-in-general`: the router picks from Your languages
+//! (Settings → General), never from the Translate languages, whatever the AI service.
+//!
+//! A language without a preset still has speech codes, from its written code
+//! (`default_detect_codes`), so every listed language can be recognised.
 //!
 //! Router steps, over the languages that are on and apply to polish, in list order:
 //! 1. hints: the language with the most of its hints (preset + user) found in the transcript;
@@ -31,7 +35,8 @@ pub struct LanguageProfile {
     /// The effective instructions: the user's text, the rendered preset, or the built-in default.
     pub instructions: String,
     pub source: InstructionsSource,
-    /// Speech codes from the preset (none without one).
+    /// Speech codes from the preset, or, without one, from the written code
+    /// (`default_detect_codes`).
     pub detect_codes: Vec<String>,
     /// The preset's hints, then the user's own.
     pub hints: Vec<String>,
@@ -41,13 +46,24 @@ pub struct LanguageProfile {
     pub polish: bool,
 }
 
-/// Resolves every chosen language in list order. `store` is where downloaded presets live; a
-/// missing or damaged preset falls back to the built-in default (and is logged).
+impl LanguageProfile {
+    /// Plan `warm-builtin-ai`: whether [`route`] can ever pick this language. It must be on,
+    /// take part in polish and have something to be recognised by: its preset's speech codes or
+    /// hints. A language without a preset or hints is never picked; its dictations get plain
+    /// polish.
+    pub fn recognisable(&self) -> bool {
+        self.enabled && self.polish && (!self.detect_codes.is_empty() || !self.hints.is_empty())
+    }
+}
+
+/// Resolves Your languages (plan `languages-in-general`) in list order. The Translate languages
+/// are not among them unless the user also speaks them. `store` is where downloaded presets
+/// live; a missing or damaged preset falls back to the built-in default (and is logged).
 pub fn language_profiles(config: &AppConfig, store: Option<&LibraryStore>) -> Vec<LanguageProfile> {
     config
-        .translation
-        .targets
+        .your_languages
         .iter()
+        .flatten()
         .map(|code| language_profile(config, store, code))
         .collect()
 }
@@ -109,12 +125,47 @@ pub fn language_profile(
         detect_codes: preset
             .as_ref()
             .map(|preset| preset.detect_codes.clone())
-            .unwrap_or_default(),
+            .unwrap_or_else(|| default_detect_codes(code)),
         hints,
+        // Without a preset the code's own speech codes need no hint (Cantonese is `yue` only).
         require_hint: preset.as_ref().is_some_and(|preset| preset.require_hint),
         polish: preset
             .as_ref()
             .is_none_or(|preset| preset.applies_to_polish() || settings.instructions.is_some()),
+    }
+}
+
+/// Plan `languages-in-general`: the speech codes of a language without a preset, from its
+/// written code. Cantonese (Hong Kong) is `yue` only, so a Mandarin dictation (`zh`) is never
+/// taken for it; the other Chinese codes are `zh`; any other language is its primary subtag
+/// (`en`, `ja`, `pt-BR` → `pt`) when `language-codes.json` knows it.
+pub fn default_detect_codes(code: &str) -> Vec<String> {
+    let parts: Vec<String> = code
+        .trim()
+        .split(['-', '_'])
+        .map(str::to_ascii_lowercase)
+        .collect();
+    let primary = parts.first().map(String::as_str).unwrap_or_default();
+    let hong_kong = parts.iter().any(|part| part == "hk" || part == "mo");
+    let speech = match primary {
+        "yue" => "yue",
+        "zh" if hong_kong => "yue",
+        "zh" => "zh",
+        other if language_library::is_known_language(other) => other,
+        _ => return Vec::new(),
+    };
+    vec![speech.to_string()]
+}
+
+impl LanguageProfile {
+    /// Plan `languages-in-general`: the text polish and Ask get for this language: its
+    /// instructions, except the generic built-in text of a language without a preset or an
+    /// edit, which says how to translate into it, not how to write it. The Chinese built-in
+    /// texts describe the writing, so they count.
+    pub fn writing_notes(&self) -> Option<&str> {
+        let generic = self.source == InstructionsSource::Builtin
+            && self.instructions == crate::llm::prompt::plain_translation_instructions(&self.code);
+        (!generic && !self.instructions.trim().is_empty()).then_some(self.instructions.as_str())
     }
 }
 
@@ -282,12 +333,14 @@ mod tests {
         .unwrap()
     }
 
-    /// Hong Kong Chinese with the Cantonese preset, then English with the English preset (the
-    /// mock's setup), with the presets stored in a temp library.
+    /// Your languages: Hong Kong Chinese with the Cantonese preset, then English with the
+    /// English preset (the mock's setup), with the presets stored in a temp library. Translate
+    /// has only Japanese.
     fn mock_setup(user_hints: &[&str]) -> (AppConfig, LibraryStore) {
         let store = temp_store("router");
         let mut config = AppConfig::default();
-        config.translation.targets = vec!["zh-Hant-HK".to_string(), "en".to_string()];
+        config.your_languages = Some(vec!["zh-Hant-HK".to_string(), "en".to_string()]);
+        config.translation.targets = vec!["ja".to_string()];
         for (code, id) in [("zh-Hant-HK", "cantonese-hong-kong"), ("en", "english")] {
             let bytes = repository_preset(id);
             let sha256 = store.store_preset(id, &bytes).unwrap();
@@ -447,14 +500,55 @@ mod tests {
         assert_eq!(count_hints(&hints, "arvo 嘅"), 2);
     }
 
+    /// Plan `languages-in-general`: Your languages decide routing; the Translate languages do not,
+    /// even with a preset, unless the user also speaks them.
     #[test]
-    fn languages_without_a_preset_route_only_by_user_hints() {
+    fn routing_uses_your_languages_not_the_translate_languages() {
+        let (mut config, store) = mock_setup(&[]);
+        assert_eq!(
+            language_profiles(&config, Some(&store))
+                .iter()
+                .map(|profile| profile.code.as_str())
+                .collect::<Vec<_>>(),
+            ["zh-Hant-HK", "en"]
+        );
+        // Cantonese is spoken but not a Translate language: it routes.
+        assert!(!config
+            .translation
+            .targets
+            .contains(&"zh-Hant-HK".to_string()));
+        assert_eq!(
+            routed(&config, &store, "我哋听日开会", "yue").as_deref(),
+            Some("zh-Hant-HK")
+        );
+
+        // Only a Translate language now: Cantonese no longer routes, English still does.
+        config.your_languages = Some(vec!["en".to_string()]);
+        config.translation.targets = vec!["zh-Hant-HK".to_string(), "en".to_string()];
+        assert_eq!(routed(&config, &store, "我哋听日开会", "yue"), None);
+        assert_eq!(
+            routed(&config, &store, "hello", "en").as_deref(),
+            Some("en")
+        );
+
+        // No languages chosen: nothing routes, whatever Translate holds.
+        config.your_languages = None;
+        assert!(language_profiles(&config, Some(&store)).is_empty());
+        assert_eq!(routed(&config, &store, "hello", "en"), None);
+    }
+
+    /// Plan `languages-in-general`: without a preset a language is heard by its own code (it
+    /// used to route only by the user's hints).
+    #[test]
+    fn languages_without_a_preset_route_by_their_own_code_and_user_hints() {
         let mut config = AppConfig::default();
-        config.translation.targets = vec!["en".to_string(), "ja".to_string()];
+        config.your_languages = Some(vec!["en".to_string(), "ja".to_string()]);
         let profiles = language_profiles(&config, None);
         assert_eq!(profiles[0].source, InstructionsSource::Builtin);
-        assert!(profiles[0].detect_codes.is_empty());
-        assert_eq!(route(&profiles, "hello", Some("en")).index(), None);
+        assert_eq!(profiles[0].detect_codes, ["en"]);
+        assert!(!profiles[0].require_hint);
+        assert_eq!(route(&profiles, "hello", Some("en")).index(), Some(0));
+        assert_eq!(route(&profiles, "こんにちは", Some("ja")).index(), Some(1));
 
         config.translation.languages.insert(
             "ja".to_string(),
@@ -480,7 +574,90 @@ mod tests {
             profiles[0].instructions,
             crate::llm::prompt::default_translation_instructions("zh-Hant-HK")
         );
-        assert!(profiles[0].detect_codes.is_empty());
+        // The code's own speech code instead of the preset's.
+        assert_eq!(profiles[0].detect_codes, ["yue"]);
+        assert!(!profiles[0].require_hint);
+    }
+
+    #[test]
+    fn default_speech_codes_come_from_the_written_code() {
+        let codes = |code: &str| default_detect_codes(code);
+        assert_eq!(codes("en"), ["en"]);
+        assert_eq!(codes("zh-Hant-HK"), ["yue"]);
+        assert_eq!(codes("zh-Hans"), ["zh"]);
+        assert_eq!(codes("zh-Hant-TW"), ["zh"]);
+        assert_eq!(codes("ja"), ["ja"]);
+        assert_eq!(codes("fr"), ["fr"]);
+        assert_eq!(codes("pt-BR"), ["pt"]);
+        assert_eq!(codes("yue-Hant-HK"), ["yue"]);
+        // Every supported language has one.
+        for code in crate::storage::SUPPORTED_TRANSLATION_LANGUAGES {
+            assert_eq!(codes(code).len(), 1, "{code}");
+        }
+        // Not a known language subtag: none.
+        assert!(codes("xx").is_empty());
+        assert!(codes("").is_empty());
+    }
+
+    /// Plan `languages-in-general`: with no presets at all, English and Cantonese still route,
+    /// and Mandarin (`zh`) goes to Simplified Mandarin, never to Cantonese.
+    #[test]
+    fn languages_without_presets_route_by_their_default_codes() {
+        let mut config = AppConfig::default();
+        config.your_languages = Some(["en", "zh-Hant-HK", "zh-Hans"].map(str::to_string).to_vec());
+        let profiles = language_profiles(&config, None);
+        let picked = |text: &str, heard: &str| {
+            route(&profiles, text, Some(heard))
+                .index()
+                .map(|index| profiles[index].code.as_str())
+        };
+        assert_eq!(picked("Can you check this?", "en"), Some("en"));
+        assert_eq!(picked("我哋听日开会", "yue"), Some("zh-Hant-HK"));
+        assert_eq!(picked("我今天很忙", "zh"), Some("zh-Hans"));
+        assert_eq!(picked("¿Podemos vernos?", "es"), None);
+
+        // With the Cantonese preset (`yue` and `zh`, a hint needed for `zh`), Mandarin still goes
+        // to Simplified Mandarin, and a Cantonese hint still goes to Cantonese.
+        let (mut with_preset, store) = mock_setup(&[]);
+        with_preset.your_languages =
+            Some(["zh-Hant-HK", "en", "zh-Hans"].map(str::to_string).to_vec());
+        assert_eq!(
+            routed(&with_preset, &store, "我今天很忙", "zh").as_deref(),
+            Some("zh-Hans")
+        );
+        assert_eq!(
+            routed(&with_preset, &store, "我今日好忙，唔得閒", "zh").as_deref(),
+            Some("zh-Hant-HK")
+        );
+    }
+
+    /// The generic built-in text says how to translate, so polish and Ask get no notes from it;
+    /// the Chinese built-in texts, presets and edits count.
+    #[test]
+    fn only_writing_instructions_become_notes() {
+        let mut config = AppConfig::default();
+        config.your_languages = Some(["ja", "zh-Hans"].map(str::to_string).to_vec());
+        let profiles = language_profiles(&config, None);
+        assert_eq!(profiles[0].writing_notes(), None);
+        assert!(profiles[1]
+            .writing_notes()
+            .is_some_and(|text| text.starts_with("Write natural Mandarin")));
+
+        config.translation.languages.insert(
+            "ja".to_string(),
+            TranslationLanguageSettings {
+                instructions: Some("Polite Japanese.".to_string()),
+                ..TranslationLanguageSettings::default()
+            },
+        );
+        let profiles = language_profiles(&config, None);
+        assert_eq!(profiles[0].writing_notes(), Some("Polite Japanese."));
+
+        let (config, store) = mock_setup(&[]);
+        let profiles = language_profiles(&config, Some(&store));
+        assert!(profiles[1]
+            .writing_notes()
+            .is_some_and(|text| !text.is_empty()));
     }
 
     #[test]

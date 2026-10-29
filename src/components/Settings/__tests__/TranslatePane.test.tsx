@@ -86,4 +86,19 @@ describe('TranslatePane', () => {
       'https://github.com/sennett-lau/oratype/blob/main/docs/guides/languages/README.md#language-presets',
     )
   })
+
+  // Plan `languages-in-general`: dictation picks from Your languages in General, not from here.
+  it('says the list is for Translate only and links to Your languages', () => {
+    window.location.hash = '#/settings?pane=translate'
+    render(<TranslatePane />)
+
+    const group = screen.getByRole('region', { name: 'Translation' })
+    expect(
+      within(group).getByText(
+        'Only the Translate shortcut uses this list. The languages you speak are in General → Your languages.',
+      ),
+    ).toBeInTheDocument()
+    fireEvent.click(within(group).getByRole('button', { name: 'Go to Your languages' }))
+    expect(window.location.hash).toBe('#/settings?pane=general')
+  })
 })

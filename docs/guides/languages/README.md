@@ -2,8 +2,8 @@
 
 OraType handles languages in two places: **speech recognition** decides which language it heard,
 and **AI polish** writes the text, following instructions for that language. This page covers
-the language guides, translation languages, their instructions, how OraType recognises the
-language you spoke, and the language presets from the repository.
+the language guides, your languages, translation languages, their instructions, how OraType
+recognises the language you spoke, and the language presets from the repository.
 
 ## Language guides
 
@@ -53,9 +53,38 @@ recording into it, but saves a detection pass and can help very short clips.
   adjust wording and script, but it cannot bring back words speech recognition changed; see
   [Language guides](#language-guides) for how to check yours.
 
+## Your languages
+
+**Settings → General → Your languages** lists the languages you speak and dictate in (up to
+twelve), one row each. When you dictate or ask, OraType picks the language you spoke from this
+list and follows its instructions. This works the same with every speech and AI service: the
+built-in models, your own server, or an API key.
+
+- A language you add gets its official preset at once when there is one (today: English,
+  Cantonese (Hong Kong) and Mandarin (Traditional)). These presets are built into OraType, so
+  nothing is downloaded; their automatic updates are on, so newer versions still arrive (see
+  [Updates](#updates)). A language that already has settings of its own keeps them.
+- Every language in the list can be recognised: by its preset's rules, or, without a preset, by
+  the code speech recognition reports for it (`en`, `ja`; `yue` for Cantonese, `zh` for
+  Mandarin). See [Where the instructions are used](#where-the-instructions-are-used).
+- The grey line says where the language's instructions come from: a preset from the library,
+  your own edit ("Based on … · edited"), or the built-in instructions. **Edit** changes them
+  (see [Choosing a preset](#choosing-a-preset)).
+- The **switch**, ✕ and **＋ Add language** work as in the Translate list below.
+- A language has one set of instructions, shared with the Translate list: the Cantonese preset
+  used here is also used when you translate into Cantonese (Hong Kong).
+- The list also decides which built-in models OraType suggests (onboarding asks for it, and
+  starts from your Mac's preferred languages).
+
+Cantonese (Hong Kong), Mandarin (Simplified) and Mandarin (Traditional) are the same languages
+as Chinese (Traditional, Hong Kong), Chinese (Simplified) and Chinese (Traditional, Taiwan) in
+the Translate list.
+
 ## Translation languages
 
-**Settings → Translate** lists your languages (up to three), one row each:
+**Settings → Translate** lists the languages the Translate shortcut translates into (up to
+three), one row each. Only Translate uses this list; dictation picks from
+[your languages](#your-languages).
 
 - The **order** is the order the Switch language key and the pill follow. Drag a row by its
   ⋮⋮ handle to change it (or focus the handle and press ↑ / ↓).
@@ -106,7 +135,8 @@ can add one with a pull request (see [Contributing a language preset](../../../C
 
 ### Choosing a preset
 
-1. Press **Edit** on a language, then **Browse presets** (or **Change**).
+1. Press **Edit** on a language (in **Your languages** or the Translate list), then **Browse
+   presets** (or **Change**).
 2. The list starts with the **Built-in default**, then the presets that fit the language:
    **Official** ones first, and the one written for exactly your language (for example
    `en-GB`) before a general one. Each shows its summary, version, authors and a model tip.
@@ -120,8 +150,10 @@ to default** goes back to the built-in instructions.
 ### Where the instructions are used
 
 - **Translating into the language** uses them whenever the language is on.
-- **Dictating in the language** (Dictate, no translation, no selected text) uses them too, but
-  only when OraType recognises that you spoke that language. The **Recognition** tab shows how:
+- **Dictating in the language** (Dictate, no translation, no selected text) uses them too, and
+  so does Ask for a spoken question, when the language is in
+  [your languages](#your-languages) and OraType recognises that you spoke it. The
+  **Recognition** tab shows how:
   1. **Hint characters and words** found in what you said pick the language with the most
      hits. The preset brings its own (Cantonese: 嘅 咗 喺 唔 聽日 …); add your own with
      **+ Add hint**.
@@ -130,11 +162,16 @@ to default** goes back to the built-in instructions.
      too, and Mandarin should not get Cantonese rules.
   3. Otherwise nothing is added and polish works as before.
 
+  A language without a preset is heard by its own code: `en` for English, `ja` for Japanese,
+  `zh` for Mandarin (Simplified or Traditional) and `yue` for Cantonese, so a Mandarin
+  dictation is never taken for Cantonese. Its built-in instructions are written for
+  translation, so dictation and Ask add them only for the Chinese languages, whose built-in
+  text describes how to write them; your own text always counts.
+
   Built-in speech recognition reports the language it heard; a server gets asked for it with
   `response_format=verbose_json` (servers that do not support it keep working; see
   [OpenAI-compatible speech](../speech/openai-compatible.md#the-protocol)). A speech preset with a
-  fixed language counts as that language. A language on its built-in instructions has no
-  recognition data, so only your own hints route to it.
+  fixed language counts as that language.
 
 ### Updates
 
@@ -147,10 +184,12 @@ to default** goes back to the built-in instructions.
 
 ### Privacy and offline use
 
-- Presets are downloaded with plain requests to `raw.githubusercontent.com`: no account, no
+- The official presets are built into OraType: a language gets one without going online.
+- Other presets are downloaded with plain requests to `raw.githubusercontent.com`: no account, no
   identifiers, nothing about you, your languages or your text. GitHub sees your IP address, as
   with any download. OraType goes online only when you browse presets, or once a day for
-  languages with automatic updates on.
+  languages where you ticked automatic updates. A built-in preset gets newer versions with
+  OraType's own updates, without going online.
 - Every download is checked against the size and SHA-256 hash in the library's index, and
   validated, before it is used. Downloaded presets are kept in OraType's data folder.
 - Offline, the built-in instructions and downloaded presets keep working; Browse shows what is

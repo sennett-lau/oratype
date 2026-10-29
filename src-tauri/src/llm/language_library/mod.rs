@@ -1,7 +1,8 @@
 //! Plan `language-prompt-library`: language presets from the repository's `presets/languages/`
 //! folder: parsing and validating `preset.md`, rendering it for one language code, reading the
 //! generated `index.json`, and matching presets to a language code. `store` keeps downloaded
-//! presets on disk and `fetch` downloads them from GitHub.
+//! presets on disk, `fetch` downloads them from GitHub and `bundled` holds the official ones
+//! built into the app (plan `languages-in-general`).
 //!
 //! This parser is independent of `scripts/language-presets.mjs` (the generator contributors
 //! run); the tests below run it over every preset in the repository and check that `index.json`
@@ -11,6 +12,7 @@
 //! `key: value` per line; text, integers, `true`/`false` or `[a, b]` lists), then the sections
 //! `## Instructions`, optional `## Variant: <tag>` notes and optional `## Examples`.
 
+pub mod bundled;
 pub mod fetch;
 pub mod store;
 
@@ -851,6 +853,11 @@ fn parse_language_codes(text: &str) -> LanguageCodes {
 fn language_codes() -> &'static LanguageCodes {
     static CODES: OnceLock<LanguageCodes> = OnceLock::new();
     CODES.get_or_init(|| parse_language_codes(LANGUAGE_CODES_JSON))
+}
+
+/// True when `subtag` is a language subtag of `language-codes.json` (`en`, `ja`, `yue`).
+pub fn is_known_language(subtag: &str) -> bool {
+    language_codes().languages.contains(subtag)
 }
 
 /// Every preset folder, validated. Panics with every problem found.

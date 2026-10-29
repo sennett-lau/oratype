@@ -18,6 +18,10 @@ Status: done — 2026-09-26
 Routing for Ask, and `require_hint` only for a shared speech code: superseded by
 [language-routing-everywhere](../2026-10-02-language-routing-everywhere/index.md).
 
+Superseded in part by [languages-in-general](../2026-10-29-languages-in-general/index.md)
+(2026-10-29): polish routing picks from Your languages in Settings → General; the Translate
+list is used only for translation, and a language's settings are shared by both lists.
+
 Builds on [translation-language-presets](../2026-09-26-translation-language-presets/index.md)
 (per-language instructions with built-in defaults) and changes two of its decisions:
 

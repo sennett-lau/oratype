@@ -27,15 +27,15 @@ interface LanguageRowsProps {
 }
 
 /**
- * Plan `language-prompt-library`: Settings → AI → Translation as one row per language, in the
- * saved order (the order the Switch language key and the pill follow). Each row: a drag handle,
- * its number, the name with an "Update" tag when a decision is needed, a line saying where its
+ * Plan `language-prompt-library`: Settings → Translate as one row per language, in the saved
+ * order (the order the Switch language key and the pill follow). Each row: a drag handle, its
+ * number, the name with an "Update" tag when a decision is needed, a line saying where its
  * instructions come from, an on/off switch (saved at once, like the sheet), Edit and remove.
- * "+ Add language" is the last row while fewer than three are chosen.
+ * "+ Add language" is the last row while fewer than three are chosen. Plan
+ * `languages-in-general`: Settings → General → Your languages reuses the row and the Add row.
  */
 export function LanguageRows({ config, status, onChange, onEdit }: LanguageRowsProps) {
   const { t } = useTranslation()
-  const [adding, setAdding] = useState(false)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const translation = config.translation
   const targets = translation.targets
@@ -63,7 +63,6 @@ export function LanguageRows({ config, status, onChange, onEdit }: LanguageRowsP
   }
 
   const add = (code: string) => {
-    setAdding(false)
     if (!code || targets.includes(code) || !canAdd) return
     onChange({ ...translation, targets: [...targets, code] })
     onEdit(code)
@@ -75,88 +74,126 @@ export function LanguageRows({ config, status, onChange, onEdit }: LanguageRowsP
         <LanguageRow
           key={code}
           code={code}
-          index={index}
           config={config}
           status={status}
           canRemove={canRemove}
-          dragging={dragIndex === index}
           onEdit={() => onEdit(code)}
           onRemove={() => remove(code)}
-          onMove={(to) => move(index, to)}
-          onDragStart={() => setDragIndex(index)}
-          onDragEnd={() => setDragIndex(null)}
-          onDrop={() => {
-            if (dragIndex !== null) move(dragIndex, index)
-            setDragIndex(null)
+          order={{
+            index,
+            dragging: dragIndex === index,
+            onMove: (to) => move(index, to),
+            onDragStart: () => setDragIndex(index),
+            onDragEnd: () => setDragIndex(null),
+            onDrop: () => {
+              if (dragIndex !== null) move(dragIndex, index)
+              setDragIndex(null)
+            },
           }}
         />
       ))}
-      {canAdd &&
-        (adding ? (
-          <div className="language-add-row">
-            <select
-              autoFocus
-              defaultValue=""
-              aria-label={t('translate.addLanguage')}
-              onChange={(event) => add(event.target.value)}
-              onBlur={() => setAdding(false)}
-              className="popup"
-            >
-              <option value="" disabled>
-                {t('translate.chooseLanguage')}
-              </option>
-              {available.map((language) => (
-                <option key={language.value} value={language.value}>
-                  {targetLanguageLabel(language.value, t)}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : (
-          <button type="button" onClick={() => setAdding(true)} className="language-add-row">
-            <Plus size={13} aria-hidden="true" />
-            {t('translate.addLanguage')}
-            <span className="language-add-limit">
-              {t('translate.language.upTo', { count: MAX_TRANSLATION_TARGETS })}
-            </span>
-          </button>
-        ))}
+      {canAdd && (
+        <LanguageAddRow
+          codes={available.map((language) => language.value)}
+          max={MAX_TRANSLATION_TARGETS}
+          nameOf={(code) => targetLanguageLabel(code, t)}
+          onAdd={add}
+        />
+      )}
     </div>
   )
 }
 
-interface LanguageRowProps {
-  code: string
+/** "+ Add language" with its limit; pressing it turns the row into the language menu. */
+export function LanguageAddRow({
+  codes,
+  max,
+  nameOf,
+  onAdd,
+}: {
+  /** The languages that can still be added, in menu order. */
+  codes: string[]
+  max: number
+  nameOf: (code: string) => string
+  onAdd: (code: string) => void
+}) {
+  const { t } = useTranslation()
+  const [adding, setAdding] = useState(false)
+  if (adding) {
+    return (
+      <div className="language-add-row">
+        <select
+          autoFocus
+          defaultValue=""
+          aria-label={t('translate.addLanguage')}
+          onChange={(event) => {
+            setAdding(false)
+            onAdd(event.target.value)
+          }}
+          onBlur={() => setAdding(false)}
+          className="popup"
+        >
+          <option value="" disabled>
+            {t('translate.chooseLanguage')}
+          </option>
+          {codes.map((code) => (
+            <option key={code} value={code}>
+              {nameOf(code)}
+            </option>
+          ))}
+        </select>
+      </div>
+    )
+  }
+  return (
+    <button type="button" onClick={() => setAdding(true)} className="language-add-row">
+      <Plus size={13} aria-hidden="true" />
+      {t('translate.addLanguage')}
+      <span className="language-add-limit">{t('translate.language.upTo', { count: max })}</span>
+    </button>
+  )
+}
+
+/** A row's place in an ordered list (Translate): its drag handle and number. */
+interface RowOrder {
   index: number
-  config: AppConfig
-  status: LibraryStatus
-  canRemove: boolean
   dragging: boolean
-  onEdit: () => void
-  onRemove: () => void
   onMove: (to: number) => void
   onDragStart: () => void
   onDragEnd: () => void
   onDrop: () => void
 }
 
-function LanguageRow({
+interface LanguageRowProps {
+  code: string
+  /** The name shown; the Translate list's name by default. */
+  name?: string
+  config: AppConfig
+  status: LibraryStatus
+  canRemove: boolean
+  onEdit: () => void
+  onRemove: () => void
+  /** Without it (Your languages) the row has no drag handle and no number. */
+  order?: RowOrder
+}
+
+/**
+ * One language: its name, where its instructions come from, its on/off switch, Edit and remove.
+ * The settings are the language's own, shared by Your languages and Translate.
+ */
+export function LanguageRow({
   code,
-  index,
+  name: shownName,
   config,
   status,
   canRemove,
-  dragging,
   onEdit,
   onRemove,
-  onMove,
-  onDragStart,
-  onDragEnd,
-  onDrop,
+  order,
 }: LanguageRowProps) {
   const { t } = useTranslation()
   const settings = languageSettings(config, code)
-  const name = targetLanguageLabel(code, t)
+  const name = shownName ?? targetLanguageLabel(code, t)
   const { detail, missing } = usePresetDetail(code, settings.library_preset)
   const presetName = detail?.name ?? settings.library_preset?.id ?? ''
   const needsDecision = needsUpdateDecision(settings, status)
@@ -194,12 +231,13 @@ function LanguageRow({
   }
 
   const onHandleKey = (event: KeyboardEvent<HTMLButtonElement>) => {
+    if (!order) return
     if (event.key === 'ArrowUp') {
       event.preventDefault()
-      onMove(index - 1)
+      order.onMove(order.index - 1)
     } else if (event.key === 'ArrowDown') {
       event.preventDefault()
-      onMove(index + 1)
+      order.onMove(order.index + 1)
     }
   }
 
@@ -207,31 +245,39 @@ function LanguageRow({
     <div
       role="listitem"
       data-testid={`language-row-${code}`}
-      className={`language-row ${settings.enabled ? '' : 'language-row-off'} ${dragging ? 'language-row-dragging' : ''}`}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={(event) => {
-        event.preventDefault()
-        onDrop()
-      }}
+      className={`language-row ${settings.enabled ? '' : 'language-row-off'} ${order?.dragging ? 'language-row-dragging' : ''}`}
+      onDragOver={order ? (event) => event.preventDefault() : undefined}
+      onDrop={
+        order
+          ? (event) => {
+              event.preventDefault()
+              order.onDrop()
+            }
+          : undefined
+      }
     >
-      <button
-        type="button"
-        draggable
-        onDragStart={(event) => {
-          event.dataTransfer?.setData('text/plain', code)
-          onDragStart()
-        }}
-        onDragEnd={onDragEnd}
-        onKeyDown={onHandleKey}
-        aria-label={t('translate.language.moveLabel', { language: name })}
-        title={t('translate.language.dragHint')}
-        className="language-grip"
-      >
-        ⋮⋮
-      </button>
-      <span className="language-number" aria-hidden="true">
-        {index + 1}
-      </span>
+      {order && (
+        <>
+          <button
+            type="button"
+            draggable
+            onDragStart={(event) => {
+              event.dataTransfer?.setData('text/plain', code)
+              order.onDragStart()
+            }}
+            onDragEnd={order.onDragEnd}
+            onKeyDown={onHandleKey}
+            aria-label={t('translate.language.moveLabel', { language: name })}
+            title={t('translate.language.dragHint')}
+            className="language-grip"
+          >
+            ⋮⋮
+          </button>
+          <span className="language-number" aria-hidden="true">
+            {order.index + 1}
+          </span>
+        </>
+      )}
       <div className="language-info">
         <span className="language-name">
           <span className="truncate">{name}</span>

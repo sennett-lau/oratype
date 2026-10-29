@@ -570,6 +570,9 @@
     "switchLanguageReset": "Usar Shift (cualquier lado)",
     "shortcutOff": "Desactivado",
     "enableAiPolishHelp": "Desactivado pega exactamente lo que dijiste",
+    "groupBuiltinAi": "IA integrada",
+    "fastLanguageSwitching": "Cambio rápido de idioma",
+    "fastLanguageSwitchingHelp": "Mantiene listo cada uno de tus idiomas, para que un dictado en otro idioma no espere a que la IA vuelva a leer sus instrucciones (hasta unos 10 segundos). Usa unos 1–2 GB más de memoria por cada idioma adicional, hasta tres.",
     "contextAdaptationHelp": "Correo, chat y documentos tienen cada uno su propio tono",
     "polishStyleMinimalDetail": "Solo corregir",
     "polishStyleCleanDetail": "Predeterminado",
@@ -820,6 +823,8 @@
     "pillPosition": "Idioma {{index}} de {{count}}",
     "addLanguage": "Añadir idioma",
     "chooseLanguage": "Elige un idioma",
+    "onlyForTranslate": "Solo el atajo Traducir usa esta lista. Los idiomas que hablas están en General → Tus idiomas.",
+    "openYourLanguages": "Ir a Tus idiomas",
     "languages": {
       "zhHans": "Chino (simplificado)",
       "zhHantHK": "Chino (tradicional, Hong Kong)",
@@ -965,6 +970,10 @@
     "failed": "No se pudo empezar a grabar el atajo: {{error}}"
   },
   "whatsNew": {
+    "fasterCantoneseModels": "La configuración integrada para cantonés es más pequeña y rápida: el reconocimiento de voz es un 21–28 % más rápido en dictados largos (1,6 GB en vez de 2,5 GB) y la mejora escribe un tercio más rápido. Si ya la tenías, Ajustes muestra Actualizar; hasta entonces tus archivos siguen funcionando.",
+    "readyFirstDictation": "La IA integrada está lista para tu primer dictado. Al arrancar lee en segundo plano las instrucciones de tus idiomas, así que la primera mejora tarda alrededor de un segundo en vez de 5–11 segundos. Si dictas enseguida, se detiene y nunca te frena.",
+    "fastLanguageSwitching": "Cambio rápido de idioma (Ajustes → IA → IA integrada, activado por defecto): cada uno de tus idiomas queda listo, así que cambiar entre ellos tarda alrededor de un segundo en vez de hasta 15. Usa unos 1–2 GB más de memoria por cada idioma adicional; desactívalo en un Mac con poca memoria.",
+    "yourLanguages": "Tus idiomas se han movido a Ajustes → General. Cada idioma trae su preajuste, y OraType usa el del idioma que hablas con cualquier servicio de IA: integrado, tu propio servidor o una clave de API. La lista de Traducir ahora es solo para traducir.",
     "renamed": "Typelite ahora se llama OraType. Tus ajustes, modelos y diccionario se conservan. Concede Accesibilidad y Micrófono una vez más (Ajustes del Sistema → Privacidad y seguridad), y si macOS pregunta si OraType puede usar «Typelite» en tu llavero, elige Permitir siempre: son tus claves de API guardadas.",
     "handsFree": "Modo manos libres: di «Hey Sam», haz una pausa y habla, sin atajos. Tus palabras se escriben en la app; di «ask …» para preguntar. Termina con «Thanks, Sam» o una pausa de 3 segundos. Actívalo en Ajustes → General → Manos libres; un modelo pequeño (60 MB) escucha en tu Mac, así que no se envía nada antes de la frase de activación.",
     "pillAfterIdle": "La píldora vuelve a aparecer tras un rato sin usarla. Tras unos ocho minutos sin dictar, podía dejar de mostrarse aunque el dictado seguía funcionando.",
@@ -1065,6 +1074,8 @@
     "changeModel": "Cambiar modelo",
     "download": "Descargar",
     "use": "Usar",
+    "update": "Actualizar",
+    "updateAvailable": "versión más rápida disponible ({{size}})",
     "model": "Modelo",
     "models": {
       "large-v3-turbo": "Máxima precisión",
@@ -1284,9 +1295,10 @@
     "add": "+ Añadir idioma",
     "addLabel": "Añadir un idioma que hablas",
     "remove": "Quitar {{language}}",
-    "hints": {
-      "yue": "Cantonés",
-      "zh": "Mandarín"
+    "names": {
+      "zhHans": "Mandarín (simplificado)",
+      "zhHantHK": "Cantonés (Hong Kong)",
+      "zhHantTW": "Mandarín (tradicional)"
     },
     "fromMac": "Tomados de los idiomas preferidos de tu Mac.",
     "list": "{{items}} y {{last}}",
@@ -1306,6 +1318,9 @@
     "homeBodyBoth": "{{speech}} para el reconocimiento de voz y {{ai}} para el pulido con IA. Se ejecutan en este Mac; {{size}} de descarga.",
     "homeBodySpeech": "{{speech}} para el reconocimiento de voz. Se ejecuta en este Mac; {{size}} de descarga.",
     "homeBodyAi": "{{ai}} para el pulido con IA. Se ejecuta en este Mac; {{size}} de descarga.",
-    "dontShowAgain": "No volver a mostrar"
+    "dontShowAgain": "No volver a mostrar",
+    "generalHelp": "Cuando dictas o preguntas, OraType elige de esta lista el idioma en que hablaste y sigue su preajuste, con modelos integrados, tu propio servidor o una clave de API. El preajuste de un idioma también se usa al traducir a ese idioma.",
+    "useMac": "Añadir {{languages}}",
+    "changeLanguages": "Cambiar tus idiomas"
   }
 }

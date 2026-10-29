@@ -1,5 +1,6 @@
 //! Plan `language-prompt-library`: commands behind the language sheet's Browse and Preview
-//! screens, and the library status that Settings shows (versions, automatic updates).
+//! screens, and the library status that Settings shows (versions, automatic updates). Plan
+//! `languages-in-general`: chosen languages without settings get their built-in preset.
 
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
@@ -13,7 +14,7 @@ use crate::llm::language_library::{
     store::{AutoUpdateRecord, IndexMeta, LibraryStore},
     Index, IndexEntry, Preset,
 };
-use crate::storage::{AppConfig, LibraryPresetRef};
+use crate::storage::{AppConfig, ConfigManager, LibraryPresetRef, TranslationLanguageSettings};
 
 /// Emitted when the library cache or an automatic update changed; the payload holds the saved
 /// `translation.languages` when an update changed them.
@@ -269,16 +270,16 @@ pub fn get_language_library_status(app: tauri::AppHandle) -> Result<LibraryStatu
 
 // ─── Automatic updates ───
 
-/// The chosen languages that want automatic updates: on, auto-update on, using a preset.
+/// The chosen languages (Your languages, then the Translate ones; plan `languages-in-general`)
+/// that want automatic updates: on, auto-update on, using a preset.
 pub(crate) fn auto_update_languages(config: &AppConfig) -> Vec<(String, LibraryPresetRef)> {
     config
-        .translation
-        .targets
-        .iter()
+        .chosen_language_codes()
+        .into_iter()
         .filter_map(|code| {
-            let settings = config.translation.language(code)?;
+            let settings = config.translation.language(&code)?;
             let preset = settings.library_preset.clone()?;
-            (settings.enabled && settings.auto_update).then(|| (code.clone(), preset))
+            (settings.enabled && settings.auto_update).then_some((code, preset))
         })
         .collect()
 }
@@ -409,6 +410,129 @@ pub async fn run_auto_update(app: &tauri::AppHandle) {
     );
 }
 
+// ─── Built-in presets (plan `languages-in-general`) ───
+
+/// Gives every chosen language (Your languages, then Translate's) that has no settings yet its
+/// official built-in preset, stored like a download. Automatic updates stay off: OraType does not
+/// go online for a preset the user did not pick, and newer built-in versions come with app
+/// updates ([`bundled_preset_updates`]). A language with settings (another preset, its own text, switched off, its own
+/// hints) is never touched, and one given its preset before is not given it again, so a language
+/// moved back to the built-in instructions keeps them. Returns the codes given a preset; the
+/// caller saves the config, then records them (`LibraryStore::record_bundled_given`). No network.
+pub(crate) fn give_bundled_presets(config: &mut AppConfig, store: &LibraryStore) -> Vec<String> {
+    let given_before = store.bundled_given();
+    let mut given = Vec::new();
+    for code in config.chosen_language_codes() {
+        if config.translation.languages.contains_key(&code) || given_before.contains(&code) {
+            continue;
+        }
+        let Some(bundled) = library::bundled::bundled_preset_for(&code) else {
+            continue;
+        };
+        let entry = &bundled.entry;
+        if !store.has_preset(&entry.id, &entry.sha256) {
+            if let Err(error) = store.store_preset(&entry.id, bundled.bytes) {
+                tracing::warn!(
+                    "Language presets: could not store the built-in {} for {code}: {error}",
+                    entry.id
+                );
+                continue;
+            }
+        }
+        config.translation.languages.insert(
+            code.clone(),
+            TranslationLanguageSettings {
+                library_preset: Some(LibraryPresetRef {
+                    id: entry.id.clone(),
+                    version: entry.version,
+                    sha256: entry.sha256.clone(),
+                }),
+                ..TranslationLanguageSettings::default()
+            },
+        );
+        tracing::info!(
+            "Language presets: {code} uses the built-in {} v{}",
+            entry.id,
+            entry.version
+        );
+        given.push(code);
+    }
+    given
+}
+
+/// The chosen languages whose preset is an official one this app has a newer built-in version
+/// of (it came with an app update), with that version, stored like a download. Applied with
+/// [`apply_auto_updates`], like the daily check, so edited text is still never replaced. No
+/// network.
+pub(crate) fn bundled_preset_updates(
+    config: &AppConfig,
+    store: &LibraryStore,
+) -> Vec<(String, library::Preset)> {
+    let mut updates = Vec::new();
+    for code in config.chosen_language_codes() {
+        let Some(current) = config
+            .translation
+            .language(&code)
+            .and_then(|settings| settings.library_preset.as_ref())
+        else {
+            continue;
+        };
+        let Some(bundled) = library::bundled::bundled_presets().iter().find(|bundled| {
+            bundled.entry.id == current.id && bundled.entry.version > current.version
+        }) else {
+            continue;
+        };
+        if !store.has_preset(&bundled.entry.id, &bundled.entry.sha256) {
+            if let Err(error) = store.store_preset(&bundled.entry.id, bundled.bytes) {
+                tracing::warn!(
+                    "Language presets: could not store the built-in {} for {code}: {error}",
+                    bundled.entry.id
+                );
+                continue;
+            }
+        }
+        updates.push((code, bundled.preset.clone()));
+    }
+    updates
+}
+
+/// At startup: gives chosen languages without settings their built-in preset (users who added
+/// languages before presets were built in, or whose list was migrated), moves official presets
+/// to the newer built-in version an app update brought, and saves the config when that changed
+/// it. Runs before any window loads the config.
+pub(crate) async fn give_bundled_presets_at_startup(
+    app: &tauri::AppHandle,
+    config_manager: &ConfigManager,
+) {
+    let Ok(store) = library_store(app) else {
+        return;
+    };
+    let Ok(mut config) = config_manager.load().await else {
+        return;
+    };
+    let given = give_bundled_presets(&mut config, &store);
+    let updates = bundled_preset_updates(&config, &store);
+    let records = apply_auto_updates(&mut config, &updates, fetch::now_unix());
+    if given.is_empty() && records.is_empty() {
+        return;
+    }
+    if let Err(error) = config_manager.save(&config).await {
+        tracing::warn!("Language presets: could not save the built-in presets: {error}");
+        return;
+    }
+    let _ = store.record_bundled_given(&given);
+    for (code, record) in &records {
+        tracing::info!(
+            "Language presets: {code} moved to the built-in {} v{} (was v{})",
+            record.id,
+            record.to,
+            record.from
+        );
+        let _ = store.record_update(code, record.clone());
+        store.prune(&record.id, &versions_in_use(&config, &record.id, ""));
+    }
+}
+
 /// Starts the daily check loop (after a short delay at startup, then every hour it looks
 /// whether a check is due).
 pub fn start_auto_updates(app: tauri::AppHandle) {
@@ -465,6 +589,139 @@ mod tests {
         assert_eq!(list.presets.len(), 1);
     }
 
+    /// Plan `languages-in-general`: Your languages without settings, as the dev build had them.
+    fn unset_languages(codes: &[&str]) -> AppConfig {
+        let mut config = AppConfig::default();
+        config.your_languages = Some(codes.iter().map(|code| code.to_string()).collect());
+        config.translation.targets = vec!["ja".to_string()];
+        config
+    }
+
+    #[test]
+    fn added_languages_get_their_built_in_preset() {
+        let store = temp_store("bundled-give");
+        let mut config = unset_languages(&["en", "zh-Hant-HK", "zh-Hans"]);
+        let given = give_bundled_presets(&mut config, &store);
+        assert_eq!(given, ["en", "zh-Hant-HK"]);
+
+        for (code, id) in [("en", "english"), ("zh-Hant-HK", "cantonese-hong-kong")] {
+            let settings = config.translation.language(code).unwrap();
+            let preset = settings.library_preset.as_ref().unwrap();
+            assert_eq!(preset.id, id);
+            // No daily check for a preset the user did not pick.
+            assert!(!settings.auto_update);
+            assert!(settings.enabled);
+            assert_eq!(settings.instructions, None);
+            // Stored like a download: the hash checks out and it validates.
+            let stored = store.load_preset(id, &preset.sha256).unwrap();
+            assert_eq!(stored.version, preset.version);
+        }
+        // No official preset for Simplified Mandarin or Japanese (Translate only).
+        assert!(config.translation.language("zh-Hans").is_none());
+        assert!(config.translation.language("ja").is_none());
+
+        // The router now hears both, with the presets' rules.
+        let profiles = crate::llm::language_router::language_profiles(&config, Some(&store));
+        assert_eq!(profiles[0].detect_codes, ["en"]);
+        assert_eq!(profiles[1].detect_codes, ["yue", "zh"]);
+        assert!(profiles[1].require_hint);
+        assert!(profiles[1].instructions.starts_with("Written Cantonese"));
+    }
+
+    #[test]
+    fn an_app_update_moves_official_presets_to_the_newer_built_in_version() {
+        let store = temp_store("bundled-update");
+        let english = library::bundled::bundled_presets()
+            .iter()
+            .find(|bundled| bundled.entry.id == "english")
+            .unwrap();
+        let mut config = unset_languages(&["en", "zh-Hant-HK"]);
+        config.translation.languages = config_with(serde_json::json!({
+            "en": {"library_preset": reference("english", 1), "instructions": "Mine."},
+            "zh-Hant-HK": {"library_preset": reference("someone-else", 1)}
+        }))
+        .translation
+        .languages;
+
+        let updates = bundled_preset_updates(&config, &store);
+        assert_eq!(
+            updates
+                .iter()
+                .map(|(code, preset)| (code.as_str(), preset.version))
+                .collect::<Vec<_>>(),
+            [("en", english.entry.version)]
+        );
+        assert!(store.has_preset("english", &english.entry.sha256));
+        let records = apply_auto_updates(&mut config, &updates, 10);
+        assert_eq!(records.len(), 1);
+        let settings = config.translation.language("en").unwrap();
+        assert_eq!(
+            settings.library_preset.as_ref().unwrap().version,
+            english.entry.version
+        );
+        // The user's own text still wins over any preset version.
+        assert_eq!(settings.instructions.as_deref(), Some("Mine."));
+        // Once current, nothing more to do.
+        assert!(bundled_preset_updates(&config, &store).is_empty());
+    }
+
+    #[test]
+    fn languages_with_settings_are_left_alone() {
+        let store = temp_store("bundled-keep");
+        let mut config = unset_languages(&["en", "zh-Hant-HK", "zh-Hant-TW"]);
+        let mine = config_with(serde_json::json!({
+            "en": {"instructions": "My English."},
+            "zh-Hant-HK": {"enabled": false},
+            "zh-Hant-TW": {"user_hints": ["醬"]}
+        }))
+        .translation
+        .languages;
+        config.translation.languages = mine.clone();
+        assert!(give_bundled_presets(&mut config, &store).is_empty());
+        assert_eq!(config.translation.languages, mine);
+
+        // Another preset stays too.
+        let mut config = unset_languages(&["zh-Hant-HK"]);
+        config.translation.languages = config_with(serde_json::json!({
+            "zh-Hant-HK": {"library_preset": reference("someone-else", 2)}
+        }))
+        .translation
+        .languages;
+        assert!(give_bundled_presets(&mut config, &store).is_empty());
+        assert_eq!(
+            config
+                .translation
+                .language("zh-Hant-HK")
+                .unwrap()
+                .library_preset
+                .as_ref()
+                .unwrap()
+                .id,
+            "someone-else"
+        );
+    }
+
+    /// Running again changes nothing, and a language moved back to the built-in instructions
+    /// (its settings removed) is not given the preset again.
+    #[test]
+    fn giving_built_in_presets_is_idempotent() {
+        let store = temp_store("bundled-once");
+        let mut config = unset_languages(&["en", "zh-Hant-HK"]);
+        let given = give_bundled_presets(&mut config, &store);
+        store.record_bundled_given(&given).unwrap();
+        let after_first = config.translation.languages.clone();
+        assert!(give_bundled_presets(&mut config, &store).is_empty());
+        assert_eq!(config.translation.languages, after_first);
+
+        config.translation.languages.remove("zh-Hant-HK");
+        assert!(give_bundled_presets(&mut config, &store).is_empty());
+        assert!(config.translation.language("zh-Hant-HK").is_none());
+
+        // A Translate language without settings counts as chosen too.
+        config.translation.targets = vec!["zh-Hant-TW".to_string()];
+        assert_eq!(give_bundled_presets(&mut config, &store), ["zh-Hant-TW"]);
+    }
+
     fn config_with(languages: serde_json::Value) -> AppConfig {
         AppConfig::from_stored_value(serde_json::json!({
             "translation": {
@@ -501,6 +758,14 @@ mod tests {
             .map(|(code, entry)| format!("{code}:{}:v{}", entry.id, entry.version))
             .collect();
         assert_eq!(plan, ["zh-Hant-HK:cantonese-hong-kong:v4"]);
+
+        // Plan `languages-in-general`: a language only in Your languages takes part too.
+        let mut spoken_only = config_with(serde_json::json!({
+            "ko": {"library_preset": reference("korean", 1), "auto_update": true}
+        }));
+        assert!(auto_update_languages(&spoken_only).is_empty());
+        spoken_only.your_languages = Some(vec!["ko".to_string()]);
+        assert_eq!(auto_update_languages(&spoken_only)[0].0, "ko");
 
         // Off: not checked at all.
         let off = config_with(serde_json::json!({

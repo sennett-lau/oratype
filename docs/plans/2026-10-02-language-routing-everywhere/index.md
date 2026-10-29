@@ -8,6 +8,10 @@ so one preset decides how all three actions write a language.
 
 Status: building — 2026-10-02
 
+Superseded in part by [languages-in-general](../2026-10-29-languages-in-general/index.md)
+(2026-10-29): the router picks from Your languages in Settings → General, not from the
+Translate languages.
+
 Changes two decisions of [language-prompt-library](../2026-09-26-language-prompt-library/index.md):
 the router now also runs for Ask, and `require_hint` applies only to a shared speech code.
 

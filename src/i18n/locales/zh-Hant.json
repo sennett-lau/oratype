@@ -570,6 +570,9 @@
     "switchLanguageReset": "使用 Shift（左右均可）",
     "shortcutOff": "關閉",
     "enableAiPolishHelp": "關閉後按原話貼上",
+    "groupBuiltinAi": "內建 AI",
+    "fastLanguageSwitching": "快速切換語言",
+    "fastLanguageSwitchingHelp": "讓你的每種語言都隨時就緒，換一種語言聽寫時，不必等 AI 重新讀一遍指示（最多約 10 秒）。每多一種語言約多用 1–2 GB 記憶體，最多三種。",
     "contextAdaptationHelp": "郵件、聊天和文件各用合適的語氣",
     "polishStyleMinimalDetail": "只做修正",
     "polishStyleCleanDetail": "預設",
@@ -820,6 +823,8 @@
     "pillPosition": "第 {{index}} 種語言，共 {{count}} 種",
     "addLanguage": "新增語言",
     "chooseLanguage": "選擇語言",
+    "onlyForTranslate": "只有翻譯快捷鍵會用到這個清單。你會說的語言在「通用 → 你的語言」。",
+    "openYourLanguages": "前往「你的語言」",
     "languages": {
       "zhHans": "簡體中文",
       "zhHantHK": "繁體中文（香港）",
@@ -965,6 +970,10 @@
     "failed": "無法開始錄製快捷鍵：{{error}}"
   },
   "whatsNew": {
+    "fasterCantoneseModels": "內建廣東話設定更細更快：長篇聽寫的語音辨識快 21–28%（1.6 GB，原本 2.5 GB），潤飾的輸出快約三分之一。如果你之前已經設定過，設定裡會顯示「更新」；更新前原有檔案照常可用。",
+    "readyFirstDictation": "內建 AI 會為你的第一次聽寫準備好。它啟動時會在背景先讀一遍你各種語言的指示，所以第一次潤飾只需約 1 秒，而不是 5–11 秒。如果你馬上開始聽寫，它會讓路，不會拖慢你。",
+    "fastLanguageSwitching": "快速切換語言（設定 → AI → 內建 AI，預設開啟）：你的每種語言都隨時就緒，切換語言只需約 1 秒，而不是最長 15 秒。每多一種語言約多用 1–2 GB 記憶體；記憶體緊張的 Mac 可以關閉。",
+    "yourLanguages": "「你的語言」搬到了「設定 → 通用」。每種語言都附帶預設，無論用內建 AI、你自己的伺服器還是 API 金鑰，OraType 都會按你講的語言套用。「翻譯」清單現在只用於翻譯。",
     "renamed": "Typelite 現已改名為 OraType。你的設定、模型和字典都會保留。請再授予一次「輔助使用」和「麥克風」權限（系統設定 → 隱私權與安全性）；如果 macOS 詢問是否讓 OraType 使用鑰匙圈中的「Typelite」，請選「永遠允許」：那是你儲存的 API 金鑰。",
     "handsFree": "免提模式：說「Hey Sam」，停一停，再說出內容，不用按任何快捷鍵。你說的話會輸入到 App；說「問下 …」就改為提問。說「多謝 Sam」或停頓 3 秒結束。在「設定 → 通用 → 免提」開啟；一個小型模型（60 MB）在你的 Mac 上聆聽，喚醒前不會傳送任何聲音。",
     "pillAfterIdle": "靜置一段時間後，膠囊會照常出現。以前大約八分鐘沒有聽寫後，膠囊可能不再顯示，但聽寫仍然有效。",
@@ -1065,6 +1074,8 @@
     "changeModel": "更換模型",
     "download": "下載",
     "use": "使用",
+    "update": "更新",
+    "updateAvailable": "有更快的版本（{{size}}）",
     "model": "模型",
     "models": {
       "large-v3-turbo": "最準確",
@@ -1284,9 +1295,10 @@
     "add": "+ 加入語言",
     "addLabel": "加入你會說的語言",
     "remove": "移除{{language}}",
-    "hints": {
-      "yue": "粵語",
-      "zh": "普通話"
+    "names": {
+      "zhHans": "普通話（簡體）",
+      "zhHantHK": "粵語（香港）",
+      "zhHantTW": "普通話（繁體）"
     },
     "fromMac": "已按 Mac 的偏好語言填入。",
     "list": "{{items}}和{{last}}",
@@ -1306,6 +1318,9 @@
     "homeBodyBoth": "{{speech}} 負責語音識別，{{ai}} 負責 AI 潤色。它們在這部 Mac 上執行，需下載 {{size}}。",
     "homeBodySpeech": "{{speech}} 負責語音識別。它在這部 Mac 上執行，需下載 {{size}}。",
     "homeBodyAi": "{{ai}} 負責 AI 潤色。它在這部 Mac 上執行，需下載 {{size}}。",
-    "dontShowAgain": "不再顯示"
+    "dontShowAgain": "不再顯示",
+    "generalHelp": "聽寫或提問時，OraType 會從這個清單找出你說的語言，並按它的預設處理，無論使用內建模型、你的伺服器還是 API 金鑰。翻譯成該語言時，也會使用它的預設。",
+    "useMac": "加入{{languages}}",
+    "changeLanguages": "更改你的語言"
   }
 }

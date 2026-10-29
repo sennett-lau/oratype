@@ -40,9 +40,10 @@ was said.
 
 ## Set it up
 
-1. **Easiest: Built-in.** OraType runs Qwen3-ASR itself. Add Cantonese under **Your languages**
-   (onboarding, or **Settings → Speech**); the Built-in card then has **Qwen3-ASR** chosen.
-   Press **Set up** (or **Download**, 2.5 GB) and go on to step 3. Its suggested AI model is
+1. **Easiest: Built-in.** OraType runs Qwen3-ASR itself. Add Cantonese (Hong Kong) under **Your
+   languages** (onboarding, or **Settings → General**); the Built-in card then has **Qwen3-ASR**
+   chosen.
+   Press **Set up** (or **Download**, 1.6 GB) and go on to step 3. Its suggested AI model is
    the stock Qwen 3.5 4B; for slang and swear words use the uncensored one of step 5.
 
    **Or run it yourself** on your Mac or on a computer with an NVIDIA GPU, with llama.cpp's
@@ -62,10 +63,13 @@ was said.
    `http://127.0.0.1:8180/v1` (or that computer's address), model `qwen3-asr`, no API key, and
    leave **Spoken language** on **Auto-detect**. Press **Test**, then **Save**.
 
-3. **Choose the Cantonese preset:** **Settings → Translate**, add Chinese (Traditional,
-   Hong Kong) if it is not in your list, press **Edit**, then **Browse presets** and use
-   **Cantonese (Hong Kong)**. Without the preset OraType cannot tell that you spoke Cantonese, and
-   neither the Cantonese notes nor the Hong Kong characters (next step) are applied.
+3. **The Cantonese preset:** add Cantonese (Hong Kong) to **Settings → General → Your
+   languages** if it is not in your list. It gets the official **Cantonese (Hong Kong)** preset
+   at once, built into OraType, and its row says so. With it OraType tells Cantonese from
+   Mandarin, and applies the Cantonese notes and the Hong Kong characters (next step). This works
+   with the built-in models and with your own servers alike, and the same preset is used when you
+   translate into Cantonese. If the row shows another preset or your own text, press **Edit**,
+   then **Change** to pick **Cantonese (Hong Kong)**.
 
 4. **Characters:** Qwen3-ASR writes Cantonese in Simplified characters. When a dictation is
    recognised as Cantonese (Hong Kong), OraType writes it in Hong Kong Traditional characters,
