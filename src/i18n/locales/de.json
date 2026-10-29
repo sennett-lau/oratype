@@ -823,6 +823,8 @@
     "pillPosition": "Sprache {{index}} von {{count}}",
     "addLanguage": "Sprache hinzufügen",
     "chooseLanguage": "Sprache wählen",
+    "onlyForTranslate": "Nur der Kurzbefehl Übersetzen nutzt diese Liste. Die Sprachen, die du sprichst, stehen unter Allgemein → Deine Sprachen.",
+    "openYourLanguages": "Zu „Deine Sprachen“",
     "languages": {
       "zhHans": "Chinesisch (vereinfacht)",
       "zhHantHK": "Chinesisch (traditionell, Hongkong)",
@@ -1289,9 +1291,10 @@
     "add": "+ Sprache hinzufügen",
     "addLabel": "Eine Sprache hinzufügen, die du sprichst",
     "remove": "{{language}} entfernen",
-    "hints": {
-      "yue": "Kantonesisch",
-      "zh": "Mandarin"
+    "names": {
+      "zhHans": "Mandarin (vereinfacht)",
+      "zhHantHK": "Kantonesisch (Hongkong)",
+      "zhHantTW": "Mandarin (traditionell)"
     },
     "fromMac": "Aus den bevorzugten Sprachen deines Macs übernommen.",
     "list": "{{items}} und {{last}}",
@@ -1311,6 +1314,9 @@
     "homeBodyBoth": "{{speech}} für die Spracherkennung und {{ai}} für die KI-Überarbeitung. Sie laufen auf diesem Mac; {{size}} zum Laden.",
     "homeBodySpeech": "{{speech}} für die Spracherkennung. Es läuft auf diesem Mac; {{size}} zum Laden.",
     "homeBodyAi": "{{ai}} für die KI-Überarbeitung. Es läuft auf diesem Mac; {{size}} zum Laden.",
-    "dontShowAgain": "Nicht mehr anzeigen"
+    "dontShowAgain": "Nicht mehr anzeigen",
+    "generalHelp": "Wenn du diktierst oder fragst, wählt OraType aus dieser Liste die Sprache, die du gesprochen hast, und folgt ihrer Voreinstellung, mit integrierten Modellen, deinem eigenen Server oder einem API-Schlüssel. Die Voreinstellung einer Sprache gilt auch, wenn du in sie übersetzt.",
+    "useMac": "{{languages}} hinzufügen",
+    "changeLanguages": "Deine Sprachen ändern"
   }
 }

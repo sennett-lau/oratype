@@ -150,21 +150,27 @@ async fn download_file(
     if !status.is_success() {
         return Err(format!("The download failed (HTTP {})", status.as_u16()));
     }
+    let preset = verify_file(entry, &bytes)?;
+    Ok((bytes.to_vec(), preset))
+}
+
+/// Checks a preset file against its index entry (size and SHA-256) and validates it. Used for
+/// downloads and for the presets built into the app (plan `languages-in-general`).
+pub(crate) fn verify_file(entry: &IndexEntry, bytes: &[u8]) -> Result<Preset, String> {
     if bytes.len() > MAX_FILE_BYTES
         || bytes.len() != entry.bytes
-        || format!("{:x}", Sha256::digest(&bytes)) != entry.sha256
+        || format!("{:x}", Sha256::digest(bytes)) != entry.sha256
     {
         return Err(VERIFY_FAILED.into());
     }
-    let preset = parse_preset(&entry.id, &bytes).map_err(|errors| {
+    parse_preset(&entry.id, bytes).map_err(|errors| {
         tracing::warn!(
             "Language presets: {} failed validation: {}",
             entry.id,
             errors.join("; ")
         );
         VERIFY_FAILED.to_string()
-    })?;
-    Ok((bytes.to_vec(), preset))
+    })
 }
 
 pub const VERIFY_FAILED: &str = "The preset could not be verified";

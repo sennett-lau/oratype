@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { useAppStore } from '../../stores/appStore'
-import { Group } from '../ui/Group'
+import { openSettingsPane } from '../../lib/router'
+import { Group, Row } from '../ui/Group'
 import { LanguageRows } from './languages/LanguageRows'
 import { LANGUAGE_PRESETS_GUIDE_URL, useLibraryStatus } from './languages/languageLibrary'
 import { LanguageSheet } from './languages/LanguageSheet'
@@ -12,7 +13,9 @@ import { LanguageSheet } from './languages/LanguageSheet'
  * into, one row per language with its instructions sheet (plan `language-prompt-library`). It
  * used to be the Translation group of Settings → AI; it has its own pane so Settings follows the
  * three shortcuts (Dictate → Prompts, Translate → Translate, Ask anything → Search). The
- * Translate shortcut itself stays in General with the other shortcuts.
+ * Translate shortcut itself stays in General with the other shortcuts. Plan
+ * `languages-in-general`: only Translate uses this list; dictation picks from Your languages in
+ * General, which share each language's settings with it.
  */
 export function TranslatePane() {
   const config = useAppStore((s) => s.config)
@@ -47,6 +50,11 @@ export function TranslatePane() {
           onChange={(translation) => updateConfig({ translation })}
           onEdit={setEditingLanguage}
         />
+        <Row help={t('translate.onlyForTranslate')}>
+          <button type="button" onClick={() => openSettingsPane('general')} className="link-button">
+            {t('translate.openYourLanguages')}
+          </button>
+        </Row>
       </Group>
 
       {editingLanguage && (

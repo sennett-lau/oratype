@@ -27,7 +27,7 @@ loads it. A download that breaks off resumes where it stopped.
   with OraType 1.2.0 or earlier you have ggml-org's Q8_0 files: they keep working, and Settings
   shows **Update** to download the faster ones (the old files are deleted once the new ones pass
   their test).
-- When you tell OraType the languages you speak (onboarding or Settings → Speech → **Your
+- When you tell OraType the languages you speak (onboarding or Settings → General → **Your
   languages**) and it has a suggested setup for them, that model is chosen and tagged **Suggested
   for your languages**. Today: Qwen3-ASR for any combination with Cantonese.
 - OraType checks the chip, the memory and the free disk space (1.1 × the model size) and offers

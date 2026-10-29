@@ -21,6 +21,7 @@ import { SwitchLanguageShortcut } from './SwitchLanguageShortcut'
 import { switchLanguageVariants } from '../../lib/switchLanguage'
 import { MicrophonePicker } from './MicrophonePicker'
 import { HandsFreeSettings } from './HandsFreeSettings'
+import { YourLanguagesGroup } from './YourLanguagesGroup'
 import { UI_LANGUAGES } from '../../i18n/languages'
 import { MAX_TRANSLATION_TARGETS, targetLanguageLabel } from '../../lib/constants'
 
@@ -194,6 +195,9 @@ export function GeneralPane() {
           </select>
         </Row>
       </Group>
+
+      {/* Plan `languages-in-general`: the languages the user speaks, with their presets. */}
+      <YourLanguagesGroup />
 
       <Group
         label={t('settings.hotkey')}

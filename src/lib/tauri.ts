@@ -7,6 +7,7 @@ import type {
   CorrectionRule,
   PlatformCapabilities,
   TranslationConfig,
+  TranslationLanguageSettings,
   ContextFamily,
   FamilySceneAssignment,
   BrowserAccessStatus,
@@ -775,9 +776,20 @@ export async function getWebSearchStatus(): Promise<WebSearchStatus> {
 }
 
 /** `apiKey`: undefined keeps the stored key, '' removes it, anything else replaces it. */
-/** Plan `language-model-suggestions`: saves the languages the user speaks; returns them as stored. */
-export async function setSpokenLanguages(languages: string[]): Promise<string[]> {
-  return invoke('set_spoken_languages', { languages })
+/** What `setYourLanguages` stored. */
+export interface YourLanguagesSaved {
+  /** Your languages as stored (normalized). */
+  your_languages: string[]
+  /** Every language's settings, with the built-in presets given to added languages. */
+  languages: Record<string, TranslationLanguageSettings>
+}
+
+/**
+ * Plan `languages-in-general`: saves Your languages (written codes). An added language without
+ * settings gets its built-in preset at once.
+ */
+export async function setYourLanguages(languages: string[]): Promise<YourLanguagesSaved> {
+  return invoke('set_your_languages', { languages })
 }
 
 /** Plan `language-model-suggestions`: "Don't show again" on the Home card of a suggested setup. */

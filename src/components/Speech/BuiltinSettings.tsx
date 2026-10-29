@@ -7,8 +7,8 @@ import { isSetupRunning } from '../../stores/modelSetupStore'
 import { useSetupHardware, useSetupStatus } from '../../hooks/useSpeechSetup'
 import { useLanguageSetup } from '../../hooks/useLanguageSetup'
 import { modelLabel } from '../../lib/languageSetups'
-import { SpokenLanguagesPicker } from '../Languages/SpokenLanguages'
-import { spokenLanguageList } from '../../lib/spokenLanguages'
+import { yourLanguageList } from '../../lib/yourLanguages'
+import { openSettingsPane } from '../../lib/router'
 import { ModelOptions, ProgressTrack } from './BuiltinParts'
 import {
   failedBadge,
@@ -26,8 +26,10 @@ import { SPEECH_SERVICE, builtinPresetOf, type EngineService } from './services'
  * "Model" group with the option cards this Mac is offered (hardware note at the top right), then
  * one status row for the selected model: Not downloaded + Download, Downloading + Cancel, In use +
  * Delete, Download failed + Try again. When no model suits this Mac, the cards and the status row
- * are hidden and only the note shows. Plan `language-model-suggestions`: above it, the languages
- * the user speaks, and a banner when their suggested setup has a model that is not in use here.
+ * are hidden and only the note shows. Plan `language-model-suggestions`: above it, a banner when
+ * the suggested setup for the user's languages has a model that is not in use here. Plan
+ * `languages-in-general`: the languages themselves are chosen in Settings → General, which the
+ * banner links to.
  */
 export function BuiltinSettings({ service = SPEECH_SERVICE }: { service?: EngineService }) {
   const { t } = useTranslation()
@@ -212,20 +214,12 @@ export function BuiltinSettings({ service = SPEECH_SERVICE }: { service?: Engine
 
   return (
     <div data-testid="builtin-settings">
-      <div className="mx-1 mt-5 mb-[7px]">
-        <span id={`${service.id}-spoken-languages`} className="group-label m-0">
-          {t('languageSetup.yourLanguages')}
-        </span>
-      </div>
-      <div className="row-group px-3.5 py-3">
-        <SpokenLanguagesPicker labelId={`${service.id}-spoken-languages`} />
-      </div>
       {showBanner && suggested && (
-        <div className="setup-banner mt-2.5" data-testid="setup-banner">
+        <div className="setup-banner mt-5" data-testid="setup-banner">
           <div className="min-w-[200px] flex-1">
             <span className="block text-[13px] font-semibold text-text-primary">
               {t('languageSetup.suggestedTitle', {
-                languages: spokenLanguageList(languages, t),
+                languages: yourLanguageList(languages, t),
               })}
             </span>
             <span className="status-detail">
@@ -235,7 +229,14 @@ export function BuiltinSettings({ service = SPEECH_SERVICE }: { service?: Engine
                   model: modelLabel(suggested),
                 },
               )}
-            </span>
+            </span>{' '}
+            <button
+              type="button"
+              className="link-button"
+              onClick={() => openSettingsPane('general')}
+            >
+              {t('languageSetup.changeLanguages')}
+            </button>
           </div>
           {button(
             suggestedInfo?.installed

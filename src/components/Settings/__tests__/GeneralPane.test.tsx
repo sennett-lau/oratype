@@ -1,6 +1,6 @@
 /**
- * Settings → General (plan `general-settings`): Shortcuts, Recording and Output groups, and the
- * controls in them writing to the config.
+ * Settings → General (plan `general-settings`): Your languages (plan `languages-in-general`),
+ * Shortcuts, Recording and Output groups, and the controls in them writing to the config.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup, within, waitFor } from '@testing-library/react'
@@ -16,6 +16,8 @@ vi.mock('react-i18next', () => ({
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(() => Promise.resolve(() => {})),
 }))
+
+vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn().mockResolvedValue(undefined) }))
 
 vi.mock('../../../lib/tauri', () => ({
   HANDS_FREE_SETUP_EVENT: 'hands-free:setup',
@@ -63,6 +65,12 @@ vi.mock('../../../lib/tauri', () => ({
     requested_device_missing: false,
   }),
   stopMicLevelMonitor: vi.fn().mockResolvedValue(undefined),
+  getLanguageLibraryStatus: vi.fn().mockResolvedValue({ latest: {}, updates: {} }),
+  loadLanguagePreset: vi.fn().mockResolvedValue(null),
+  setYourLanguages: vi.fn(async (languages: string[]) => ({
+    your_languages: languages,
+    languages: {},
+  })),
 }))
 
 import { GeneralPane } from '../GeneralPane'
@@ -89,6 +97,24 @@ afterEach(() => {
 })
 
 describe('GeneralPane', () => {
+  // Plan `languages-in-general`: Your languages come right after the interface language.
+  it('lists Your languages after the interface language, before the shortcuts', () => {
+    useAppStore.getState().updateConfig({
+      your_languages: ['en', 'zh-Hant-HK'],
+      translation: { targets: ['ja'], active_target: 'ja' },
+    })
+    render(<GeneralPane />)
+
+    const yours = screen.getByRole('region', { name: 'languageSetup.yourLanguages' })
+    const follows = (a: Element, b: Element) =>
+      Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(follows(screen.getByRole('combobox', { name: 'settings.language' }), yours)).toBe(true)
+    expect(follows(yours, screen.getByRole('region', { name: 'settings.hotkey' }))).toBe(true)
+    expect(within(yours).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(yours).getByText('languageSetup.names.zhHantHK')).toBeInTheDocument()
+    expect(within(yours).queryByTestId('language-row-ja')).toBeNull()
+  })
+
   it('offers the configured shortcut roles and keeps Cancel read-only', () => {
     render(<GeneralPane />)
     const shortcuts = screen.getByRole('region', { name: 'settings.hotkey' })

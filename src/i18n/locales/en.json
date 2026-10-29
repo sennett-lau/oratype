@@ -823,6 +823,8 @@
     "pillPosition": "Language {{index}} of {{count}}",
     "addLanguage": "Add language",
     "chooseLanguage": "Choose a language",
+    "onlyForTranslate": "Only the Translate shortcut uses this list. The languages you speak are in General → Your languages.",
+    "openYourLanguages": "Go to Your languages",
     "languages": {
       "zhHans": "Chinese (Simplified)",
       "zhHantHK": "Chinese (Traditional, Hong Kong)",
@@ -1289,9 +1291,10 @@
     "add": "+ Add language",
     "addLabel": "Add a language you speak",
     "remove": "Remove {{language}}",
-    "hints": {
-      "yue": "Cantonese",
-      "zh": "Mandarin"
+    "names": {
+      "zhHans": "Mandarin (Simplified)",
+      "zhHantHK": "Cantonese (Hong Kong)",
+      "zhHantTW": "Mandarin (Traditional)"
     },
     "fromMac": "Filled in from your Mac’s preferred languages.",
     "list": "{{items}} and {{last}}",
@@ -1311,6 +1314,9 @@
     "homeBodyBoth": "{{speech}} for speech recognition and {{ai}} for AI polish. They run on this Mac; {{size}} to download.",
     "homeBodySpeech": "{{speech}} for speech recognition. It runs on this Mac; {{size}} to download.",
     "homeBodyAi": "{{ai}} for AI polish. It runs on this Mac; {{size}} to download.",
-    "dontShowAgain": "Don’t show again"
+    "dontShowAgain": "Don’t show again",
+    "generalHelp": "When you dictate or ask, OraType picks the language you spoke from this list and follows its preset, with built-in models, your own server or an API key. A language’s preset also applies when you translate into it.",
+    "useMac": "Add {{languages}}",
+    "changeLanguages": "Change your languages"
   }
 }

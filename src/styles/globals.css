@@ -996,7 +996,8 @@ body,
     }
   }
 
-  /* Plan `language-prompt-library`: Settings → AI → Translation, one row per language. */
+  /* Plan `language-prompt-library`: Settings → Translate, one row per language (plan
+     `languages-in-general`: also Settings → General → Your languages, without the order). */
   .language-row {
     display: flex;
     align-items: center;
@@ -2038,11 +2039,6 @@ body,
   }
   .spoken-lang {
     max-width: 100%;
-  }
-  .spoken-lang-hint {
-    margin-left: 5px;
-    color: var(--color-text-secondary);
-    font-size: 11.5px;
   }
   .spoken-langs .spoken-lang-add {
     width: auto;
