@@ -90,11 +90,13 @@ pub fn list_ai_models(
     let installed = ai_models::installed(&dir);
     Ok(ai_models::AI_MODELS
         .iter()
-        .map(|model| super::speech_setup::SpeechModelInfo {
-            id: model.file.id.to_string(),
-            file_name: model.file.file_name.to_string(),
-            size_bytes: model.file.size_bytes,
-            installed: installed.iter().any(|m| m.id == model.file.id),
+        .map(|model| {
+            super::speech_setup::SpeechModelInfo::new(
+                model.file.id,
+                model.file.file_name,
+                model.file.size_bytes,
+                &installed,
+            )
         })
         .collect())
 }
@@ -140,7 +142,8 @@ pub async fn get_ai_hardware(app: tauri::AppHandle) -> Result<AiHardwareCheck, S
     .map_err(|error| error.to_string())
 }
 
-/// Deletes an AI model file (stopping the server first when it uses it). The Built-in preset
+/// Deletes an AI model file, and any earlier version of it (stopping the server first when it
+/// uses one of them). The Built-in preset
 /// moves to another installed model or loses its model (see
 /// `AppConfig::reconcile_builtin_ai_models`).
 #[tauri::command]
@@ -156,10 +159,19 @@ pub async fn delete_ai_model(
         return Err("This model is being set up right now".to_string());
     }
     let dir = models_dir(&app)?;
-    if builtin::server().running_model_file().as_deref() == Some(model.file.file_name) {
+    let files: Vec<_> = std::iter::once(model.file)
+        .chain(model.previous.iter().copied())
+        .collect();
+    let running = builtin::server().running_model_file();
+    if files
+        .iter()
+        .any(|file| running.as_deref() == Some(file.file_name))
+    {
         builtin::server().stop();
     }
-    models::delete_model(&dir, &model.file).map_err(|error| error.to_string())?;
+    for file in &files {
+        models::delete_model(&dir, file).map_err(|error| error.to_string())?;
+    }
 
     let mut config = state.load().await.map_err(|e| e.to_string())?;
     if config.reconcile_builtin_ai_models(&ai_models::installed_pairs(&dir)) {
@@ -256,6 +268,11 @@ async fn run_setup(
         .await
         .map_err(|error| io(error.to_string()))?;
     let previous_active = config.active_ai_preset_id.clone();
+    // Plan `faster-cantonese-models`: setting up a model with an earlier version on disk updates
+    // it. The earlier file goes once the current one passes the test; when the test fails, the
+    // preset stays on the earlier file that worked.
+    let earlier = ai_models::installed_previous(&model, dir);
+    let presets_before = config.ai_presets.clone();
     let preset = config.install_builtin_llama(model.file.id, model.file.file_name);
     // Plan `warm-builtin-ai`: start with the slots the config wants, so the server is not
     // started again right after its test.
@@ -276,8 +293,22 @@ async fn run_setup(
         Ok(ms) => {
             tracing::info!("Built-in AI preset passed its test in {ms} ms");
             config.mark_ai_verified(&preset, storage::now_unix_ms());
+            if !earlier.is_empty() {
+                for file in &earlier {
+                    if let Err(error) = models::delete_model(dir, file) {
+                        tracing::warn!("Could not delete the earlier {}: {error}", file.file_name);
+                    }
+                }
+                tracing::info!("Updated {}; deleted its earlier file", model.file.id);
+                config.reconcile_builtin_ai_models(&ai_models::installed_pairs(dir));
+            }
         }
-        Err(_) => config.active_ai_preset_id = previous_active,
+        Err(_) => {
+            config.active_ai_preset_id = previous_active;
+            if !earlier.is_empty() {
+                config.ai_presets = presets_before;
+            }
+        }
     }
     config_state
         .save(&config)

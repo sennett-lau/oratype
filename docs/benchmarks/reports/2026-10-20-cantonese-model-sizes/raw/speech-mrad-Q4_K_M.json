@@ -1,0 +1,19 @@
+{
+ "model": "Qwen3-ASR-1.7B.Q4_K_M.gguf (mradermacher/Qwen3-ASR-1.7B-GGUF at 664b960, with its Qwen3-ASR-1.7B.mmproj-Q8_0.gguf)",
+ "size_bytes": 1282435552,
+ "kind": "speech",
+ "ready_s": 3.6,
+ "eval_metrics": {
+  "prompt_tokens_total": 1379.0,
+  "prompt_seconds_total": 3.7737290000000003,
+  "tokens_predicted_total": 419.0,
+  "tokens_predicted_seconds_total": 6.578200000000001,
+  "n_decode_total": 419.0,
+  "prompt_tokens_per_s": 365.4210463973433,
+  "predicted_tokens_per_s": 63.695235778784465
+ },
+ "memory": {
+  "footprint": "2101 MB",
+  "rss_mb": 3095
+ }
+}
