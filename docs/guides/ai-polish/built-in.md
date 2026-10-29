@@ -35,9 +35,13 @@ starts the server and sends one test request.
   While it runs it keeps the model in memory (about 3 GB for Best quality).
 - The very first start after installing or updating OraType takes a minute or two while macOS
   prepares the GPU code; later starts take a few seconds.
-- The first polish after a start is a second or two slower, while the server processes the long
-  polish instructions once and caches them. See [Benchmarks](../benchmarks/README.md) for measured
-  numbers.
+- Right after it starts, OraType has it read the polish instructions once for each of your
+  languages, so your first dictation does not wait for that (5–11 s with the 4B models).
+- **Fast language switching** (Settings → AI polish → Built-in AI, on by default) keeps one
+  copy of the instructions ready per language, up to three. Switching language then takes under
+  a second instead of up to about 10 s, and each extra language uses about 1–2 GB more memory.
+  Turn it off on a Mac that is short of memory. See [Benchmarks](../benchmarks/README.md) for
+  measured numbers.
 
 ## Building OraType yourself
 

@@ -464,6 +464,12 @@ export interface AppConfig {
   auto_update: boolean
   /** Plan `hands-free-mode`: say "Hey Sam" instead of pressing a shortcut (off by default). */
   hands_free: HandsFreeConfig
+  /**
+   * Plan `warm-builtin-ai`: "Fast language switching". Built-in AI keeps one request slot per
+   * language, so switching language does not make it read its instructions again (on by default;
+   * about 1–2 GB more memory per extra language).
+   */
+  builtin_ai_language_slots: boolean
   /** Version of the built-in preset templates in this config (backend migration marker). */
   builtin_presets_version: number
   /** The three-shortcut tour (onboarding Dictate, Translate, Ask steps) was finished. */
@@ -1329,6 +1335,7 @@ const defaultConfig: AppConfig = {
   mute_output_while_recording: false,
   auto_update: true,
   hands_free: { enabled: false, wake_name: 'Sam', sensitivity: 'normal', action: 'dictate' },
+  builtin_ai_language_slots: true,
   builtin_presets_version: 1,
   shortcut_tour_completed: false,
   shortcut_tour_prompt_dismissed: false,

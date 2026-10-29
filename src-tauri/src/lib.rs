@@ -1233,6 +1233,12 @@ pub fn run() {
             // Plan `ai-polish-setup`: the same for Built-in AI, and start its server when it is in
             // use.
             app.manage(commands::ai_setup::AiSetupState::default());
+            // Plan `warm-builtin-ai`: after the server starts, read each language's instructions
+            // before the first dictation.
+            let warm_up_app = app_handle.clone();
+            llm::builtin::set_warm_up(move || {
+                tauri::async_runtime::spawn(pipeline::warm_up_builtin_ai(warm_up_app.clone()));
+            });
             tauri::async_runtime::block_on(commands::ai_setup::init(&app_handle));
             // Plan `searxng-setup`: where the Built-in search lives, and its start at launch.
             {

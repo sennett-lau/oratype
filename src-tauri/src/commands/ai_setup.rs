@@ -256,6 +256,9 @@ async fn run_setup(
         .map_err(|error| io(error.to_string()))?;
     let previous_active = config.active_ai_preset_id.clone();
     let preset = config.install_builtin_llama(model.file.id, model.file.file_name);
+    // Plan `warm-builtin-ai`: start with the slots the config wants, so the server is not
+    // started again right after its test.
+    builtin::server().set_slots(builtin::wanted_slots(&config));
     let test = match builtin::server()
         .ensure(&preset.model_file, &preset.model)
         .await
@@ -280,6 +283,9 @@ async fn run_setup(
         .map_err(|error| io(error.to_string()))?;
     emit_ai_presets(app, &config);
     builtin::sync_with_config(&config);
+    if test.is_ok() {
+        builtin::warm_up();
+    }
     test
 }
 

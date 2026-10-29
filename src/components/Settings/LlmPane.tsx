@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useAppStore } from '../../stores/appStore'
+import { isBuiltinAi, useAppStore } from '../../stores/appStore'
 import type { PolishStyle } from '../../stores/appStore'
+import { activeAiPreset } from '../../lib/connectionStatus'
 import { getLatestMappingCandidate, listCustomAppMappings } from '../../lib/tauri'
 import type { CustomAppMappingView, MappingCandidateView } from '../../lib/tauri'
 import { Group, Row } from '../ui/Group'
@@ -26,7 +27,8 @@ const STYLE_KEY: Record<PolishStyle, string> = {
  * Settings → AI (plan `ai-polish-setup`): "AI polish uses" (Built-in or your server or API key,
  * with their details), then Polish (clean-up switch, style cards, match the app, the last app and
  * browser access) and a collapsed Advanced (selected text, custom instructions). The translation
- * languages moved to their own Settings → Translate pane (plan `settings-order`).
+ * languages moved to their own Settings → Translate pane (plan `settings-order`). With Built-in
+ * AI in use, a Built-in AI group holds "Fast language switching" (plan `warm-builtin-ai`).
  */
 export function LlmPane() {
   const config = useAppStore((s) => s.config)
@@ -107,6 +109,22 @@ export function LlmPane() {
   return (
     <div>
       <EngineChoice service={AI_SERVICE} />
+
+      {isBuiltinAi(activeAiPreset(config)) && (
+        <Group label={t('settings.groupBuiltinAi')}>
+          <Row
+            label={t('settings.fastLanguageSwitching')}
+            help={t('settings.fastLanguageSwitchingHelp')}
+          >
+            <Toggle
+              checked={config.builtin_ai_language_slots}
+              onChange={(checked) => updateConfig({ builtin_ai_language_slots: checked })}
+              label={t('settings.fastLanguageSwitching')}
+              hideLabel
+            />
+          </Row>
+        </Group>
+      )}
 
       <Group label={t('settings.groupPolish')}>
         <Row label={t('settings.enableAiPolish')} help={t('settings.enableAiPolishHelp')}>
