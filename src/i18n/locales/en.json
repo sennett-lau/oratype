@@ -970,6 +970,10 @@
     "failed": "Could not start recording the shortcut: {{error}}"
   },
   "whatsNew": {
+    "fasterCantoneseModels": "The built-in Cantonese setup is smaller and faster: speech is 21–28% faster on long dictations (1.6 GB instead of 2.5 GB) and polish writes about a third faster. If you set it up before, Settings shows Update; your files keep working until then.",
+    "readyFirstDictation": "Built-in AI is ready for your first dictation. When it starts, it reads your languages’ instructions in the background, so the first polish takes about a second instead of 5–11 seconds. Dictating straight away stops this, so it never slows you down.",
+    "fastLanguageSwitching": "Fast language switching (Settings → AI → Built-in AI, on by default): each of your languages stays ready, so switching between them takes about a second instead of up to 15. It uses about 1–2 GB more memory per extra language; turn it off on a Mac that is short of memory.",
+    "yourLanguages": "Your languages moved to Settings → General. Each language comes with its preset, and OraType uses the one you speak with every AI service: built-in, your own server or an API key. The Translate list is now only for Translate.",
     "renamed": "Typelite is now OraType. Your settings, models and dictionary come along. Grant Accessibility and Microphone again once (System Settings → Privacy & Security), and if macOS asks to let OraType use “Typelite” in your keychain, choose Always Allow: those are your saved API keys.",
     "handsFree": "Hands-free mode: say “Hey Sam”, pause, then speak, with no shortcut. Your words are typed into the app; say “ask …” to ask instead. Finish with “Thanks, Sam” or a 3-second pause. Turn it on in Settings → General → Hands-free; a small model (60 MB) listens on your Mac, so nothing is sent before the wake phrase.",
     "pillAfterIdle": "The pill shows again after a quiet spell. After about eight minutes without dictating, it could stop appearing while dictation still worked.",
