@@ -72,7 +72,8 @@ pub async fn init(app: &tauri::AppHandle) {
             "missing"
         }
     );
-    builtin::sync_with_config(&config);
+    let store = super::language_presets::library_store(app).ok();
+    builtin::sync_with_config(&config, store.as_ref());
 }
 
 #[tauri::command]
@@ -273,6 +274,10 @@ async fn run_setup(
     let earlier = ai_models::installed_previous(&model, dir);
     let presets_before = config.ai_presets.clone();
     let preset = config.install_builtin_llama(model.file.id, model.file.file_name);
+    // Plan `warm-builtin-ai`: start with the slots the config wants, so the server is not
+    // started again right after its test.
+    let store = super::language_presets::library_store(app).ok();
+    builtin::server().set_slots(builtin::wanted_slots(&config, store.as_ref()));
     let test = match builtin::server()
         .ensure(&preset.model_file, &preset.model)
         .await
@@ -310,7 +315,10 @@ async fn run_setup(
         .await
         .map_err(|error| io(error.to_string()))?;
     emit_ai_presets(app, &config);
-    builtin::sync_with_config(&config);
+    builtin::sync_with_config(&config, store.as_ref());
+    if test.is_ok() {
+        builtin::warm_up();
+    }
     test
 }
 
