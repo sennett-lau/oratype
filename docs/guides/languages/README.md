@@ -2,8 +2,8 @@
 
 OraType handles languages in two places: **speech recognition** decides which language it heard,
 and **AI polish** writes the text, following instructions for that language. This page covers
-the language guides, translation languages, their instructions, how OraType recognises the
-language you spoke, and the language presets from the repository.
+the language guides, your languages, translation languages, their instructions, how OraType
+recognises the language you spoke, and the language presets from the repository.
 
 ## Language guides
 
@@ -53,9 +53,33 @@ recording into it, but saves a detection pass and can help very short clips.
   adjust wording and script, but it cannot bring back words speech recognition changed; see
   [Language guides](#language-guides) for how to check yours.
 
+## Your languages
+
+**Settings → General → Your languages** lists the languages you speak and dictate in (up to
+twelve), one row each. When you dictate or ask, OraType picks the language you spoke from this
+list and follows its instructions. This works the same with every speech and AI service: the
+built-in models, your own server, or an API key.
+
+- The grey line says where the language's instructions come from: a preset from the library,
+  your own edit ("Based on … · edited"), or the built-in instructions. To have OraType recognise
+  a language, give it a preset (see [Choosing a preset](#choosing-a-preset)); a language on its
+  built-in instructions is recognised only by hints you add yourself.
+- The **switch**, **Edit**, ✕ and **＋ Add language** work as in the Translate list below. Adding
+  a language opens its settings, where **Browse presets** finds its preset.
+- A language has one set of instructions, shared with the Translate list: the Cantonese preset
+  you choose here is also used when you translate into Cantonese (Hong Kong).
+- The list also decides which built-in models OraType suggests (onboarding asks for it, and
+  starts from your Mac's preferred languages).
+
+Cantonese (Hong Kong), Mandarin (Simplified) and Mandarin (Traditional) are the same languages
+as Chinese (Traditional, Hong Kong), Chinese (Simplified) and Chinese (Traditional, Taiwan) in
+the Translate list.
+
 ## Translation languages
 
-**Settings → Translate** lists your languages (up to three), one row each:
+**Settings → Translate** lists the languages the Translate shortcut translates into (up to
+three), one row each. Only Translate uses this list; dictation picks from
+[your languages](#your-languages).
 
 - The **order** is the order the Switch language key and the pill follow. Drag a row by its
   ⋮⋮ handle to change it (or focus the handle and press ↑ / ↓).
@@ -106,7 +130,8 @@ can add one with a pull request (see [Contributing a language preset](../../../C
 
 ### Choosing a preset
 
-1. Press **Edit** on a language, then **Browse presets** (or **Change**).
+1. Press **Edit** on a language (in **Your languages** or the Translate list), then **Browse
+   presets** (or **Change**).
 2. The list starts with the **Built-in default**, then the presets that fit the language:
    **Official** ones first, and the one written for exactly your language (for example
    `en-GB`) before a general one. Each shows its summary, version, authors and a model tip.
@@ -120,8 +145,10 @@ to default** goes back to the built-in instructions.
 ### Where the instructions are used
 
 - **Translating into the language** uses them whenever the language is on.
-- **Dictating in the language** (Dictate, no translation, no selected text) uses them too, but
-  only when OraType recognises that you spoke that language. The **Recognition** tab shows how:
+- **Dictating in the language** (Dictate, no translation, no selected text) uses them too, and
+  so does Ask for a spoken question, when the language is in
+  [your languages](#your-languages) and OraType recognises that you spoke it. The
+  **Recognition** tab shows how:
   1. **Hint characters and words** found in what you said pick the language with the most
      hits. The preset brings its own (Cantonese: 嘅 咗 喺 唔 聽日 …); add your own with
      **+ Add hint**.

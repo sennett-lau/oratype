@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest'
-import { parseHash, settingsPaneHash } from '../router'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { openSettingsPane, parseHash, settingsPaneHash } from '../router'
 
 afterEach(() => {
   window.location.hash = ''
@@ -29,5 +29,19 @@ describe('desktop route parsing', () => {
 
   it('builds links to a Settings section', () => {
     expect(settingsPaneHash('general')).toBe('#/settings?pane=general')
+  })
+
+  // Plan `languages-in-general`: Translate and the built-in pages link to General. A tab click
+  // does not change the address, so it may already name the pane.
+  it('opens a Settings section even when the address already names it', () => {
+    const changed = vi.fn()
+    window.addEventListener('hashchange', changed)
+    window.location.hash = '#/settings?pane=general'
+    changed.mockClear()
+
+    openSettingsPane('general')
+    expect(window.location.hash).toBe('#/settings?pane=general')
+    expect(changed).toHaveBeenCalledTimes(1)
+    window.removeEventListener('hashchange', changed)
   })
 })

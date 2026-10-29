@@ -40,8 +40,9 @@ was said.
 
 ## Set it up
 
-1. **Easiest: Built-in.** OraType runs Qwen3-ASR itself. Add Cantonese under **Your languages**
-   (onboarding, or **Settings → Speech**); the Built-in card then has **Qwen3-ASR** chosen.
+1. **Easiest: Built-in.** OraType runs Qwen3-ASR itself. Add Cantonese (Hong Kong) under **Your
+   languages** (onboarding, or **Settings → General**); the Built-in card then has **Qwen3-ASR**
+   chosen.
    Press **Set up** (or **Download**, 2.5 GB) and go on to step 3. Its suggested AI model is
    the stock Qwen 3.5 4B; for slang and swear words use the uncensored one of step 5.
 
@@ -62,10 +63,12 @@ was said.
    `http://127.0.0.1:8180/v1` (or that computer's address), model `qwen3-asr`, no API key, and
    leave **Spoken language** on **Auto-detect**. Press **Test**, then **Save**.
 
-3. **Choose the Cantonese preset:** **Settings → Translate**, add Chinese (Traditional,
-   Hong Kong) if it is not in your list, press **Edit**, then **Browse presets** and use
+3. **Choose the Cantonese preset:** **Settings → General → Your languages**, add Cantonese
+   (Hong Kong) if it is not in your list, press **Edit**, then **Browse presets** and use
    **Cantonese (Hong Kong)**. Without the preset OraType cannot tell that you spoke Cantonese, and
-   neither the Cantonese notes nor the Hong Kong characters (next step) are applied.
+   neither the Cantonese notes nor the Hong Kong characters (next step) are applied. This works
+   with the built-in models and with your own servers alike, and the same preset is used when you
+   translate into Cantonese.
 
 4. **Characters:** Qwen3-ASR writes Cantonese in Simplified characters. When a dictation is
    recognised as Cantonese (Hong Kong), OraType writes it in Hong Kong Traditional characters,

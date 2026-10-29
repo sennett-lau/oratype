@@ -1577,7 +1577,7 @@ pub fn run() {
             commands::speech_setup::start_speech_setup,
             commands::speech_setup::cancel_speech_setup,
             commands::speech_setup::list_speech_models,
-            commands::language_setup::set_spoken_languages,
+            commands::language_setup::set_your_languages,
             commands::language_setup::dismiss_language_setup,
             commands::speech_setup::delete_speech_model,
             commands::speech_setup::get_speech_hardware,

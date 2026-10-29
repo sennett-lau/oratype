@@ -110,7 +110,7 @@ describe('SttSetupStep', () => {
       vi.mocked(tauri.getSpeechHardware).mockResolvedValue(
         hardwareCheck(['large-v3-turbo', 'small', 'qwen3-asr-1.7b']),
       )
-      useAppStore.getState().setConfig({ ...config(), spoken_languages: ['en', 'yue'] })
+      useAppStore.getState().setConfig({ ...config(), your_languages: ['en', 'zh-Hant-HK'] })
       await renderStep()
 
       const models = within(card()).getByRole('radiogroup', { name: 'Model' })
@@ -128,7 +128,7 @@ describe('SttSetupStep', () => {
       vi.mocked(tauri.getSpeechHardware).mockResolvedValue(
         hardwareCheck(['large-v3-turbo', 'small', 'qwen3-asr-1.7b']),
       )
-      useAppStore.getState().setConfig({ ...config(), spoken_languages: ['en', 'ja'] })
+      useAppStore.getState().setConfig({ ...config(), your_languages: ['en', 'ja'] })
       await renderStep()
 
       const models = within(card()).getByRole('radiogroup', { name: 'Model' })

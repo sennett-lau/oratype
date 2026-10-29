@@ -1,6 +1,7 @@
 //! Plan `language-prompt-library`: the user's chosen languages as the prompt sees them
 //! (effective instructions and recognition data), and the polish router that picks at most one
-//! of them for a dictation.
+//! of them for a dictation. Plan `languages-in-general`: the router picks from Your languages
+//! (Settings → General), never from the Translate languages, whatever the AI service.
 //!
 //! Router steps, over the languages that are on and apply to polish, in list order:
 //! 1. hints: the language with the most of its hints (preset + user) found in the transcript;
@@ -41,13 +42,14 @@ pub struct LanguageProfile {
     pub polish: bool,
 }
 
-/// Resolves every chosen language in list order. `store` is where downloaded presets live; a
-/// missing or damaged preset falls back to the built-in default (and is logged).
+/// Resolves Your languages (plan `languages-in-general`) in list order. The Translate languages
+/// are not among them unless the user also speaks them. `store` is where downloaded presets
+/// live; a missing or damaged preset falls back to the built-in default (and is logged).
 pub fn language_profiles(config: &AppConfig, store: Option<&LibraryStore>) -> Vec<LanguageProfile> {
     config
-        .translation
-        .targets
+        .your_languages
         .iter()
+        .flatten()
         .map(|code| language_profile(config, store, code))
         .collect()
 }
@@ -282,12 +284,14 @@ mod tests {
         .unwrap()
     }
 
-    /// Hong Kong Chinese with the Cantonese preset, then English with the English preset (the
-    /// mock's setup), with the presets stored in a temp library.
+    /// Your languages: Hong Kong Chinese with the Cantonese preset, then English with the
+    /// English preset (the mock's setup), with the presets stored in a temp library. Translate
+    /// has only Japanese.
     fn mock_setup(user_hints: &[&str]) -> (AppConfig, LibraryStore) {
         let store = temp_store("router");
         let mut config = AppConfig::default();
-        config.translation.targets = vec!["zh-Hant-HK".to_string(), "en".to_string()];
+        config.your_languages = Some(vec!["zh-Hant-HK".to_string(), "en".to_string()]);
+        config.translation.targets = vec!["ja".to_string()];
         for (code, id) in [("zh-Hant-HK", "cantonese-hong-kong"), ("en", "english")] {
             let bytes = repository_preset(id);
             let sha256 = store.store_preset(id, &bytes).unwrap();
@@ -447,10 +451,47 @@ mod tests {
         assert_eq!(count_hints(&hints, "arvo 嘅"), 2);
     }
 
+    /// Plan `languages-in-general`: Your languages decide routing; the Translate languages do not,
+    /// even with a preset, unless the user also speaks them.
+    #[test]
+    fn routing_uses_your_languages_not_the_translate_languages() {
+        let (mut config, store) = mock_setup(&[]);
+        assert_eq!(
+            language_profiles(&config, Some(&store))
+                .iter()
+                .map(|profile| profile.code.as_str())
+                .collect::<Vec<_>>(),
+            ["zh-Hant-HK", "en"]
+        );
+        // Cantonese is spoken but not a Translate language: it routes.
+        assert!(!config
+            .translation
+            .targets
+            .contains(&"zh-Hant-HK".to_string()));
+        assert_eq!(
+            routed(&config, &store, "我哋听日开会", "yue").as_deref(),
+            Some("zh-Hant-HK")
+        );
+
+        // Only a Translate language now: Cantonese no longer routes, English still does.
+        config.your_languages = Some(vec!["en".to_string()]);
+        config.translation.targets = vec!["zh-Hant-HK".to_string(), "en".to_string()];
+        assert_eq!(routed(&config, &store, "我哋听日开会", "yue"), None);
+        assert_eq!(
+            routed(&config, &store, "hello", "en").as_deref(),
+            Some("en")
+        );
+
+        // No languages chosen: nothing routes, whatever Translate holds.
+        config.your_languages = None;
+        assert!(language_profiles(&config, Some(&store)).is_empty());
+        assert_eq!(routed(&config, &store, "hello", "en"), None);
+    }
+
     #[test]
     fn languages_without_a_preset_route_only_by_user_hints() {
         let mut config = AppConfig::default();
-        config.translation.targets = vec!["en".to_string(), "ja".to_string()];
+        config.your_languages = Some(vec!["en".to_string(), "ja".to_string()]);
         let profiles = language_profiles(&config, None);
         assert_eq!(profiles[0].source, InstructionsSource::Builtin);
         assert!(profiles[0].detect_codes.is_empty());

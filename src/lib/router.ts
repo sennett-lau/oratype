@@ -30,3 +30,13 @@ export function useRoute() {
 export function settingsPaneHash(pane: string): string {
   return `#/settings?pane=${pane}`
 }
+
+/**
+ * Opens a Settings section from inside Settings (a link in one pane to another). A tab click does
+ * not change the address, so it may already name the pane; the change is then announced anyway.
+ */
+export function openSettingsPane(pane: string) {
+  const hash = settingsPaneHash(pane)
+  if (window.location.hash === hash) window.dispatchEvent(new Event('hashchange'))
+  else window.location.hash = hash
+}

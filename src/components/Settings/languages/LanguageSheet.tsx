@@ -56,10 +56,13 @@ function speechLanguageName(code: string, uiLanguage: string): string {
  */
 export function LanguageSheet({
   code,
+  name: shownName,
   status,
   onClose,
 }: {
   code: string
+  /** The language's name; the Translate list's name by default (Your languages passes its own). */
+  name?: string
   status: LibraryStatus
   onClose: () => void
 }) {
@@ -68,7 +71,7 @@ export function LanguageSheet({
     const { config, savedConfig } = useAppStore.getState()
     return languageSettings(savedConfig ?? config, code)
   }, [code])
-  const name = targetLanguageLabel(code, t)
+  const name = shownName ?? targetLanguageLabel(code, t)
 
   const [enabled, setEnabled] = useState(stored.enabled)
   const [tab, setTab] = useState<Tab>('instructions')

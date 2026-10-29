@@ -820,6 +820,8 @@
     "pillPosition": "第 {{index}} 種語言，共 {{count}} 種",
     "addLanguage": "新增語言",
     "chooseLanguage": "選擇語言",
+    "onlyForTranslate": "只有翻譯快捷鍵會用到這個清單。你會說的語言在「通用 → 你的語言」。",
+    "openYourLanguages": "前往「你的語言」",
     "languages": {
       "zhHans": "簡體中文",
       "zhHantHK": "繁體中文（香港）",
@@ -1284,9 +1286,10 @@
     "add": "+ 加入語言",
     "addLabel": "加入你會說的語言",
     "remove": "移除{{language}}",
-    "hints": {
-      "yue": "粵語",
-      "zh": "普通話"
+    "names": {
+      "zhHans": "普通話（簡體）",
+      "zhHantHK": "粵語（香港）",
+      "zhHantTW": "普通話（繁體）"
     },
     "fromMac": "已按 Mac 的偏好語言填入。",
     "list": "{{items}}和{{last}}",
@@ -1306,6 +1309,9 @@
     "homeBodyBoth": "{{speech}} 負責語音識別，{{ai}} 負責 AI 潤色。它們在這部 Mac 上執行，需下載 {{size}}。",
     "homeBodySpeech": "{{speech}} 負責語音識別。它在這部 Mac 上執行，需下載 {{size}}。",
     "homeBodyAi": "{{ai}} 負責 AI 潤色。它在這部 Mac 上執行，需下載 {{size}}。",
-    "dontShowAgain": "不再顯示"
+    "dontShowAgain": "不再顯示",
+    "generalHelp": "聽寫或提問時，OraType 會從這個清單找出你說的語言，並按它的預設處理，無論使用內建模型、你的伺服器還是 API 金鑰。翻譯成該語言時，也會使用它的預設。",
+    "useMac": "加入{{languages}}",
+    "changeLanguages": "更改你的語言"
   }
 }

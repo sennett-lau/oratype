@@ -1,6 +1,7 @@
-//! Plan `language-model-suggestions`: the languages the user speaks and the Home card of a
-//! suggested setup. Both are saved at once by their own controls (onboarding, Settings, Home),
-//! not by the Settings Save bar, and every window gets the change as `config:patch`.
+//! Plans `language-model-suggestions` and `languages-in-general`: Your languages and the Home
+//! card of a suggested setup. Both are saved at once by their own controls (onboarding,
+//! Settings → General, Home), not by the Settings Save bar, and every window gets the change as
+//! `config:patch`.
 
 use serde_json::json;
 use tauri::Emitter;
@@ -11,22 +12,22 @@ fn emit_patch(app: &tauri::AppHandle, config: &storage::AppConfig) {
     let _ = app.emit(
         "config:patch",
         json!({
-            "spoken_languages": config.spoken_languages,
+            "your_languages": config.your_languages,
             "dismissed_language_setup": config.dismissed_language_setup,
         }),
     );
 }
 
-/// Saves the languages the user speaks (codes such as `en`, `yue`, `zh`) and returns them as
+/// Saves Your languages (written-language codes such as `en`, `zh-Hant-HK`) and returns them as
 /// stored (normalized).
 #[tauri::command]
-pub async fn set_spoken_languages(
+pub async fn set_your_languages(
     app: tauri::AppHandle,
     state: tauri::State<'_, storage::ConfigManager>,
     languages: Vec<String>,
 ) -> Result<Vec<String>, String> {
     let mut config = state.load().await.map_err(|error| error.to_string())?;
-    config.spoken_languages = Some(languages);
+    config.your_languages = Some(languages);
     state
         .save(&config)
         .await
@@ -34,14 +35,10 @@ pub async fn set_spoken_languages(
     let config = state.load().await.map_err(|error| error.to_string())?;
     emit_patch(&app, &config);
     tracing::info!(
-        "Spoken languages saved: {}",
-        config
-            .spoken_languages
-            .clone()
-            .unwrap_or_default()
-            .join(", ")
+        "Your languages saved: {}",
+        config.your_languages.clone().unwrap_or_default().join(", ")
     );
-    Ok(config.spoken_languages.unwrap_or_default())
+    Ok(config.your_languages.unwrap_or_default())
 }
 
 /// "Don't show again" on the Home card of the suggested setup `setup_id`.

@@ -481,10 +481,12 @@ export interface AppConfig {
    */
   web_search: WebSearchConfig
   /**
-   * Plan `language-model-suggestions`: the languages the user speaks (`en`, `yue`, `zh`); null
-   * until chosen (the Mac's languages are used meanwhile). Saved by its own controls.
+   * Plan `languages-in-general`: Your languages (Settings → General), the languages the user
+   * speaks and dictates in, as written codes like the translation languages (`en`, `zh-Hant-HK`).
+   * Dictate and Ask pick from them. Null until chosen (the Mac's languages are shown meanwhile).
+   * Saved by their own controls, not the Save bar.
    */
-  spoken_languages: string[] | null
+  your_languages: string[] | null
   /** Plan `language-model-suggestions`: the suggested setup whose Home card was hidden. */
   dismissed_language_setup: string | null
 }
@@ -1334,7 +1336,7 @@ const defaultConfig: AppConfig = {
   shortcut_tour_prompt_dismissed: false,
   measure_typing_speed: true,
   web_search: { provider: 'none', base_url: '' },
-  spoken_languages: null,
+  your_languages: null,
   dismissed_language_setup: null,
 }
 

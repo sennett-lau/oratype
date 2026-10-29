@@ -17,8 +17,8 @@ Where Your languages appear and what reads them. Back to [index](index.md).
 - A note under the rows: when you dictate or ask, OraType picks the language you spoke from this
   list and follows its preset, with built-in models, your own server or an API key; the preset
   also applies when translating into the language.
-- An empty list says so. While the user has never chosen (no saved list), the note offers to
-  add the Mac's preferred languages with one button.
+- While the user has never chosen (no saved list), the note offers to add the Mac's preferred
+  languages with one button. An empty list shows only the Add row.
 
 ## Settings → Translate
 

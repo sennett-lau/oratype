@@ -547,3 +547,46 @@ describe('Onboarding shortcut gate (plan onboarding-shortcut-gate)', () => {
     consoleError.mockRestore()
   })
 })
+
+// Plan `languages-in-general`: Dictate and Ask pick from saved languages only.
+describe('Onboarding → Your languages', () => {
+  const originalLanguages = Object.getOwnPropertyDescriptor(window.navigator, 'languages')
+
+  beforeEach(() => {
+    Object.defineProperty(window.navigator, 'languages', {
+      value: ['en-US', 'zh-HK'],
+      configurable: true,
+    })
+    vi.mocked(tauri.setYourLanguages).mockImplementation(async (languages) => languages)
+  })
+
+  afterEach(() => {
+    if (originalLanguages) Object.defineProperty(window.navigator, 'languages', originalLanguages)
+  })
+
+  it('Next saves the Mac languages the step showed', async () => {
+    useAppStore.setState({ onboardingStep: 2 })
+    render(<Onboarding />)
+    await waitFor(() => expect(tauri.getConfig).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+    await waitFor(() => expect(useAppStore.getState().onboardingStep).toBe(3))
+    expect(tauri.setYourLanguages).toHaveBeenCalledWith(['en', 'zh-Hant-HK'])
+    expect(useAppStore.getState().config.your_languages).toEqual(['en', 'zh-Hant-HK'])
+  })
+
+  it('Next keeps the languages the user chose', async () => {
+    const chosen = { ...useAppStore.getState().config, your_languages: ['ja'] }
+    vi.mocked(tauri.getConfig).mockResolvedValue(chosen)
+    useAppStore.setState({ onboardingStep: 2, config: chosen })
+    render(<Onboarding />)
+    await waitFor(() => expect(tauri.getConfig).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+
+    await waitFor(() => expect(useAppStore.getState().onboardingStep).toBe(3))
+    expect(tauri.setYourLanguages).not.toHaveBeenCalled()
+    expect(useAppStore.getState().config.your_languages).toEqual(['ja'])
+  })
+})

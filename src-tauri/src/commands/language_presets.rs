@@ -269,16 +269,16 @@ pub fn get_language_library_status(app: tauri::AppHandle) -> Result<LibraryStatu
 
 // ─── Automatic updates ───
 
-/// The chosen languages that want automatic updates: on, auto-update on, using a preset.
+/// The chosen languages (Your languages, then the Translate ones; plan `languages-in-general`)
+/// that want automatic updates: on, auto-update on, using a preset.
 pub(crate) fn auto_update_languages(config: &AppConfig) -> Vec<(String, LibraryPresetRef)> {
     config
-        .translation
-        .targets
-        .iter()
+        .chosen_language_codes()
+        .into_iter()
         .filter_map(|code| {
-            let settings = config.translation.language(code)?;
+            let settings = config.translation.language(&code)?;
             let preset = settings.library_preset.clone()?;
-            (settings.enabled && settings.auto_update).then(|| (code.clone(), preset))
+            (settings.enabled && settings.auto_update).then_some((code, preset))
         })
         .collect()
 }
@@ -501,6 +501,14 @@ mod tests {
             .map(|(code, entry)| format!("{code}:{}:v{}", entry.id, entry.version))
             .collect();
         assert_eq!(plan, ["zh-Hant-HK:cantonese-hong-kong:v4"]);
+
+        // Plan `languages-in-general`: a language only in Your languages takes part too.
+        let mut spoken_only = config_with(serde_json::json!({
+            "ko": {"library_preset": reference("korean", 1), "auto_update": true}
+        }));
+        assert!(auto_update_languages(&spoken_only).is_empty());
+        spoken_only.your_languages = Some(vec!["ko".to_string()]);
+        assert_eq!(auto_update_languages(&spoken_only)[0].0, "ko");
 
         // Off: not checked at all.
         let off = config_with(serde_json::json!({

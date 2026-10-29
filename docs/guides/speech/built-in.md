@@ -21,7 +21,7 @@ loads it. A download that breaks off resumes where it stopped.
 - The whisper models come from the official whisper.cpp repository on Hugging Face, Qwen3-ASR
   from ggml-org's (Apache-2.0). They are stored in
   `~/Library/Application Support/dev.oratype.mac/models/`.
-- When you tell OraType the languages you speak (onboarding or Settings → Speech → **Your
+- When you tell OraType the languages you speak (onboarding or Settings → General → **Your
   languages**) and it has a suggested setup for them, that model is chosen and tagged **Suggested
   for your languages**. Today: Qwen3-ASR for any combination with Cantonese.
 - OraType checks the chip, the memory and the free disk space (1.1 × the model size) and offers

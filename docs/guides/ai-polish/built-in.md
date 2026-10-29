@@ -20,7 +20,7 @@ starts the server and sends one test request.
 - The models come from Unsloth's Hugging Face repositories (Qwen does not publish Q4_K_M files
   of these) and are released by Qwen under the Apache-2.0 licence.
 - Qwen 3.5 4B is the AI half of the setup suggested for Cantonese (see **Your languages** in
-  onboarding or Settings). In the polish evaluations it does better than Qwen3 4B on Cantonese
+  onboarding or Settings → General). In the polish evaluations it does better than Qwen3 4B on Cantonese
   and worse on English and Mandarin, so it is suggested only for combinations with Cantonese. They are stored in
   `~/Library/Application Support/dev.oratype.mac/models/`, next to the speech models.
 - Intel Macs, and Macs with less memory than the table says, get no Built-in option; use an
