@@ -43,7 +43,7 @@ was said.
 1. **Easiest: Built-in.** OraType runs Qwen3-ASR itself. Add Cantonese (Hong Kong) under **Your
    languages** (onboarding, or **Settings → General**); the Built-in card then has **Qwen3-ASR**
    chosen.
-   Press **Set up** (or **Download**, 2.5 GB) and go on to step 3. Its suggested AI model is
+   Press **Set up** (or **Download**, 1.6 GB) and go on to step 3. Its suggested AI model is
    the stock Qwen 3.5 4B; for slang and swear words use the uncensored one of step 5.
 
    **Or run it yourself** on your Mac or on a computer with an NVIDIA GPU, with llama.cpp's

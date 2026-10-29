@@ -15,6 +15,10 @@
 //! - Its log goes to the OraType log filtered to errors, load and timing lines (see
 //!   [`log_level_for`]); llama-server never prints the prompt or the answer at its default
 //!   verbosity.
+//! - Plan `warm-builtin-ai`: with "Fast language switching" on, it gets one request slot per
+//!   language (up to [`MAX_LANGUAGE_SLOTS`]) and each dictation goes to its language's slot, so
+//!   the server keeps every language's instructions read. After a start in the background it is
+//!   warmed up: each slot reads its language's instructions once, before the first dictation.
 //!
 //! The first start after install or update compiles llama.cpp's Metal shaders, which takes one
 //! to two minutes; macOS caches the result, and later starts take a few seconds.
@@ -30,6 +34,7 @@ use async_trait::async_trait;
 use crate::error::AppError;
 use crate::storage::{AiPreset, AppConfig};
 
+use super::language_library::store::LibraryStore;
 use super::LlmConfig;
 
 /// The program's name inside `OraType.app/Contents/MacOS/`.
@@ -38,6 +43,9 @@ pub const SERVER_BINARY_NAME: &str = "llama-server";
 /// preset is about 3,300 tokens, so 4096 left too little room and cut long answers short
 /// (1.1.3). 8192 holds a long dictation and its answer; it costs about 0.6 GB more memory.
 pub const CONTEXT_TOKENS: u32 = 8192;
+/// Plan `warm-builtin-ai`: at most this many request slots, one per language. Each slot has its
+/// own [`CONTEXT_TOKENS`], which costs about 1.1 GB (Qwen 3.5 4B) to 2.2 GB (Qwen3 4B) of memory.
+pub const MAX_LANGUAGE_SLOTS: u32 = 3;
 /// Long enough for the first start, which compiles the Metal shaders.
 pub const STARTUP_TIMEOUT: Duration = Duration::from_secs(240);
 const HEALTH_POLL: Duration = Duration::from_millis(250);
@@ -144,11 +152,14 @@ pub fn launch_spec(
         model_alias,
         port,
         api_key,
+        1,
     )
 }
 
 /// The arguments of one server start for `role`. A speech server gets the audio projector and a
-/// larger context, and no `--reasoning` switch (a speech model has no thinking mode).
+/// larger context, and no `--reasoning` switch (a speech model has no thinking mode). `slots`
+/// request slots each get the full context (plan `warm-builtin-ai`).
+#[allow(clippy::too_many_arguments)]
 pub fn launch_spec_for(
     role: ServerRole,
     binary: &Path,
@@ -157,11 +168,13 @@ pub fn launch_spec_for(
     model_alias: &str,
     port: u16,
     api_key: &str,
+    slots: u32,
 ) -> LaunchSpec {
+    let slots = slots.max(1);
     let context = match role {
         ServerRole::Polish => CONTEXT_TOKENS,
         ServerRole::Speech => SPEECH_CONTEXT_TOKENS,
-    };
+    } * slots;
     let mut args: Vec<String> = [
         "--model",
         &model_path.to_string_lossy(),
@@ -176,7 +189,7 @@ pub fn launch_spec_for(
         "--ctx-size",
         &context.to_string(),
         "--parallel",
-        "1",
+        &slots.to_string(),
     ]
     .iter()
     .map(|arg| arg.to_string())
@@ -218,6 +231,7 @@ struct Running {
     child: Box<dyn ServerChild>,
     model_path: PathBuf,
     projector_path: Option<PathBuf>,
+    slots: u32,
     endpoint: Endpoint,
 }
 
@@ -234,6 +248,9 @@ pub struct ServerManager {
     generation: AtomicU64,
     models_dir: Mutex<Option<PathBuf>>,
     pid_file: Mutex<Option<PathBuf>>,
+    /// Request slots for the next start (plan `warm-builtin-ai`); set from the config by
+    /// [`sync_with_config`], so a start on demand uses the same number.
+    slots: Mutex<u32>,
     startup_timeout: Duration,
     poll: Duration,
 }
@@ -252,6 +269,7 @@ impl ServerManager {
             generation: AtomicU64::new(0),
             models_dir: Mutex::new(None),
             pid_file: Mutex::new(None),
+            slots: Mutex::new(1),
             startup_timeout: STARTUP_TIMEOUT,
             poll: HEALTH_POLL,
         }
@@ -276,17 +294,29 @@ impl ServerManager {
         self.launcher.find_binary().is_some()
     }
 
+    /// Sets how many request slots the next start gets (at least 1). A running server with a
+    /// different number is started again by the next [`ensure`](Self::ensure).
+    pub fn set_slots(&self, slots: u32) {
+        *lock(&self.slots) = slots.max(1);
+    }
+
     /// The model file the running server serves, if one runs.
     pub fn running_model_file(&self) -> Option<String> {
+        self.running_model_and_slots().map(|(file, _)| file)
+    }
+
+    /// The running server's model file and number of request slots, if one runs.
+    pub fn running_model_and_slots(&self) -> Option<(String, u32)> {
         let mut running = lock(&self.running);
         let current = running.as_mut()?;
         if current.child.exit_status().is_some() {
             return None;
         }
-        current
+        let file = current
             .model_path
             .file_name()
-            .map(|name| name.to_string_lossy().to_string())
+            .map(|name| name.to_string_lossy().to_string())?;
+        Some((file, current.slots))
     }
 
     /// Returns the address of a server running `model_file`, starting it (or starting it
@@ -319,13 +349,15 @@ impl ServerManager {
             Some(file) => Some(dir.join(file)),
             None => None,
         };
+        let slots = *lock(&self.slots);
 
         {
             let mut running = lock(&self.running);
             if let Some(current) = running.as_mut() {
                 match current.child.exit_status() {
                     None if current.model_path == model_path
-                        && current.projector_path == projector_path =>
+                        && current.projector_path == projector_path
+                        && current.slots == slots =>
                     {
                         return Ok(current.endpoint.clone())
                     }
@@ -353,6 +385,7 @@ impl ServerManager {
             alias,
             port,
             &api_key,
+            slots,
         );
         let started = Instant::now();
         let mut child = self
@@ -361,11 +394,12 @@ impl ServerManager {
             .map_err(|error| ServerError::Spawn(error.to_string()))?;
         self.write_pid(Some(child.pid()));
         tracing::info!(
-            "{label} starting: {} on port {port}",
+            "{label} starting: {} on port {port}, {slots} slot{}",
             model_path
                 .file_name()
                 .map(|name| name.to_string_lossy().to_string())
-                .unwrap_or_default()
+                .unwrap_or_default(),
+            if slots == 1 { "" } else { "s" }
         );
 
         let origin = format!("http://127.0.0.1:{port}");
@@ -400,6 +434,7 @@ impl ServerManager {
             child,
             model_path,
             projector_path,
+            slots,
             endpoint: endpoint.clone(),
         });
         Ok(endpoint)
@@ -468,7 +503,9 @@ fn stop_stale_server(pid_file: &Path) {
 
 /// Which level a line of llama-server's log gets in the OraType log, or `None` to drop it.
 /// Lines look like `0.02.681.426 I srv  llama_server: model loaded`; the letter is the level.
-/// Errors, the load and listen lines and the per-request timing totals are kept.
+/// Errors, the load and listen lines and each request's timings are kept: prompt tokens read and
+/// how fast ("prompt eval time"), tokens written and how fast ("eval time"), the total, and the
+/// slot's size at the end ("stop processing: n_tokens"), which shows how much came from the cache.
 pub fn log_level_for(line: &str) -> Option<tracing::Level> {
     let mut parts = line.split_whitespace();
     let _time = parts.next()?;
@@ -476,7 +513,9 @@ pub fn log_level_for(line: &str) -> Option<tracing::Level> {
         "E" => Some(tracing::Level::WARN),
         "I" if line.contains("model loaded")
             || line.contains("listening on")
-            || line.contains("total time") =>
+            || line.contains("eval time")
+            || line.contains("total time")
+            || line.contains("stop processing") =>
         {
             Some(tracing::Level::INFO)
         }
@@ -725,17 +764,93 @@ pub fn wanted_model(config: &AppConfig) -> Option<(String, String)> {
         .map(|preset| (preset.model_file.clone(), preset.model.clone()))
 }
 
-/// Starts or stops the built-in server to match `config` (at app start and after the AI engine
-/// changed). Starting runs in the background.
-pub fn sync_with_config(config: &AppConfig) {
+/// Plan `warm-builtin-ai`: the language codes that get their own request slot, in slot order:
+/// the router's languages it can recognise (see
+/// [`super::language_router::LanguageProfile::recognisable`]), at most [`MAX_LANGUAGE_SLOTS`].
+/// A language without a preset or hints is never routed, so a slot for it would sit unused.
+/// Empty when "Fast language switching" is off. `store` is where downloaded presets live.
+pub fn slot_languages(config: &AppConfig, store: Option<&LibraryStore>) -> Vec<String> {
+    if !config.builtin_ai_language_slots {
+        return Vec::new();
+    }
+    super::language_router::language_profiles(config, store)
+        .into_iter()
+        .filter(|profile| profile.recognisable())
+        .map(|profile| profile.code)
+        .take(MAX_LANGUAGE_SLOTS as usize)
+        .collect()
+}
+
+/// How many request slots the built-in server runs with for `config`: one per language with
+/// "Fast language switching" on (at least 1), else 1.
+pub fn wanted_slots(config: &AppConfig, store: Option<&LibraryStore>) -> u32 {
+    (slot_languages(config, store).len() as u32).max(1)
+}
+
+/// The slot a dictation in `language` goes to, when it has one of its own. `None` lets the server
+/// pick (one slot, or a language without its own).
+pub fn slot_for_language(
+    config: &AppConfig,
+    store: Option<&LibraryStore>,
+    language: &str,
+) -> Option<u32> {
+    let languages = slot_languages(config, store);
+    if languages.len() < 2 {
+        return None;
+    }
+    languages
+        .iter()
+        .position(|code| code == language)
+        .map(|index| index as u32)
+}
+
+/// Bumped when a recording starts: a warm-up that began under an earlier value stops, so it
+/// never competes with a dictation for the GPU (plan `warm-builtin-ai`).
+static WARM_UP_RUN: AtomicU64 = AtomicU64::new(0);
+
+/// The current warm-up run; a warm-up keeps it and stops once it changes.
+pub fn warm_up_run() -> u64 {
+    WARM_UP_RUN.load(Ordering::SeqCst)
+}
+
+/// Stops any warm-up under way (a recording started).
+pub fn stop_warm_up() {
+    WARM_UP_RUN.fetch_add(1, Ordering::SeqCst);
+}
+
+type WarmUp = Box<dyn Fn() + Send + Sync>;
+
+/// What runs after the built-in server started in the background (set once at app start; the
+/// pipeline sends each language's instructions, plan `warm-builtin-ai`).
+static WARM_UP: std::sync::OnceLock<WarmUp> = std::sync::OnceLock::new();
+
+pub fn set_warm_up(warm_up: impl Fn() + Send + Sync + 'static) {
+    let _ = WARM_UP.set(Box::new(warm_up));
+}
+
+/// Runs the warm-up, if one is set. Called after a background start and after Built-in AI
+/// passed its setup test.
+pub fn warm_up() {
+    if let Some(warm_up) = WARM_UP.get() {
+        warm_up();
+    }
+}
+
+/// Starts or stops the built-in server to match `config` (at app start and after settings
+/// changed). Starting runs in the background and ends with the warm-up. A server with another
+/// number of slots (languages or "Fast language switching" changed) is started again.
+pub fn sync_with_config(config: &AppConfig, store: Option<&LibraryStore>) {
     match wanted_model(config) {
         Some((model_file, alias)) => {
-            if server().running_model_file().as_deref() == Some(model_file.as_str()) {
+            let slots = wanted_slots(config, store);
+            server().set_slots(slots);
+            if server().running_model_and_slots() == Some((model_file.clone(), slots)) {
                 return;
             }
             tauri::async_runtime::spawn(async move {
-                if let Err(error) = server().ensure(&model_file, &alias).await {
-                    tracing::warn!("Built-in AI server did not start: {error}");
+                match server().ensure(&model_file, &alias).await {
+                    Ok(_) => warm_up(),
+                    Err(error) => tracing::warn!("Built-in AI server did not start: {error}"),
                 }
             });
         }
@@ -884,6 +999,7 @@ mod tests {
             "qwen3-asr-1.7b",
             5556,
             "secret",
+            1,
         );
         let args = spec.args.join(" ");
         for part in [
@@ -907,6 +1023,128 @@ mod tests {
             "secret",
         );
         assert!(!polish.args.join(" ").contains("--mmproj"));
+    }
+
+    #[test]
+    fn each_language_slot_gets_the_full_context() {
+        let spec = launch_spec_for(
+            ServerRole::Polish,
+            Path::new("/app/llama-server"),
+            Path::new("/models/m.gguf"),
+            None,
+            "qwen3.5-4b",
+            5555,
+            "secret",
+            3,
+        );
+        let args = spec.args.join(" ");
+        assert!(args.contains("--parallel 3"), "{args}");
+        assert!(args.contains("--ctx-size 24576"), "{args}");
+        let one = launch_spec(
+            "/app/llama-server".as_ref(),
+            "/m.gguf".as_ref(),
+            "m",
+            1,
+            "k",
+        );
+        assert!(one.args.join(" ").contains("--parallel 1"));
+    }
+
+    #[tokio::test]
+    async fn another_number_of_slots_restarts_the_server() {
+        let s = setup("slots", true, 1, None);
+        s.manager.ensure("a.gguf", "m").await.unwrap();
+        s.manager.ensure("a.gguf", "m").await.unwrap();
+        assert_eq!(lock(&s.spawned).len(), 1);
+        s.manager.set_slots(2);
+        s.manager.ensure("a.gguf", "m").await.unwrap();
+        let spawned = lock(&s.spawned);
+        assert_eq!(spawned.len(), 2);
+        assert!(spawned[1].args.join(" ").contains("--parallel 2"));
+        drop(spawned);
+        assert_eq!(
+            s.manager.running_model_and_slots(),
+            Some(("a.gguf".to_string(), 2))
+        );
+    }
+
+    /// `codes` as the router's languages, each with a user hint so it can be recognised
+    /// without a preset.
+    fn languages_with_hints(config: &mut AppConfig, codes: &[&str]) {
+        config.your_languages = Some(codes.iter().map(|code| code.to_string()).collect());
+        for code in codes {
+            config
+                .translation
+                .languages
+                .entry(code.to_string())
+                .or_default()
+                .user_hints
+                .push(format!("hint-{code}"));
+        }
+    }
+
+    #[test]
+    fn languages_get_their_own_slots_only_with_fast_switching_on() {
+        let mut config = AppConfig::default();
+        languages_with_hints(&mut config, &["zh-Hant-HK", "en", "ja"]);
+        assert!(config.builtin_ai_language_slots, "on by default");
+        assert_eq!(wanted_slots(&config, None), 3);
+        assert_eq!(slot_for_language(&config, None, "zh-Hant-HK"), Some(0));
+        assert_eq!(slot_for_language(&config, None, "ja"), Some(2));
+        assert_eq!(slot_for_language(&config, None, "fr"), None);
+
+        config.builtin_ai_language_slots = false;
+        assert_eq!(wanted_slots(&config, None), 1);
+        assert_eq!(slot_for_language(&config, None, "en"), None);
+
+        // One language needs no pinning.
+        config.builtin_ai_language_slots = true;
+        languages_with_hints(&mut config, &["en"]);
+        assert_eq!(wanted_slots(&config, None), 1);
+        assert_eq!(slot_for_language(&config, None, "en"), None);
+    }
+
+    /// Plan `warm-builtin-ai`: a language the router cannot recognise (no preset, no hints) never
+    /// gets a dictation, so it gets no slot either, and slot numbers skip it.
+    #[test]
+    fn only_languages_the_router_can_recognise_get_a_slot() {
+        // Plan `languages-in-general`: every listed language has speech codes, preset or not.
+        let mut config = AppConfig::default();
+        config.your_languages = Some(["en", "zh-Hant-HK", "ja"].map(String::from).to_vec());
+        assert_eq!(slot_languages(&config, None), ["en", "zh-Hant-HK", "ja"]);
+        assert_eq!(slot_for_language(&config, None, "zh-Hant-HK"), Some(1));
+
+        // A language switched off is never routed: no slot, and the numbers skip it.
+        config
+            .translation
+            .languages
+            .entry("en".to_string())
+            .or_default()
+            .enabled = false;
+        assert_eq!(slot_languages(&config, None), ["zh-Hant-HK", "ja"]);
+        assert_eq!(slot_for_language(&config, None, "zh-Hant-HK"), Some(0));
+        assert_eq!(slot_for_language(&config, None, "en"), None);
+
+        for code in ["zh-Hant-HK", "ja"] {
+            config
+                .translation
+                .languages
+                .entry(code.to_string())
+                .or_default()
+                .enabled = false;
+        }
+        assert_eq!(wanted_slots(&config, None), 1);
+    }
+
+    #[test]
+    fn slots_stop_at_the_limit() {
+        let mut config = AppConfig::default();
+        languages_with_hints(&mut config, &["en", "zh-Hant-HK", "ja", "fr"]);
+        assert_eq!(
+            slot_languages(&config, None).len(),
+            MAX_LANGUAGE_SLOTS as usize
+        );
+        assert_eq!(wanted_slots(&config, None), MAX_LANGUAGE_SLOTS);
     }
 
     #[tokio::test]
@@ -1014,6 +1252,9 @@ mod tests {
             "0.02.681.430 I srv  llama_server: listening on http://127.0.0.1:18431",
             "0.13.023.925 I slot print_timing: id  0 | task 24 |       total time =     312.28 ms /    12 tokens",
             "0.00.100.000 E srv  load_model: failed to load model",
+            "2.50.074.900 I slot print_timing: id  0 | task 17 | prompt eval time =    8500.12 ms /  3269 tokens (    2.60 ms per token,   384.58 tokens per second)",
+            "2.50.074.950 I slot print_timing: id  0 | task 17 |        eval time =     253.11 ms /    60 tokens (    4.22 ms per token,   237.05 tokens per second)",
+            "2.50.074.800 I slot  release: id  0 | task 17 | stop processing: n_tokens = 3329, truncated = 0",
         ];
         for line in keep {
             assert!(log_level_for(line).is_some(), "{line}");
@@ -1022,6 +1263,7 @@ mod tests {
         for line in [
             "0.12.711.639 W slot   operator(): id  0 | task 24 | n_past was set to 47",
             "0.00.066.332 I srv  llama_server: initializing ...",
+            "2.41.500.000 I slot update_slots: id  0 | task 17 | prompt processing, n_tokens =   2048, progress = 0.62, t =   5.10 s / 401.57 tokens per second",
             "ggml_metal_init: found device",
             "",
         ] {

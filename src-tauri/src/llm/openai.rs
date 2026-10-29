@@ -30,6 +30,56 @@ impl OpenAiProvider {
     }
 }
 
+/// The chat messages of a polish request: the system prompt, the selected text (if any) and the
+/// transcription. Plan `warm-builtin-ai`: the built-in AI warm-up sends these same messages.
+pub fn polish_messages(req: &PolishRequest) -> Vec<serde_json::Value> {
+    let has_selected_text = req
+        .selected_text
+        .as_ref()
+        .is_some_and(|s| !s.trim().is_empty());
+
+    let system_prompt = prompt::build_context_system_prompt(prompt::ContextPromptOptions {
+        context: &req.context,
+        dictionary: &req.dictionary,
+        correction_rules: &req.correction_rules,
+        polish_style: &req.polish_style,
+        personal_style_prompt: "",
+        mapped_scene_prompt: &req.mapped_scene_prompt,
+        active_scene_prompt: &req.active_scene_prompt,
+        polish_custom_prompt: &req.polish_custom_prompt,
+        polish_chinese_script: &req.polish_chinese_script,
+        chinese_script_sample: if has_selected_text {
+            req.selected_text.as_deref().unwrap_or_default()
+        } else {
+            &req.raw_text
+        },
+        translate_enabled: req.translate_enabled,
+        target_lang: &req.target_lang,
+        translation_instructions: &req.translation_instructions,
+        polish_language_notes: req.polish_language_notes.as_ref().map(|notes| {
+            prompt::LanguageNotes {
+                code: &notes.code,
+                text: &notes.text,
+            }
+        }),
+        has_selected_text,
+        voice_intent: Some(&req.voice_intent),
+    });
+
+    let mut messages = vec![serde_json::json!({ "role": "system", "content": system_prompt })];
+    if has_selected_text {
+        messages.push(serde_json::json!({
+                "role": "user",
+                "content": format!("<selected_text>\n{}\n</selected_text>", req.selected_text.as_ref().unwrap())
+            }));
+    }
+    messages.push(serde_json::json!({
+        "role": "user",
+        "content": format!("<transcription>\n{}\n</transcription>", req.raw_text)
+    }));
+    messages
+}
+
 #[async_trait]
 impl LlmProvider for OpenAiProvider {
     async fn polish(
@@ -38,55 +88,10 @@ impl LlmProvider for OpenAiProvider {
         req: &PolishRequest,
         on_chunk: Option<&ChunkCallback>,
     ) -> Result<PolishResponse, AppError> {
-        let has_selected_text = req
-            .selected_text
-            .as_ref()
-            .is_some_and(|s| !s.trim().is_empty());
-
-        let system_prompt = prompt::build_context_system_prompt(prompt::ContextPromptOptions {
-            context: &req.context,
-            dictionary: &req.dictionary,
-            correction_rules: &req.correction_rules,
-            polish_style: &req.polish_style,
-            personal_style_prompt: "",
-            mapped_scene_prompt: &req.mapped_scene_prompt,
-            active_scene_prompt: &req.active_scene_prompt,
-            polish_custom_prompt: &req.polish_custom_prompt,
-            polish_chinese_script: &req.polish_chinese_script,
-            chinese_script_sample: if has_selected_text {
-                req.selected_text.as_deref().unwrap_or_default()
-            } else {
-                &req.raw_text
-            },
-            translate_enabled: req.translate_enabled,
-            target_lang: &req.target_lang,
-            translation_instructions: &req.translation_instructions,
-            polish_language_notes: req.polish_language_notes.as_ref().map(|notes| {
-                prompt::LanguageNotes {
-                    code: &notes.code,
-                    text: &notes.text,
-                }
-            }),
-            has_selected_text,
-            voice_intent: Some(&req.voice_intent),
-        });
-
-        let mut messages = vec![serde_json::json!({ "role": "system", "content": system_prompt })];
-        if has_selected_text {
-            messages.push(serde_json::json!({
-                "role": "user",
-                "content": format!("<selected_text>\n{}\n</selected_text>", req.selected_text.as_ref().unwrap())
-            }));
-        }
-        messages.push(serde_json::json!({
-            "role": "user",
-            "content": format!("<transcription>\n{}\n</transcription>", req.raw_text)
-        }));
-
         let endpoint = protocol::chat_endpoint(&config.base_url).map_err(AppError::Config)?;
         let body = protocol::build_chat_body(
             &config.model,
-            messages,
+            polish_messages(req),
             config.max_tokens,
             config.temperature,
             on_chunk.is_some(),
@@ -183,6 +188,10 @@ impl LlmProvider for OpenAiProvider {
 
         // Prompt rule 7 (no final period) and the no-dash rule, applied again to dictation
         // answers because small models ignore them. See `prompt::clean_dictation_output`.
+        let has_selected_text = req
+            .selected_text
+            .as_ref()
+            .is_some_and(|s| !s.trim().is_empty());
         let strip_final_period =
             prompt::final_period_rule_applies(req.voice_intent.kind, has_selected_text);
         // Every answer gets plain spaces (see `prompt::plain_spaces`).

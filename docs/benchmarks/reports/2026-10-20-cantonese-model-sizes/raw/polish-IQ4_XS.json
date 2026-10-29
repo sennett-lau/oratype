@@ -1,0 +1,28 @@
+{
+ "model": "Qwen3.5-4B-IQ4_XS.gguf",
+ "size_bytes": 2477053088,
+ "kind": "polish",
+ "ready_s": 2.6,
+ "metrics_yue": {
+  "prompt_tokens_total": 46161.0,
+  "prompt_seconds_total": 154.411,
+  "tokens_predicted_total": 2679.0,
+  "tokens_predicted_seconds_total": 76.9237,
+  "n_decode_total": 2780.0,
+  "prompt_tokens_per_s": 298.94890908031164,
+  "predicted_tokens_per_s": 34.826717903584985
+ },
+ "metrics_en+zh-Hans": {
+  "prompt_tokens_total": 3178.0,
+  "prompt_seconds_total": 22.096000000000004,
+  "tokens_predicted_total": 1660.0,
+  "tokens_predicted_seconds_total": 46.94930000000001,
+  "n_decode_total": 1723.0,
+  "prompt_tokens_per_s": 143.82693700217231,
+  "predicted_tokens_per_s": 35.357289672050484
+ },
+ "memory": {
+  "footprint": "703 MB",
+  "rss_mb": 2908
+ }
+}

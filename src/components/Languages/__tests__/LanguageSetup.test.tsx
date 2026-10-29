@@ -60,8 +60,8 @@ describe('Onboarding → Your languages (plan `language-model-suggestions`)', ()
     ).toBeInTheDocument()
     expect(within(box).getByText('Qwen3-ASR 1.7B')).toBeInTheDocument()
     expect(within(box).getByText('Qwen 3.5 4B')).toBeInTheDocument()
-    expect(within(box).getByText('2.5 GB')).toBeInTheDocument()
-    expect(within(box).getByText('2.7 GB')).toBeInTheDocument()
+    expect(within(box).getByText('1.6 GB')).toBeInTheDocument()
+    expect(within(box).getByText('2.6 GB')).toBeInTheDocument()
     // The list is the user's own choice, so no "from your Mac" note.
     expect(screen.queryByText(/Filled in from your Mac/)).not.toBeInTheDocument()
   })
@@ -126,7 +126,7 @@ describe('Home → Suggested for your languages', () => {
     ).toBeInTheDocument()
     expect(
       within(card).getByText(
-        'Qwen3-ASR 1.7B for speech recognition and Qwen 3.5 4B for AI polish. They run on this Mac; 5.3 GB to download.',
+        'Qwen3-ASR 1.7B for speech recognition and Qwen 3.5 4B for AI polish. They run on this Mac; 4.2 GB to download.',
       ),
     ).toBeInTheDocument()
     fireEvent.click(within(card).getByRole('button', { name: 'Set up' }))
@@ -177,7 +177,7 @@ describe('Home → Suggested for your languages', () => {
     render(<LanguageSetupCard />)
     const card = await screen.findByTestId('language-setup-card')
     expect(
-      within(card).getByText('Qwen 3.5 4B for AI polish. It runs on this Mac; 2.7 GB to download.'),
+      within(card).getByText('Qwen 3.5 4B for AI polish. It runs on this Mac; 2.6 GB to download.'),
     ).toBeInTheDocument()
     fireEvent.click(within(card).getByRole('button', { name: 'Set up' }))
     expect(window.location.hash).toBe('#/settings?pane=llm')

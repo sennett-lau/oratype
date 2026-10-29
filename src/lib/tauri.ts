@@ -452,9 +452,12 @@ export interface SpeechSetupStatus {
 
 export interface SpeechModelInfo {
   id: string
+  /** The installed file when the model is installed, else the file a download gets. */
   fileName: string
   sizeBytes: number
   installed: boolean
+  /** Plan `faster-cantonese-models`: only an earlier version is installed; Update gets the current one. */
+  updateAvailable: boolean
 }
 
 export async function getSpeechSetupStatus(): Promise<SpeechSetupStatus> {

@@ -1198,6 +1198,10 @@ pub struct AppConfig {
     pub dismissed_language_setup: Option<String>,
     /// Plan `hands-free-mode`: wake phrase ("Hey Sam") instead of a shortcut. Off by default.
     pub hands_free: crate::hands_free::HandsFreeConfig,
+    /// Plan `warm-builtin-ai`: "Fast language switching". Built-in AI keeps one request slot per
+    /// language, so a dictation in another language does not make it read its instructions
+    /// again. On by default; each extra slot costs about 1–2 GB of memory.
+    pub builtin_ai_language_slots: bool,
 }
 
 impl Default for AppConfig {
@@ -1253,6 +1257,7 @@ impl Default for AppConfig {
             spoken_languages: None,
             dismissed_language_setup: None,
             hands_free: crate::hands_free::HandsFreeConfig::default(),
+            builtin_ai_language_slots: true,
         }
     }
 }

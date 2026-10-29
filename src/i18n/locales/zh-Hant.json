@@ -570,6 +570,9 @@
     "switchLanguageReset": "使用 Shift（左右均可）",
     "shortcutOff": "關閉",
     "enableAiPolishHelp": "關閉後按原話貼上",
+    "groupBuiltinAi": "內建 AI",
+    "fastLanguageSwitching": "快速切換語言",
+    "fastLanguageSwitchingHelp": "讓你的每種語言都隨時就緒，換一種語言聽寫時，不必等 AI 重新讀一遍指示（最多約 10 秒）。每多一種語言約多用 1–2 GB 記憶體，最多三種。",
     "contextAdaptationHelp": "郵件、聊天和文件各用合適的語氣",
     "polishStyleMinimalDetail": "只做修正",
     "polishStyleCleanDetail": "預設",
@@ -1067,6 +1070,8 @@
     "changeModel": "更換模型",
     "download": "下載",
     "use": "使用",
+    "update": "更新",
+    "updateAvailable": "有更快的版本（{{size}}）",
     "model": "模型",
     "models": {
       "large-v3-turbo": "最準確",

@@ -81,9 +81,40 @@ pub fn get_speech_setup_status(state: tauri::State<'_, SpeechSetupState>) -> Spe
 #[serde(rename_all = "camelCase")]
 pub struct SpeechModelInfo {
     pub id: String,
+    /// The installed file when the model is installed, else the file a download gets.
     pub file_name: String,
     pub size_bytes: u64,
     pub installed: bool,
+    /// Plan `faster-cantonese-models`: only an earlier version is installed; setting the model up
+    /// again downloads the current one.
+    pub update_available: bool,
+}
+
+impl SpeechModelInfo {
+    /// The row of a catalog model: what is installed of it, or else what a download gets.
+    pub fn new(
+        id: &str,
+        file_name: &str,
+        size_bytes: u64,
+        installed: &[models::InstalledModel],
+    ) -> Self {
+        match installed.iter().find(|model| model.id == id) {
+            Some(model) => Self {
+                id: id.to_string(),
+                file_name: model.file_name.clone(),
+                size_bytes: model.size_bytes,
+                installed: true,
+                update_available: model.update_available,
+            },
+            None => Self {
+                id: id.to_string(),
+                file_name: file_name.to_string(),
+                size_bytes,
+                installed: false,
+                update_available: false,
+            },
+        }
+    }
 }
 
 #[tauri::command]
@@ -92,12 +123,7 @@ pub fn list_speech_models(app: tauri::AppHandle) -> Result<Vec<SpeechModelInfo>,
     let installed = models::installed_models(&dir);
     Ok(models::speech_catalog()
         .into_iter()
-        .map(|model| SpeechModelInfo {
-            id: model.id.to_string(),
-            file_name: model.file_name.to_string(),
-            size_bytes: model.size_bytes,
-            installed: installed.iter().any(|m| m.id == model.id),
-        })
+        .map(|model| SpeechModelInfo::new(model.id, model.file_name, model.size_bytes, &installed))
         .collect())
 }
 
@@ -155,9 +181,10 @@ pub async fn delete_speech_model(
     }
     let dir = models_dir(&app)?;
     if let Some(asr) = models::asr_model(&model_id) {
-        // Plan `language-model-suggestions`: stop the speech server first, then delete both files.
+        // Plan `language-model-suggestions`: stop the speech server first, then delete both files
+        // (and those of an earlier version, plan `faster-cantonese-models`).
         crate::llm::builtin::speech_server().stop();
-        for file in [asr.file, asr.projector] {
+        for file in asr.all_files() {
             models::delete_model(&dir, &file).map_err(|error| error.to_string())?;
         }
     } else {
@@ -313,6 +340,14 @@ async fn run_setup(
             reason: error.to_string(),
         })?;
     let previous_active = config.active_speech_preset_id.clone();
+    // Plan `faster-cantonese-models`: setting up a model with an earlier version on disk updates
+    // it. The earlier files go once the current ones pass the test; when the test fails, the
+    // presets stay on the earlier files that worked.
+    let earlier = match model {
+        SetupModel::LlamaServer(asr) => asr.installed_previous(dir),
+        SetupModel::Whisper(_) => None,
+    };
+    let presets_before = config.speech_presets.clone();
     let preset = config.install_builtin_whisper(model.id(), model.file_name());
     let test = match model {
         SetupModel::Whisper(_) => crate::stt::builtin::self_test(&preset.model_file).await,
@@ -325,8 +360,22 @@ async fn run_setup(
         Ok(ms) => {
             tracing::info!("Built-in speech preset passed its test in {ms} ms");
             config.mark_speech_verified(&preset, storage::now_unix_ms());
+            if let Some(earlier) = earlier {
+                for file in [earlier.file, earlier.projector] {
+                    if let Err(error) = models::delete_model(dir, &file) {
+                        tracing::warn!("Could not delete the earlier {}: {error}", file.file_name);
+                    }
+                }
+                tracing::info!("Updated {}; deleted its earlier files", model.id());
+                config.reconcile_builtin_models(&models::installed_pairs(dir));
+            }
         }
-        Err(_) => config.active_speech_preset_id = previous_active,
+        Err(_) => {
+            config.active_speech_preset_id = previous_active;
+            if earlier.is_some() {
+                config.speech_presets = presets_before;
+            }
+        }
     }
     config_state
         .save(&config)
