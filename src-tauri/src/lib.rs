@@ -1193,6 +1193,15 @@ pub fn run() {
                 context_detector.clone(),
             );
 
+            // Plan `languages-in-general`: chosen languages without settings get their built-in
+            // preset, before any window loads the config.
+            tauri::async_runtime::block_on(
+                commands::language_presets::give_bundled_presets_at_startup(
+                    &app_handle,
+                    &config_manager,
+                ),
+            );
+
             // Load initial config to get hotkey
             let mut initial_config =
                 tauri::async_runtime::block_on(config_manager.load()).unwrap_or_default();

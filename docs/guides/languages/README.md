@@ -60,14 +60,19 @@ twelve), one row each. When you dictate or ask, OraType picks the language you s
 list and follows its instructions. This works the same with every speech and AI service: the
 built-in models, your own server, or an API key.
 
+- A language you add gets its official preset at once when there is one (today: English,
+  Cantonese (Hong Kong) and Mandarin (Traditional)). These presets are built into OraType, so
+  nothing is downloaded; their automatic updates are on, so newer versions still arrive (see
+  [Updates](#updates)). A language that already has settings of its own keeps them.
+- Every language in the list can be recognised: by its preset's rules, or, without a preset, by
+  the code speech recognition reports for it (`en`, `ja`; `yue` for Cantonese, `zh` for
+  Mandarin). See [Where the instructions are used](#where-the-instructions-are-used).
 - The grey line says where the language's instructions come from: a preset from the library,
-  your own edit ("Based on … · edited"), or the built-in instructions. To have OraType recognise
-  a language, give it a preset (see [Choosing a preset](#choosing-a-preset)); a language on its
-  built-in instructions is recognised only by hints you add yourself.
-- The **switch**, **Edit**, ✕ and **＋ Add language** work as in the Translate list below. Adding
-  a language opens its settings, where **Browse presets** finds its preset.
+  your own edit ("Based on … · edited"), or the built-in instructions. **Edit** changes them
+  (see [Choosing a preset](#choosing-a-preset)).
+- The **switch**, ✕ and **＋ Add language** work as in the Translate list below.
 - A language has one set of instructions, shared with the Translate list: the Cantonese preset
-  you choose here is also used when you translate into Cantonese (Hong Kong).
+  used here is also used when you translate into Cantonese (Hong Kong).
 - The list also decides which built-in models OraType suggests (onboarding asks for it, and
   starts from your Mac's preferred languages).
 
@@ -157,11 +162,16 @@ to default** goes back to the built-in instructions.
      too, and Mandarin should not get Cantonese rules.
   3. Otherwise nothing is added and polish works as before.
 
+  A language without a preset is heard by its own code: `en` for English, `ja` for Japanese,
+  `zh` for Mandarin (Simplified or Traditional) and `yue` for Cantonese, so a Mandarin
+  dictation is never taken for Cantonese. Its built-in instructions are written for
+  translation, so dictation and Ask add them only for the Chinese languages, whose built-in
+  text describes how to write them; your own text always counts.
+
   Built-in speech recognition reports the language it heard; a server gets asked for it with
   `response_format=verbose_json` (servers that do not support it keep working; see
   [OpenAI-compatible speech](../speech/openai-compatible.md#the-protocol)). A speech preset with a
-  fixed language counts as that language. A language on its built-in instructions has no
-  recognition data, so only your own hints route to it.
+  fixed language counts as that language.
 
 ### Updates
 
@@ -174,10 +184,12 @@ to default** goes back to the built-in instructions.
 
 ### Privacy and offline use
 
-- Presets are downloaded with plain requests to `raw.githubusercontent.com`: no account, no
+- The official presets are built into OraType: a language gets one without going online.
+- Other presets are downloaded with plain requests to `raw.githubusercontent.com`: no account, no
   identifiers, nothing about you, your languages or your text. GitHub sees your IP address, as
   with any download. OraType goes online only when you browse presets, or once a day for
-  languages with automatic updates on.
+  languages with automatic updates on (which includes the languages that got a built-in
+  preset; turn it off in the language's settings).
 - Every download is checked against the size and SHA-256 hash in the library's index, and
   validated, before it is used. Downloaded presets are kept in OraType's data folder.
 - Offline, the built-in instructions and downloaded presets keep working; Browse shows what is

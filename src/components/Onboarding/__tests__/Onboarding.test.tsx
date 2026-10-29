@@ -557,7 +557,10 @@ describe('Onboarding → Your languages', () => {
       value: ['en-US', 'zh-HK'],
       configurable: true,
     })
-    vi.mocked(tauri.setYourLanguages).mockImplementation(async (languages) => languages)
+    vi.mocked(tauri.setYourLanguages).mockImplementation(async (languages) => ({
+      your_languages: languages,
+      languages: {},
+    }))
   })
 
   afterEach(() => {

@@ -35,6 +35,10 @@ languages either, it stays unset. An explicit empty spoken list counts as set. T
 config is written back at once, so the migration runs once; later loads only normalize the list,
 so a language the user removes stays removed. The log names the codes, never any text.
 
+The migrated languages that have no settings get their built-in preset at the next startup
+(see [behaviour.md](behaviour.md#built-in-presets)), so a migrated Cantonese speaker is
+recognised without opening Settings.
+
 ## Examples
 
 | Spoken | Translate | Your languages |

@@ -67,7 +67,10 @@ vi.mock('../../../lib/tauri', () => ({
   stopMicLevelMonitor: vi.fn().mockResolvedValue(undefined),
   getLanguageLibraryStatus: vi.fn().mockResolvedValue({ latest: {}, updates: {} }),
   loadLanguagePreset: vi.fn().mockResolvedValue(null),
-  setYourLanguages: vi.fn(async (languages: string[]) => languages),
+  setYourLanguages: vi.fn(async (languages: string[]) => ({
+    your_languages: languages,
+    languages: {},
+  })),
 }))
 
 import { GeneralPane } from '../GeneralPane'

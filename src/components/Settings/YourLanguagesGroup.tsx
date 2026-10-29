@@ -21,7 +21,8 @@ import { LanguageSheet } from './languages/LanguageSheet'
  * and dictates in. Dictate and Ask pick the one spoken from this list and follow its preset,
  * with every speech and AI service. One row per language, as in Translate but without an order:
  * where its instructions come from, its switch, Edit (the same sheet) and remove. A language's
- * settings are shared with Translate. The list itself is saved at once, not by the Save bar.
+ * settings are shared with Translate. The list itself is saved at once, not by the Save bar, and
+ * an added language gets its built-in preset there, so its row shows it without a sheet.
  * Until the user has chosen, a button offers the Mac's preferred languages.
  */
 export function YourLanguagesGroup() {
@@ -42,7 +43,6 @@ export function YourLanguagesGroup() {
   const add = (code: string) => {
     if (!code || languages.includes(code) || languages.length >= MAX_YOUR_LANGUAGES) return
     save([...languages, code])
-    setEditing(code)
   }
 
   return (

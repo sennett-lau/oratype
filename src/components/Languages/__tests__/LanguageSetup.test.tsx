@@ -34,7 +34,10 @@ beforeEach(() => {
   vi.mocked(tauri.getAiHardware).mockResolvedValue(
     hardwareCheck(['qwen3-4b', 'qwen3-1.7b', 'qwen3.5-4b'], { serverAvailable: true }),
   )
-  vi.mocked(tauri.setYourLanguages).mockImplementation(async (languages) => languages)
+  vi.mocked(tauri.setYourLanguages).mockImplementation(async (languages) => ({
+    your_languages: languages,
+    languages: {},
+  }))
   vi.mocked(tauri.dismissLanguageSetup).mockResolvedValue(undefined)
   window.location.hash = '#/'
 })

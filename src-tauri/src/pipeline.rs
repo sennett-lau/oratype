@@ -408,14 +408,19 @@ fn language_parts(
     if !route_polish {
         return LanguageParts::default();
     }
+    // Plan `languages-in-general`: a routed language on the generic built-in text gets no notes.
+    let polish_notes =
+        routed_language(config, store, transcript, detected_language).and_then(|profile| {
+            profile
+                .writing_notes()
+                .map(|text| llm::PolishLanguageNotes {
+                    code: profile.code.clone(),
+                    text: text.to_string(),
+                })
+        });
     LanguageParts {
         translation_instructions: String::new(),
-        polish_notes: routed_language(config, store, transcript, detected_language).map(
-            |profile| llm::PolishLanguageNotes {
-                code: profile.code,
-                text: profile.instructions,
-            },
-        ),
+        polish_notes,
     }
 }
 
@@ -4548,6 +4553,26 @@ mod tests {
         assert_eq!(sent["model"], "qwen3.5-4b");
         let system = sent["messages"][0]["content"].as_str().unwrap();
         assert!(system.contains("<language_notes>\nWritten Cantonese"));
+    }
+
+    /// Plan `languages-in-general`: a language without a preset is recognised by its own code,
+    /// but its generic built-in text (translation wording) is not added to polish.
+    #[test]
+    fn a_language_on_the_generic_built_in_text_gets_no_polish_notes() {
+        let mut config = storage::AppConfig::default();
+        config.your_languages = Some(vec!["ja".to_string(), "zh-Hans".to_string()]);
+        assert_eq!(
+            routed_language(&config, None, "こんにちは", Some("ja")).map(|profile| profile.code),
+            Some("ja".to_string())
+        );
+        let parts = language_parts(&config, None, false, "en", true, "こんにちは", Some("ja"));
+        assert_eq!(parts.polish_notes, None);
+        // The Chinese built-in texts describe the writing, so they are added.
+        let notes = language_parts(&config, None, false, "en", true, "我今天很忙", Some("zh"))
+            .polish_notes
+            .unwrap();
+        assert_eq!(notes.code, "zh-Hans");
+        assert!(notes.text.starts_with("Write natural Mandarin"));
     }
 
     fn config_with_speech_language(language: &str) -> storage::AppConfig {

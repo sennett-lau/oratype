@@ -5,6 +5,7 @@
 //!   index.json            the last index.json fetched from GitHub
 //!   index-meta.json       its ETag and when it was fetched
 //!   updates.json          automatic updates, for the "Updated automatically" banner
+//!   bundled.json          languages that were given their built-in preset once
 //!   <id>/<sha256>.md      one file per downloaded version, named by its hash
 //! ```
 //!
@@ -72,6 +73,10 @@ impl LibraryStore {
 
     fn updates_path(&self) -> PathBuf {
         self.dir.join("updates.json")
+    }
+
+    fn bundled_path(&self) -> PathBuf {
+        self.dir.join("bundled.json")
     }
 
     /// `<id>/<sha256>.md`, or `None` for an id or hash that could leave the folder.
@@ -178,6 +183,28 @@ impl LibraryStore {
         updates.insert(code.to_string(), record);
         let json = serde_json::to_vec_pretty(&updates).map_err(std::io::Error::other)?;
         write_atomic(&self.updates_path(), &json)
+    }
+
+    /// Plan `languages-in-general`: the language codes that were given their built-in preset
+    /// once. They are not given it again, so a language moved back to the built-in instructions
+    /// keeps them.
+    pub fn bundled_given(&self) -> Vec<String> {
+        std::fs::read(self.bundled_path())
+            .ok()
+            .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+            .unwrap_or_default()
+    }
+
+    /// Adds `codes` to [`Self::bundled_given`].
+    pub fn record_bundled_given(&self, codes: &[String]) -> std::io::Result<()> {
+        let mut given = self.bundled_given();
+        for code in codes {
+            if !given.contains(code) {
+                given.push(code.clone());
+            }
+        }
+        let json = serde_json::to_vec_pretty(&given).map_err(std::io::Error::other)?;
+        write_atomic(&self.bundled_path(), &json)
     }
 }
 

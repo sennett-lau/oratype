@@ -2,7 +2,11 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as tauri from '../../../lib/tauri'
 import type { PresetDetail } from '../../../lib/tauri'
-import { useAppStore, type AppConfig } from '../../../stores/appStore'
+import {
+  useAppStore,
+  type AppConfig,
+  type TranslationLanguageSettings,
+} from '../../../stores/appStore'
 import { YourLanguagesGroup } from '../YourLanguagesGroup'
 import { resetTranslationDefaultsCache } from '../translationLanguages'
 
@@ -32,24 +36,32 @@ const CANTONESE: PresetDetail = {
   applies_to: ['polish', 'translate'],
 }
 
+const CANTONESE_SETTINGS: TranslationLanguageSettings = {
+  instructions: null,
+  library_preset: { id: 'cantonese-hong-kong', version: 4, sha256: SHA },
+}
+
 /** Your languages and a Translate list that differs from them. */
-function setup(yourLanguages: string[] | null) {
+function setup(
+  yourLanguages: string[] | null,
+  languages: Record<string, TranslationLanguageSettings> = { 'zh-Hant-HK': CANTONESE_SETTINGS },
+) {
   const base = useAppStore.getState().config
   const config: AppConfig = {
     ...base,
     your_languages: yourLanguages,
-    translation: {
-      targets: ['ja'],
-      active_target: 'ja',
-      languages: {
-        'zh-Hant-HK': {
-          instructions: null,
-          library_preset: { id: 'cantonese-hong-kong', version: 4, sha256: SHA },
-        },
-      },
-    },
+    translation: { targets: ['ja'], active_target: 'ja', languages },
   }
   useAppStore.setState({ config, savedConfig: config })
+}
+
+/** Like the backend: an added Cantonese without settings gets its built-in preset. */
+async function saveLikeTheBackend(languages: string[]): Promise<tauri.YourLanguagesSaved> {
+  const saved = { ...useAppStore.getState().savedConfig?.translation.languages }
+  if (languages.includes('zh-Hant-HK') && !saved['zh-Hant-HK']) {
+    saved['zh-Hant-HK'] = { ...CANTONESE_SETTINGS, auto_update: true }
+  }
+  return { your_languages: languages, languages: saved }
 }
 
 function row(code: string) {
@@ -61,7 +73,7 @@ const originalLanguages = Object.getOwnPropertyDescriptor(window.navigator, 'lan
 beforeEach(() => {
   useAppStore.setState(useAppStore.getInitialState())
   resetTranslationDefaultsCache()
-  vi.mocked(tauri.setYourLanguages).mockImplementation(async (languages) => languages)
+  vi.mocked(tauri.setYourLanguages).mockImplementation(saveLikeTheBackend)
   vi.mocked(tauri.loadLanguagePreset).mockResolvedValue(CANTONESE)
   vi.mocked(tauri.getLanguageLibraryStatus).mockResolvedValue({ latest: {}, updates: {} })
   vi.mocked(tauri.getTranslationLanguageDefaults).mockResolvedValue({})
@@ -100,8 +112,8 @@ describe('Settings → General → Your languages', () => {
     ).toBeInTheDocument()
   })
 
-  it('adds a language at once and opens its sheet to choose a preset', async () => {
-    setup(['en'])
+  it('adds a language at once and shows the built-in preset it got', async () => {
+    setup(['en'], {})
     render(<YourLanguagesGroup />)
 
     fireEvent.click(screen.getByRole('button', { name: /Add language/ }))
@@ -117,7 +129,18 @@ describe('Settings → General → Your languages', () => {
     // Saved at once: nothing for the Save bar, and Translate's list is unchanged.
     expect(tauri.updateConfig).not.toHaveBeenCalled()
     expect(useAppStore.getState().config.translation.targets).toEqual(['ja'])
-    expect(screen.getByRole('dialog', { name: 'Cantonese (Hong Kong)' })).toBeInTheDocument()
+    // Plan `languages-in-general`: the preset came with it; no sheet to fill in.
+    await waitFor(() =>
+      expect(
+        within(row('zh-Hant-HK')).getByText(
+          'Cantonese (Hong Kong) 廣東話 preset · v4 · updates automatically',
+        ),
+      ).toBeInTheDocument(),
+    )
+    expect(
+      useAppStore.getState().savedConfig?.translation.languages?.['zh-Hant-HK']?.library_preset?.id,
+    ).toBe('cantonese-hong-kong')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('removes any language, even the last one', async () => {

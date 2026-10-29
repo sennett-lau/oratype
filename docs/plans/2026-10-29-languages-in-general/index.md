@@ -32,10 +32,12 @@ Changes decisions of earlier plans (each has a "Superseded in part" note):
   Switch language key.
 - Existing users keep the routing they had after the upgrade.
 
+- An added language is recognised and uses its official preset with no manual step.
+
 ## Non-goals
 
-- Downloading a language's preset by itself when the language is added. Presets are fetched
-  only when the user browses or turns automatic updates on (plan `language-prompt-library`).
+- Downloading a preset when a language is added: the official ones are built in, and others are
+  fetched only when the user browses or has automatic updates on (plan `language-prompt-library`).
 - Changing the router's steps, the preset format or the Translate list.
 - Regional variants (en-GB, pt-BR) or a free "any language" field.
 
@@ -54,6 +56,10 @@ Changes decisions of earlier plans (each has a "Superseded in part" note):
 | Onboarding keeps its languages step, and Next saves the list it shows | The step fills in the Mac's languages; routing needs them saved. |
 | A one-time migration builds Your languages from the old spoken languages and the Translate languages | Dictation was routed by the Translate list; keeping those languages keeps every user's routing. |
 | Automatic preset updates cover Your languages and Translate's languages | A language used only for dictation can also follow new versions. |
+| The official presets are built into the app (`include_str!`), checked with the download checks | A language can get its preset with no network request; the hash check is the same as for a download. |
+| A chosen language without settings gets its official built-in preset, with automatic updates on, once | Found in a dev build: with no preset nothing was recognised, so every dictation got plain polish. Updates keep it current; a language the user set up, or moved back to the built-in text, is left alone. |
+| A language without a preset is heard by its own speech code: `zh-Hant-HK` → `yue`, other Chinese → `zh`, else its primary subtag | Every listed language can be recognised; Cantonese without its preset never takes Mandarin's `zh`. |
+| The generic built-in text (translation wording) is not added to polish or Ask | It says how to translate, not how to write; the Chinese built-in texts, presets and edits are added. |
 
 ## Considered
 
@@ -73,6 +79,10 @@ Changes decisions of earlier plans (each has a "Superseded in part" note):
 
 ## Open questions
 
-- Should adding a language pick its official preset by itself? It needs a download from GitHub,
-  which today happens only when the user browses presets or has automatic updates on.
 - Should Your languages be reorderable, if tie-breaking between hints ever matters in practice?
+- Mandarin (Taiwan)'s preset needs a hint for `zh`, so with no other Mandarin listed, Taiwan
+  Mandarin without one of its hint words gets no notes. Should a preset's `require_hint` apply
+  only when another listed language also hears the code?
+
+Answered while building: adding a language picks its official preset by itself, from the copy
+built into the app (no download).

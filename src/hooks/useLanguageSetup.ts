@@ -40,10 +40,16 @@ export function useSuggestedModel(service: EngineService): string | null {
   return service.id === 'speech' ? suggestion.speech : suggestion.ai
 }
 
-/** Saves Your languages and puts the stored list in both configs (no Save bar). */
+/**
+ * Saves Your languages and puts the stored list in both configs (no Save bar). Plan
+ * `languages-in-general`: also the language settings, which hold the built-in presets the
+ * backend gave added languages, so their rows show them at once.
+ */
 export async function saveYourLanguages(languages: string[]): Promise<void> {
   const saved = await setYourLanguages(languages)
-  useAppStore.getState().applyPersistedConfigPatch({ your_languages: saved ?? languages })
+  const store = useAppStore.getState()
+  store.applyPersistedConfigPatch({ your_languages: saved?.your_languages ?? languages })
+  if (saved?.languages) store.applyPersistedTranslationLanguages(saved.languages)
 }
 
 /** "Don't show again" on the Home card of a suggested setup. */

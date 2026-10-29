@@ -11,7 +11,8 @@ Where Your languages appear and what reads them. Back to [index](index.md).
   These are the Translate rows without the drag handle and number. Any language can be removed;
   the list may be empty.
 - **＋ Add language** ("up to 12") lists the supported languages not yet chosen. Adding one
-  saves the list and opens the language's sheet, where **Browse presets** picks a preset.
+  saves the list and, when it has no settings yet, gives it its official built-in preset (see
+  "Built-in presets"), so the row shows the preset at once. No sheet opens; **Edit** changes it.
 - The switch and the sheet save the language's settings at once, as in Translate. They are the
   same settings Translate uses for that language.
 - A note under the rows: when you dictate or ask, OraType picks the language you spoke from this
@@ -19,6 +20,22 @@ Where Your languages appear and what reads them. Back to [index](index.md).
   also applies when translating into the language.
 - While the user has never chosen (no saved list), the note offers to add the Mac's preferred
   languages with one button. An empty list shows only the Add row.
+
+## Built-in presets
+
+- The official presets of `presets/languages/` (with `index.json`) are compiled into the app and
+  pass the same size, SHA-256 and validation checks as a download. A test fails when an official
+  preset is missing from the built-in list.
+- A chosen language (Your languages, then Translate's) without a settings entry gets the best
+  direct official match, as Browse would list it first: `en` → English, `zh-Hant-HK` →
+  Cantonese (Hong Kong), `zh-Hant-TW` → Mandarin (Taiwan); `zh-Hans` and `ja` have none today.
+  The file is stored like a download, the language's `library_preset` points to it, and
+  automatic updates are on.
+- It runs when Your languages are saved (General, onboarding) and once at startup, before any
+  window loads the config, which covers migrated lists and languages added earlier.
+- A language with settings (another preset, its own text, switched off, its own hints) is never
+  touched. The codes given a preset are recorded in the store (`bundled.json`), so a language the
+  user moved back to the built-in text is not given it again. Logs name codes and ids only.
 
 ## Settings → Translate
 
@@ -54,6 +71,19 @@ Translate ──┴─> its target ───────────────
 
 - `language_profiles` resolves Your languages in list order; the router's steps are those of
   plans `language-prompt-library` and `language-routing-everywhere`.
+- A language without a preset gets speech codes from its written code, with no hint needed:
+
+  | Code | Speech codes |
+  |---|---|
+  | `zh-Hant-HK` | `yue` |
+  | `zh-Hans`, `zh-Hant-TW` | `zh` |
+  | any other (`en`, `ja`, `pt-BR`) | its primary subtag (`en`, `ja`, `pt`), when `language-codes.json` knows it |
+
+  A preset's own codes, hints and `require_hint` take priority (Cantonese: `yue` and `zh`, a hint
+  needed for `zh`), so Mandarin goes to Mandarin and never to Cantonese.
+- Polish and Ask get the routed language's instructions, except the generic built-in text of a
+  language without a preset or an edit, which is written for translation; Ask then keeps its own
+  question-language detection.
 - The AI request is the same for every AI preset: the routed language's instructions go into the
   system prompt, whether the preset is Built-in, a server or an API key.
 - Translate uses its target's settings, as before; the Switch language key and the pill follow
