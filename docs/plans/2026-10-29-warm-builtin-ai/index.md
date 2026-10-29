@@ -48,7 +48,7 @@ Status: building - 2026-10-29
   context). The router's languages, in order, get slots 0, 1, 2. A dictation the router places in
   one of them sends `id_slot`. Reason: a slot keeps its own language's instructions, so a switch
   costs 0.9 s instead of 11 s (Qwen 3.5 4B). Three keeps the memory bounded.
-- **"Fast language switching" is on by default**, in Settings → AI polish → Built-in AI, shown
+- **"Fast language switching" is on by default**, in Settings → AI → Built-in AI, shown
   only when Built-in AI is in use. Its help text gives the cost: about 1–2 GB more memory per
   extra language. Reason: most Macs that run a 4B model have the memory, and the user asked
   for speed first; turning it off gives one slot, as before.
