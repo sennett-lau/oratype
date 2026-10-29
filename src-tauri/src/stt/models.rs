@@ -81,25 +81,54 @@ pub struct AsrModel {
     pub base_url: &'static str,
     /// Installed memory it needs. It shares the Mac with the AI polish model.
     pub min_memory_bytes: u64,
+    /// Files an earlier OraType downloaded for this model (see [`AsrFiles`]).
+    pub previous: &'static [AsrFiles],
 }
 
-/// The `llama-server` speech models. Files from ggml-org's Hugging Face repository, pinned to one
-/// commit; sizes and SHA-256 values are the files' LFS size and object id.
+/// Plan `faster-cantonese-models`: a model file with the audio projector it runs with. A
+/// model's earlier files still count as installed and still run, so an update never breaks a
+/// working setup; Settings offers the current files as an update, and the earlier ones are
+/// deleted once the current ones passed their test.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct AsrFiles {
+    pub file: KnownModel,
+    pub projector: KnownModel,
+}
+
+/// The `llama-server` speech models, pinned to one commit of their Hugging Face repository; sizes
+/// and SHA-256 values are the files' LFS size and object id. Qwen3-ASR 1.7B is mradermacher's
+/// Q4_K_M with its Q8_0 audio projector: 21-28% faster than ggml-org's Q8_0 on long Cantonese
+/// dictations with the same transcripts (benchmark report `2026-10-20-cantonese-model-sizes`).
 pub const ASR_MODELS: &[AsrModel] = &[AsrModel {
     file: KnownModel {
         id: QWEN3_ASR_MODEL_ID,
-        file_name: "Qwen3-ASR-1.7B-Q8_0.gguf",
-        size_bytes: 2_165_034_944,
-        sha256: "58e22d0532d4eacaf034cfac17a6fed159f37c41390c710186783be439d1fc57",
+        file_name: "Qwen3-ASR-1.7B.Q4_K_M.gguf",
+        size_bytes: 1_282_435_552,
+        sha256: "3893b8926065bbff3da7586d21d8711a9b4fa4fa8f12cd0cefad58e31b2660b6",
     },
     projector: KnownModel {
         id: QWEN3_ASR_MODEL_ID,
-        file_name: "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf",
-        size_bytes: 355_709_344,
-        sha256: "46c1d533af3f354ceb37ce855dbceff7da7fa7cf1e6a523df3b13440bd164c0d",
+        file_name: "Qwen3-ASR-1.7B.mmproj-Q8_0.gguf",
+        size_bytes: 355_709_472,
+        sha256: "780b5b48dfbc23c219cc9d3da9fdaccc7da567fa661b3724d19bda50fbcfc8c3",
     },
-    base_url: "https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/36a678687ba7d07a74ca70ccb0e36902e005fb80",
+    base_url: "https://huggingface.co/mradermacher/Qwen3-ASR-1.7B-GGUF/resolve/664b960e358348943aefcdc26b3cf09eff1fb0ac",
     min_memory_bytes: 8 * GIB,
+    // OraType 1.1.3 to 1.2.0: ggml-org's Q8_0 (2.17 GB) and its projector.
+    previous: &[AsrFiles {
+        file: KnownModel {
+            id: QWEN3_ASR_MODEL_ID,
+            file_name: "Qwen3-ASR-1.7B-Q8_0.gguf",
+            size_bytes: 2_165_034_944,
+            sha256: "58e22d0532d4eacaf034cfac17a6fed159f37c41390c710186783be439d1fc57",
+        },
+        projector: KnownModel {
+            id: QWEN3_ASR_MODEL_ID,
+            file_name: "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf",
+            size_bytes: 355_709_344,
+            sha256: "46c1d533af3f354ceb37ce855dbceff7da7fa7cf1e6a523df3b13440bd164c0d",
+        },
+    }],
 }];
 
 impl AsrModel {
@@ -117,6 +146,31 @@ impl AsrModel {
     /// True when both files are fully in place.
     pub fn installed(&self, dir: &Path) -> bool {
         installed_from(dir, &[self.file, self.projector]).len() == 2
+    }
+
+    /// Earlier files of this model that are fully in place (both of them).
+    pub fn installed_previous(&self, dir: &Path) -> Option<&'static AsrFiles> {
+        self.previous
+            .iter()
+            .find(|files| installed_from(dir, &[files.file, files.projector]).len() == 2)
+    }
+
+    /// The audio projector that goes with `model_file`: an earlier model file runs with its own
+    /// earlier projector.
+    pub fn projector_for(&self, model_file: &str) -> KnownModel {
+        self.previous
+            .iter()
+            .find(|files| files.file.file_name == model_file)
+            .map_or(self.projector, |files| files.projector)
+    }
+
+    /// Every file of this model, current and earlier, for deleting it.
+    pub fn all_files(&self) -> Vec<KnownModel> {
+        let mut files = vec![self.file, self.projector];
+        for earlier in self.previous {
+            files.extend([earlier.file, earlier.projector]);
+        }
+        files
     }
 
     /// One entry with the total size, for the hardware rules and the setup status.
@@ -176,22 +230,33 @@ pub struct InstalledModel {
     pub id: String,
     pub file_name: String,
     pub size_bytes: u64,
+    /// Plan `faster-cantonese-models`: only an earlier version of the model is installed; the
+    /// current files are offered as an update.
+    pub update_available: bool,
 }
 
 /// The known speech models whose files are fully in place (see [`installed_from`]). A
 /// `llama-server` model needs both of its files and is listed with its model file and total size.
 pub fn installed_models(dir: &Path) -> Vec<InstalledModel> {
     let mut installed = installed_from(dir, KNOWN_MODELS);
-    installed.extend(
-        ASR_MODELS
-            .iter()
-            .filter(|model| model.installed(dir))
-            .map(|model| InstalledModel {
+    installed.extend(ASR_MODELS.iter().filter_map(|model| {
+        if model.installed(dir) {
+            return Some(InstalledModel {
                 id: model.file.id.to_string(),
                 file_name: model.file.file_name.to_string(),
                 size_bytes: model.size_bytes(),
-            }),
-    );
+                update_available: false,
+            });
+        }
+        // Plan `faster-cantonese-models`: an earlier version still counts, so presets on it
+        // keep working until the user takes the update.
+        model.installed_previous(dir).map(|earlier| InstalledModel {
+            id: model.file.id.to_string(),
+            file_name: earlier.file.file_name.to_string(),
+            size_bytes: earlier.file.size_bytes + earlier.projector.size_bytes,
+            update_available: true,
+        })
+    }));
     installed
 }
 
@@ -207,14 +272,26 @@ pub fn installed_from(dir: &Path, table: &[KnownModel]) -> Vec<InstalledModel> {
                 id: model.id.to_string(),
                 file_name: model.file_name.to_string(),
                 size_bytes: model.size_bytes,
+                update_available: false,
             })
         })
         .collect()
 }
 
-/// `(id, file name)` of each installed model, for `AppConfig::reconcile_builtin_models`.
+/// `(id, file name)` of each installed model, for `AppConfig::reconcile_builtin_models`. Earlier
+/// files still on disk next to the current ones come last (plan `faster-cantonese-models`: an
+/// update whose test failed), so a preset on them is left alone.
 pub fn installed_pairs(dir: &Path) -> Vec<(String, String)> {
-    pairs(installed_models(dir))
+    let mut pairs = pairs(installed_models(dir));
+    for model in ASR_MODELS.iter().filter(|model| model.installed(dir)) {
+        if let Some(earlier) = model.installed_previous(dir) {
+            pairs.push((
+                model.file.id.to_string(),
+                earlier.file.file_name.to_string(),
+            ));
+        }
+    }
+    pairs
 }
 
 /// `(id, file name)` of each model in `installed`.
@@ -605,17 +682,39 @@ mod tests {
             assert!(file.file_name.ends_with(".gguf"));
             assert!(known_model_by_file(file.file_name).is_none());
         }
-        assert_eq!(qwen.size_bytes(), 2_520_744_288);
+        assert_eq!(qwen.size_bytes(), 1_638_145_024);
         assert_eq!(qwen.as_known_model().size_bytes, qwen.size_bytes());
-        assert_eq!(qwen.as_known_model().file_name, "Qwen3-ASR-1.7B-Q8_0.gguf");
+        assert_eq!(
+            qwen.as_known_model().file_name,
+            "Qwen3-ASR-1.7B.Q4_K_M.gguf"
+        );
         let [(model, model_url), (projector, projector_url)] = qwen.downloads();
         assert_eq!(model, qwen.file);
         assert_eq!(projector, qwen.projector);
-        assert!(
-            model_url.starts_with("https://huggingface.co/ggml-org/Qwen3-ASR-1.7B-GGUF/resolve/")
+        assert!(model_url
+            .starts_with("https://huggingface.co/mradermacher/Qwen3-ASR-1.7B-GGUF/resolve/"));
+        assert!(model_url.ends_with("/Qwen3-ASR-1.7B.Q4_K_M.gguf"));
+        assert!(projector_url.ends_with("/Qwen3-ASR-1.7B.mmproj-Q8_0.gguf"));
+        // Plan `faster-cantonese-models`: the files OraType 1.1.3 to 1.2.0 downloaded.
+        let earlier = qwen.previous[0];
+        assert_eq!(earlier.file.file_name, "Qwen3-ASR-1.7B-Q8_0.gguf");
+        assert_eq!(
+            earlier.projector.file_name,
+            "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf"
         );
-        assert!(model_url.ends_with("/Qwen3-ASR-1.7B-Q8_0.gguf"));
-        assert!(projector_url.ends_with("/mmproj-Qwen3-ASR-1.7B-Q8_0.gguf"));
+        for file in [earlier.file, earlier.projector] {
+            assert_eq!(file.id, QWEN3_ASR_MODEL_ID);
+            assert_eq!(file.sha256.len(), 64);
+            assert_ne!(file.file_name, qwen.file.file_name);
+            assert_ne!(file.file_name, qwen.projector.file_name);
+        }
+        assert_eq!(qwen.projector_for(qwen.file.file_name), qwen.projector);
+        assert_eq!(
+            qwen.projector_for(earlier.file.file_name),
+            earlier.projector
+        );
+        assert_eq!(qwen.projector_for("something-else.gguf"), qwen.projector);
+        assert_eq!(qwen.all_files().len(), 4);
         assert!(runs_in_llama_server(QWEN3_ASR_MODEL_ID));
         assert!(!runs_in_llama_server("large-v3-turbo"));
         assert!(known_model(QWEN3_ASR_MODEL_ID).is_none());
@@ -647,6 +746,7 @@ mod tests {
                 id: QWEN3_ASR_MODEL_ID.into(),
                 file_name: qwen.file.file_name.into(),
                 size_bytes: qwen.size_bytes(),
+                update_available: false,
             }]
         );
         assert_eq!(
@@ -658,6 +758,65 @@ mod tests {
         );
         delete_model(&dir, &qwen.file).unwrap();
         delete_model(&dir, &qwen.projector).unwrap();
+        assert!(std::fs::read_dir(&dir).unwrap().next().is_none());
+    }
+
+    fn create_full(dir: &Path, file: &KnownModel) {
+        std::fs::File::create(dir.join(file.file_name))
+            .unwrap()
+            .set_len(file.size_bytes)
+            .unwrap();
+    }
+
+    #[test]
+    fn an_earlier_speech_model_counts_as_installed_with_an_update() {
+        let dir = temp_dir("asr-earlier");
+        let qwen = asr_model(QWEN3_ASR_MODEL_ID).unwrap();
+        let earlier = qwen.previous[0];
+        create_full(&dir, &earlier.file);
+        // Without its projector the earlier model is not installed either.
+        assert!(installed_models(&dir).is_empty());
+        create_full(&dir, &earlier.projector);
+        assert_eq!(
+            installed_models(&dir),
+            vec![InstalledModel {
+                id: QWEN3_ASR_MODEL_ID.into(),
+                file_name: earlier.file.file_name.into(),
+                size_bytes: earlier.file.size_bytes + earlier.projector.size_bytes,
+                update_available: true,
+            }]
+        );
+        assert_eq!(
+            installed_pairs(&dir),
+            vec![(
+                QWEN3_ASR_MODEL_ID.to_string(),
+                earlier.file.file_name.to_string()
+            )]
+        );
+
+        // Both versions on disk (an update whose test failed): the current one is listed, and a
+        // preset on the earlier files keeps them.
+        create_full(&dir, &qwen.file);
+        create_full(&dir, &qwen.projector);
+        let listed = installed_models(&dir);
+        assert_eq!(listed[0].file_name, qwen.file.file_name);
+        assert!(!listed[0].update_available);
+        assert_eq!(
+            installed_pairs(&dir),
+            vec![
+                (
+                    QWEN3_ASR_MODEL_ID.to_string(),
+                    qwen.file.file_name.to_string()
+                ),
+                (
+                    QWEN3_ASR_MODEL_ID.to_string(),
+                    earlier.file.file_name.to_string()
+                ),
+            ]
+        );
+        for file in qwen.all_files() {
+            delete_model(&dir, &file).unwrap();
+        }
         assert!(std::fs::read_dir(&dir).unwrap().next().is_none());
     }
 
@@ -695,6 +854,7 @@ mod tests {
                 id: "small".into(),
                 file_name: small.file_name.into(),
                 size_bytes: small.size_bytes,
+                update_available: false,
             }]
         );
         assert_eq!(

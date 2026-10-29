@@ -1,0 +1,19 @@
+{
+ "model": "Qwen3-ASR-1.7B-Q4_K_M.gguf",
+ "size_bytes": 1282435008,
+ "kind": "speech",
+ "ready_s": 1.5,
+ "eval_metrics": {
+  "prompt_tokens_total": 1379.0,
+  "prompt_seconds_total": 4.924615,
+  "tokens_predicted_total": 419.0,
+  "tokens_predicted_seconds_total": 5.91226,
+  "n_decode_total": 419.0,
+  "prompt_tokens_per_s": 280.0218900360739,
+  "predicted_tokens_per_s": 70.86968435082355
+ },
+ "memory": {
+  "footprint": "2081 MB",
+  "rss_mb": 3350
+ }
+}

@@ -1065,6 +1065,8 @@
     "changeModel": "モデルを変更",
     "download": "ダウンロード",
     "use": "使う",
+    "update": "更新",
+    "updateAvailable": "より速い版があります（{{size}}）",
     "model": "モデル",
     "models": {
       "large-v3-turbo": "最高精度",
