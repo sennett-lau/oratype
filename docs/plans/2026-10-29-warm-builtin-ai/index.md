@@ -27,7 +27,18 @@ Status: building - 2026-10-29
 - **Warm up after every start in the background** (app start, model change, slot change, after
   setup's test). Each language with a slot gets one polish request with its real instructions,
   built by the same code as a dictation (`polish_request` in `pipeline.rs`), asking for one token.
-  Reason: the first dictation then reads only its transcript (0.5–1.1 s instead of 2.5–11 s).
+  With one slot it is the first language the router can recognise, or the plain instructions
+  when it can recognise none. Reason: the first dictation then reads only its transcript
+  (0.5–1.1 s instead of 2.5–11 s).
+- **Only languages the router can recognise get a slot and a warm-up**: on, used for polish,
+  and with a preset's speech codes or hints. Reason: a language without them is never routed;
+  its dictations get the plain instructions, so a slot or warm-up for it is wasted. A dev build
+  showed it: two languages without presets got two warm-ups, every dictation got the plain
+  instructions, and the first two still read everything.
+- **A recording stops the warm-up.** The request under way is dropped; llama-server stops
+  reading it at its next batch (2048 tokens, at most about 4 s), and the next language is not
+  sent. Reason: a warm-up that runs beside a dictation shares the GPU with it and makes it
+  slower (13.7 s instead of about 10 s in the dev build).
 - **The warm-up uses an app OraType does not know** (the General context). Reason: the app's part
   of the instructions comes last, inside the last ~512 tokens, where llama-server keeps a
   checkpoint; a dictation in any app then re-reads only that part (about 2 s on Qwen 3.5 4B).
@@ -54,6 +65,8 @@ Status: building - 2026-10-29
 - Re-warming after every settings change. A save happens often; most saves do not change the
   instructions, and a stale cache costs one slow dictation.
 - A slot for Ask and Translate. More memory for requests that are rarer than dictation.
+- A smaller `--batch-size` (512) so a dropped warm-up stops sooner (2.2 s instead of 4.2 s).
+  Every full prompt read got slower (15.8–22.6 s instead of 11.7 s on Qwen 3.5 4B).
 
 ## Parts
 

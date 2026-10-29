@@ -34,6 +34,7 @@ use async_trait::async_trait;
 use crate::error::AppError;
 use crate::storage::{AiPreset, AppConfig};
 
+use super::language_library::store::LibraryStore;
 use super::LlmConfig;
 
 /// The program's name inside `OraType.app/Contents/MacOS/`.
@@ -764,14 +765,17 @@ pub fn wanted_model(config: &AppConfig) -> Option<(String, String)> {
 }
 
 /// Plan `warm-builtin-ai`: the language codes that get their own request slot, in slot order:
-/// the router's languages (see [`super::language_router::language_profiles`]), at most
-/// [`MAX_LANGUAGE_SLOTS`]. Empty when "Fast language switching" is off.
-pub fn slot_languages(config: &AppConfig) -> Vec<String> {
+/// the router's languages it can recognise (see
+/// [`super::language_router::LanguageProfile::recognisable`]), at most [`MAX_LANGUAGE_SLOTS`].
+/// A language without a preset or hints is never routed, so a slot for it would sit unused.
+/// Empty when "Fast language switching" is off. `store` is where downloaded presets live.
+pub fn slot_languages(config: &AppConfig, store: Option<&LibraryStore>) -> Vec<String> {
     if !config.builtin_ai_language_slots {
         return Vec::new();
     }
-    super::language_router::language_profiles(config, None)
+    super::language_router::language_profiles(config, store)
         .into_iter()
+        .filter(|profile| profile.recognisable())
         .map(|profile| profile.code)
         .take(MAX_LANGUAGE_SLOTS as usize)
         .collect()
@@ -779,20 +783,39 @@ pub fn slot_languages(config: &AppConfig) -> Vec<String> {
 
 /// How many request slots the built-in server runs with for `config`: one per language with
 /// "Fast language switching" on (at least 1), else 1.
-pub fn wanted_slots(config: &AppConfig) -> u32 {
-    (slot_languages(config).len() as u32).max(1)
+pub fn wanted_slots(config: &AppConfig, store: Option<&LibraryStore>) -> u32 {
+    (slot_languages(config, store).len() as u32).max(1)
 }
 
 /// The slot a dictation in `language` goes to, when it has one of its own. `None` lets the server
 /// pick (one slot, or a language without its own).
-pub fn slot_for_language(config: &AppConfig, language: &str) -> Option<u32> {
-    if wanted_slots(config) < 2 {
+pub fn slot_for_language(
+    config: &AppConfig,
+    store: Option<&LibraryStore>,
+    language: &str,
+) -> Option<u32> {
+    let languages = slot_languages(config, store);
+    if languages.len() < 2 {
         return None;
     }
-    slot_languages(config)
+    languages
         .iter()
         .position(|code| code == language)
         .map(|index| index as u32)
+}
+
+/// Bumped when a recording starts: a warm-up that began under an earlier value stops, so it
+/// never competes with a dictation for the GPU (plan `warm-builtin-ai`).
+static WARM_UP_RUN: AtomicU64 = AtomicU64::new(0);
+
+/// The current warm-up run; a warm-up keeps it and stops once it changes.
+pub fn warm_up_run() -> u64 {
+    WARM_UP_RUN.load(Ordering::SeqCst)
+}
+
+/// Stops any warm-up under way (a recording started).
+pub fn stop_warm_up() {
+    WARM_UP_RUN.fetch_add(1, Ordering::SeqCst);
 }
 
 type WarmUp = Box<dyn Fn() + Send + Sync>;
@@ -816,10 +839,10 @@ pub fn warm_up() {
 /// Starts or stops the built-in server to match `config` (at app start and after settings
 /// changed). Starting runs in the background and ends with the warm-up. A server with another
 /// number of slots (languages or "Fast language switching" changed) is started again.
-pub fn sync_with_config(config: &AppConfig) {
+pub fn sync_with_config(config: &AppConfig, store: Option<&LibraryStore>) {
     match wanted_model(config) {
         Some((model_file, alias)) => {
-            let slots = wanted_slots(config);
+            let slots = wanted_slots(config, store);
             server().set_slots(slots);
             if server().running_model_and_slots() == Some((model_file.clone(), slots)) {
                 return;
@@ -1045,34 +1068,72 @@ mod tests {
         );
     }
 
+    /// `codes` as the router's languages, each with a user hint so it can be recognised
+    /// without a preset.
+    fn languages_with_hints(config: &mut AppConfig, codes: &[&str]) {
+        config.translation.targets = codes.iter().map(|code| code.to_string()).collect();
+        for code in codes {
+            config
+                .translation
+                .languages
+                .entry(code.to_string())
+                .or_default()
+                .user_hints
+                .push(format!("hint-{code}"));
+        }
+    }
+
     #[test]
     fn languages_get_their_own_slots_only_with_fast_switching_on() {
         let mut config = AppConfig::default();
-        config.translation.targets =
-            vec!["zh-Hant-HK".to_string(), "en".to_string(), "ja".to_string()];
+        languages_with_hints(&mut config, &["zh-Hant-HK", "en", "ja"]);
         assert!(config.builtin_ai_language_slots, "on by default");
-        assert_eq!(wanted_slots(&config), 3);
-        assert_eq!(slot_for_language(&config, "zh-Hant-HK"), Some(0));
-        assert_eq!(slot_for_language(&config, "ja"), Some(2));
-        assert_eq!(slot_for_language(&config, "fr"), None);
+        assert_eq!(wanted_slots(&config, None), 3);
+        assert_eq!(slot_for_language(&config, None, "zh-Hant-HK"), Some(0));
+        assert_eq!(slot_for_language(&config, None, "ja"), Some(2));
+        assert_eq!(slot_for_language(&config, None, "fr"), None);
 
         config.builtin_ai_language_slots = false;
-        assert_eq!(wanted_slots(&config), 1);
-        assert_eq!(slot_for_language(&config, "en"), None);
+        assert_eq!(wanted_slots(&config, None), 1);
+        assert_eq!(slot_for_language(&config, None, "en"), None);
 
         // One language needs no pinning.
         config.builtin_ai_language_slots = true;
-        config.translation.targets = vec!["en".to_string()];
-        assert_eq!(wanted_slots(&config), 1);
-        assert_eq!(slot_for_language(&config, "en"), None);
+        languages_with_hints(&mut config, &["en"]);
+        assert_eq!(wanted_slots(&config, None), 1);
+        assert_eq!(slot_for_language(&config, None, "en"), None);
+    }
+
+    /// Plan `warm-builtin-ai`: a language the router cannot recognise (no preset, no hints) never
+    /// gets a dictation, so it gets no slot either, and slot numbers skip it.
+    #[test]
+    fn only_languages_the_router_can_recognise_get_a_slot() {
+        let mut config = AppConfig::default();
+        config.translation.targets = vec!["en".to_string(), "zh-Hant-HK".to_string()];
+        assert_eq!(slot_languages(&config, None), Vec::<String>::new());
+        assert_eq!(wanted_slots(&config, None), 1);
+
+        languages_with_hints(&mut config, &["zh-Hant-HK", "ja"]);
+        config.translation.targets = ["en", "zh-Hant-HK", "ja"].map(String::from).to_vec();
+        assert_eq!(slot_languages(&config, None), ["zh-Hant-HK", "ja"]);
+        assert_eq!(slot_for_language(&config, None, "zh-Hant-HK"), Some(0));
+        assert_eq!(slot_for_language(&config, None, "ja"), Some(1));
+        assert_eq!(slot_for_language(&config, None, "en"), None);
+
+        // A language that is switched off is not routed either.
+        config.translation.languages.get_mut("ja").unwrap().enabled = false;
+        assert_eq!(wanted_slots(&config, None), 1);
     }
 
     #[test]
     fn slots_stop_at_the_limit() {
         let mut config = AppConfig::default();
-        config.translation.targets = ["en", "zh-Hant-HK", "ja", "fr"].map(String::from).to_vec();
-        assert!(slot_languages(&config).len() <= MAX_LANGUAGE_SLOTS as usize);
-        assert!(wanted_slots(&config) <= MAX_LANGUAGE_SLOTS);
+        languages_with_hints(&mut config, &["en", "zh-Hant-HK", "ja", "fr"]);
+        assert_eq!(
+            slot_languages(&config, None).len(),
+            MAX_LANGUAGE_SLOTS as usize
+        );
+        assert_eq!(wanted_slots(&config, None), MAX_LANGUAGE_SLOTS);
     }
 
     #[tokio::test]

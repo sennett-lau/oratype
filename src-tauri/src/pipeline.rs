@@ -460,8 +460,10 @@ fn polish_request(
 }
 
 /// Plan `warm-builtin-ai`: what the built-in AI server should read before the first dictation.
-/// One polish request per language with its own slot (or, with one slot, for the first
-/// language), built like a plain dictation in an app OraType does not know, asking for one token.
+/// One polish request per language with its own slot; with one slot, for the first language the
+/// router can recognise, or the plain instructions (no language part) when it can recognise none,
+/// which is what every dictation then gets. Each is built like a plain dictation in an app
+/// OraType does not know, asking for one token.
 /// The app's own part comes near the end of the instructions, where the server keeps a
 /// checkpoint, so a dictation in any app still finds the rest read.
 pub(crate) fn warm_up_requests(
@@ -470,8 +472,12 @@ pub(crate) fn warm_up_requests(
     dictionary: &[String],
     correction_rules: &[llm::CorrectionRule],
 ) -> Vec<(Option<u32>, PolishRequest)> {
-    let profiles = llm::language_router::language_profiles(config, store);
-    let slots = llm::builtin::slot_languages(config);
+    let profiles: Vec<llm::language_router::LanguageProfile> =
+        llm::language_router::language_profiles(config, store)
+            .into_iter()
+            .filter(|profile| profile.recognisable())
+            .collect();
+    let slots = llm::builtin::slot_languages(config, store);
     let languages: Vec<Option<&llm::language_router::LanguageProfile>> = if slots.len() > 1 {
         profiles.iter().take(slots.len()).map(Some).collect()
     } else {
@@ -526,6 +532,7 @@ pub(crate) fn warm_up_requests(
 /// after the other, and logs how long each took. Never fails: a dictation that comes first
 /// just reads the instructions itself.
 pub async fn warm_up_builtin_ai(app: tauri::AppHandle) {
+    let run = llm::builtin::warm_up_run();
     let (Some(config_state), Some(dictionary_store)) = (
         app.try_state::<storage::ConfigManager>(),
         app.try_state::<storage::DictionaryStore>(),
@@ -556,15 +563,22 @@ pub async fn warm_up_builtin_ai(app: tauri::AppHandle) {
     let Ok(llm_config) = llm::builtin::llm_config(preset, String::new()).await else {
         return;
     };
-    send_warm_up(&llm_config, requests).await;
+    send_warm_up(&llm_config, requests, move || {
+        llm::builtin::warm_up_run() == run
+    })
+    .await;
 }
 
 /// Sends the warm-up requests one after the other; returns how many the server took. Each asks
 /// for one token: the server reads the whole prompt and keeps it, the answer is not used, and
-/// stopping at the length limit is expected. Stops at the first failure.
+/// stopping at the length limit is expected. Stops at the first failure, and as soon as
+/// `still_wanted` turns false (a recording started): the request is dropped, and llama-server
+/// stops reading it at its next batch (at most 2048 tokens, a few seconds), so the dictation does
+/// not share the GPU with it.
 async fn send_warm_up(
     llm_config: &llm::LlmConfig,
     requests: Vec<(Option<u32>, PolishRequest)>,
+    still_wanted: impl Fn() -> bool,
 ) -> usize {
     let Ok(url) = llm::protocol::chat_endpoint(&llm_config.base_url) else {
         return 0;
@@ -574,6 +588,10 @@ async fn send_warm_up(
     };
     let mut warmed = 0;
     for (slot, request) in requests {
+        if !still_wanted() {
+            tracing::info!("Built-in AI warm-up stopped: a recording started");
+            return warmed;
+        }
         let mut extra = llm_config.extra_request_fields.clone();
         if let Some(slot) = slot {
             extra.insert("id_slot".to_string(), slot.into());
@@ -592,12 +610,23 @@ async fn send_warm_up(
             .map(|notes| notes.code.clone())
             .unwrap_or_else(|| "none".to_string());
         let started = std::time::Instant::now();
-        let sent =
+        let request =
             llm::protocol::apply_auth_headers(client.post(url.as_str()), &llm_config.api_key)
                 .json(&body)
                 .timeout(llm::protocol::REQUEST_TIMEOUT)
-                .send()
-                .await;
+                .send();
+        let recording_started = async {
+            while still_wanted() {
+                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            }
+        };
+        let sent = tokio::select! {
+            sent = request => sent,
+            _ = recording_started => {
+                tracing::info!("Built-in AI warm-up stopped: a recording started");
+                return warmed;
+            }
+        };
         match sent {
             Ok(response) if response.status().is_success() => {
                 warmed += 1;
@@ -1574,6 +1603,9 @@ impl PipelineHandle {
         {
             return Ok(());
         }
+        // Plan `warm-builtin-ai`: a warm-up still under way stops, so this dictation has the
+        // built-in AI server to itself.
+        llm::builtin::stop_warm_up();
 
         // Plan `setup-without-dead-ends`: a missing service stops the run before anything starts,
         // with one clear message. Dictate without AI still runs and pastes the raw transcript.
@@ -2762,7 +2794,9 @@ impl PipelineHandle {
             .polish_notes
             .as_ref()
             .filter(|_| ai_preset.is_builtin_llama())
-            .and_then(|notes| llm::builtin::slot_for_language(config, &notes.code));
+            .and_then(|notes| {
+                llm::builtin::slot_for_language(config, library_store.as_ref(), &notes.code)
+            });
         let req = polish_request(
             config,
             app_ctx.summary(),
@@ -4519,10 +4553,23 @@ mod tests {
         (config, store)
     }
 
+    /// Your languages' settings with a user hint, so the router can recognise a language that
+    /// has no preset.
+    fn with_hint(config: &mut storage::AppConfig, code: &str, hint: &str) {
+        config
+            .translation
+            .languages
+            .entry(code.to_string())
+            .or_default()
+            .user_hints
+            .push(hint.to_string());
+    }
+
     #[test]
     fn the_warm_up_reads_each_slot_languages_instructions_like_a_dictation() {
         let (mut config, store) = config_with_cantonese_preset();
         config.translation.targets = vec!["zh-Hant-HK".to_string(), "en".to_string()];
+        with_hint(&mut config, "en", "meeting");
         let words = vec!["OraType".to_string()];
         let requests = warm_up_requests(&config, Some(&store), &words, &[]);
         assert_eq!(requests.len(), 2);
@@ -4559,10 +4606,38 @@ mod tests {
                 .map(|n| n.code.as_str()),
             Some("zh-Hant-HK")
         );
+    }
 
-        // No languages: the instructions without a language section.
+    /// A language the router cannot recognise (no preset, no hints) is never picked, so its
+    /// dictations get the plain instructions: that is what the warm-up must read.
+    #[test]
+    fn the_warm_up_reads_what_dictations_get_when_no_language_can_be_recognised() {
+        let (mut config, store) = config_with_cantonese_preset();
+        // English has no preset and no hints; Cantonese without the library has no preset either.
+        config.translation.targets = vec!["en".to_string(), "zh-Hant-HK".to_string()];
+        let requests = warm_up_requests(&config, None, &[], &[]);
+        assert_eq!(requests.len(), 1);
+        assert_eq!(requests[0].0, None, "no slot of its own");
+        assert_eq!(requests[0].1.polish_language_notes, None);
+        assert_eq!(llm::builtin::wanted_slots(&config, None), 1);
+
+        // With the library, only Cantonese can be recognised: one slot, its instructions.
+        let requests = warm_up_requests(&config, Some(&store), &[], &[]);
+        assert_eq!(requests.len(), 1);
+        assert_eq!(requests[0].0, None);
+        assert_eq!(
+            requests[0]
+                .1
+                .polish_language_notes
+                .as_ref()
+                .map(|n| n.code.as_str()),
+            Some("zh-Hant-HK")
+        );
+        assert_eq!(llm::builtin::wanted_slots(&config, Some(&store)), 1);
+
+        // No languages at all: the plain instructions.
         config.translation.targets.clear();
-        let requests = warm_up_requests(&config, Some(&store), &words, &[]);
+        let requests = warm_up_requests(&config, Some(&store), &[], &[]);
         assert_eq!(requests.len(), 1);
         assert_eq!(requests[0].1.polish_language_notes, None);
     }
@@ -4612,6 +4687,7 @@ mod tests {
     async fn the_warm_up_sends_each_language_a_one_token_dictation_to_its_slot() {
         let (mut config, store) = config_with_cantonese_preset();
         config.translation.targets = vec!["zh-Hant-HK".to_string(), "en".to_string()];
+        with_hint(&mut config, "en", "meeting");
         let requests = warm_up_requests(&config, Some(&store), &[], &[]);
         let expected: Vec<Vec<serde_json::Value>> = requests
             .iter()
@@ -4628,7 +4704,7 @@ mod tests {
         };
 
         // A one-token answer stops at the length limit; that is the point, not a failure.
-        assert_eq!(send_warm_up(&llm_config, requests).await, 2);
+        assert_eq!(send_warm_up(&llm_config, requests, || true).await, 2);
         let bodies = bodies.lock().unwrap();
         assert_eq!(bodies.len(), 2);
         for (slot, body) in bodies.iter().enumerate() {
@@ -4640,6 +4716,84 @@ mod tests {
                 serde_json::Value::from(expected[slot].clone())
             );
         }
+    }
+
+    /// A chat server that records each request body and never answers, like llama-server busy
+    /// reading a long prompt.
+    fn silent_chat_server() -> (String, Arc<Mutex<Vec<serde_json::Value>>>) {
+        use std::io::{BufRead, BufReader, Read};
+        let listener = std::net::TcpListener::bind(("127.0.0.1", 0)).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let bodies = Arc::new(Mutex::new(Vec::new()));
+        let seen = bodies.clone();
+        std::thread::spawn(move || {
+            let mut open = Vec::new();
+            for stream in listener.incoming() {
+                let stream = stream.unwrap();
+                let mut reader = BufReader::new(stream.try_clone().unwrap());
+                let mut length = 0;
+                loop {
+                    let mut line = String::new();
+                    reader.read_line(&mut line).unwrap();
+                    if line.trim().is_empty() {
+                        break;
+                    }
+                    if let Some(value) = line.to_ascii_lowercase().strip_prefix("content-length:") {
+                        length = value.trim().parse().unwrap();
+                    }
+                }
+                let mut body = vec![0; length];
+                reader.read_exact(&mut body).unwrap();
+                seen.lock()
+                    .unwrap()
+                    .push(serde_json::from_slice(&body).unwrap());
+                open.push(stream);
+            }
+        });
+        (format!("http://127.0.0.1:{port}/v1"), bodies)
+    }
+
+    #[tokio::test]
+    async fn a_recording_stops_the_warm_up() {
+        let (mut config, store) = config_with_cantonese_preset();
+        config.translation.targets = vec!["zh-Hant-HK".to_string(), "en".to_string()];
+        with_hint(&mut config, "en", "meeting");
+        let llm_config = |base_url: String| llm::LlmConfig {
+            api_key: String::new(),
+            model: "qwen3.5-4b".to_string(),
+            base_url,
+            extra_request_fields: serde_json::Map::new(),
+            max_tokens: 4096,
+            temperature: 0.3,
+        };
+
+        // A recording started before the warm-up got going: nothing is sent.
+        let (base_url, bodies) = cut_off_chat_server();
+        let requests = warm_up_requests(&config, Some(&store), &[], &[]);
+        assert_eq!(
+            send_warm_up(&llm_config(base_url), requests, || false).await,
+            0
+        );
+        assert!(bodies.lock().unwrap().is_empty());
+
+        // A recording starts while the server reads the first prompt: the request is dropped
+        // at once, not after the server answers, and the next language is not sent.
+        let (base_url, bodies) = silent_chat_server();
+        let requests = warm_up_requests(&config, Some(&store), &[], &[]);
+        let seen = bodies.clone();
+        let still_wanted = move || seen.lock().unwrap().is_empty();
+        let started = std::time::Instant::now();
+        assert_eq!(
+            send_warm_up(&llm_config(base_url), requests, still_wanted).await,
+            0
+        );
+        assert!(started.elapsed() < std::time::Duration::from_secs(5));
+        assert_eq!(bodies.lock().unwrap().len(), 1);
+
+        // The app's own signal: a recording start changes the run a warm-up keeps.
+        let run = llm::builtin::warm_up_run();
+        llm::builtin::stop_warm_up();
+        assert_ne!(llm::builtin::warm_up_run(), run);
     }
 
     #[test]
