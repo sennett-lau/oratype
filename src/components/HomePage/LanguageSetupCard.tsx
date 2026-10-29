@@ -6,7 +6,7 @@ import { formatSize } from '../../lib/speechSetup'
 import { missingModels, modelLabel } from '../../lib/languageSetups'
 import { currentEngine, hideLanguageSetup, useLanguageSetup } from '../../hooks/useLanguageSetup'
 import { AI_SERVICE, SPEECH_SERVICE } from '../Speech/services'
-import { spokenLanguageList } from '../../lib/spokenLanguages'
+import { yourLanguageList } from '../../lib/yourLanguages'
 import { Group, Row } from '../ui/Group'
 
 /**
@@ -51,7 +51,7 @@ export function LanguageSetupCard() {
     <div className="mb-[22px]" data-testid="language-setup-card">
       <Group label={t('languageSetup.homeGroup')}>
         <Row
-          label={t('languageSetup.homeTitle', { languages: spokenLanguageList(languages, t) })}
+          label={t('languageSetup.homeTitle', { languages: yourLanguageList(languages, t) })}
           help={t(bodyKey, {
             speech: speech ? modelLabel(speech.id) : '',
             ai: ai ? modelLabel(ai.id) : '',

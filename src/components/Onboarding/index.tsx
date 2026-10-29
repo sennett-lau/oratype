@@ -9,6 +9,8 @@ import {
   updateConfig as saveConfig,
 } from '../../lib/tauri'
 import { isAiReady, isSpeechReady } from '../../lib/readiness'
+import { effectiveYourLanguages } from '../../lib/yourLanguages'
+import { saveYourLanguages } from '../../hooks/useLanguageSetup'
 import { OnboardingLayout } from './OnboardingLayout'
 import { WelcomeStep } from './WelcomeStep'
 import { MicrophoneStep } from './MicrophoneStep'
@@ -204,9 +206,26 @@ export function Onboarding() {
     }
   }
 
+  /**
+   * Plan `languages-in-general`: the languages step shows the Mac's languages until the user
+   * changes them. Dictate and Ask pick from saved languages only, so Next saves the shown list.
+   */
+  const keepShownLanguages = async () => {
+    const { your_languages: chosen } = useAppStore.getState().config
+    if (chosen != null) return
+    try {
+      await saveYourLanguages(effectiveYourLanguages(chosen))
+    } catch (error) {
+      console.error('[onboarding] failed to save your languages', error)
+    }
+  }
+
   const handleNext = async () => {
     if (isLast) {
       await finish(true)
+    } else if (step === LANGUAGES_STEP) {
+      await keepShownLanguages()
+      await goTo(step + 1)
     } else if (step === WEB_SEARCH_STEP) {
       await leaveSetupSteps()
     } else {

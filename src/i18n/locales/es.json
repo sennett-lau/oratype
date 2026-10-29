@@ -823,6 +823,8 @@
     "pillPosition": "Idioma {{index}} de {{count}}",
     "addLanguage": "Añadir idioma",
     "chooseLanguage": "Elige un idioma",
+    "onlyForTranslate": "Solo el atajo Traducir usa esta lista. Los idiomas que hablas están en General → Tus idiomas.",
+    "openYourLanguages": "Ir a Tus idiomas",
     "languages": {
       "zhHans": "Chino (simplificado)",
       "zhHantHK": "Chino (tradicional, Hong Kong)",
@@ -1289,9 +1291,10 @@
     "add": "+ Añadir idioma",
     "addLabel": "Añadir un idioma que hablas",
     "remove": "Quitar {{language}}",
-    "hints": {
-      "yue": "Cantonés",
-      "zh": "Mandarín"
+    "names": {
+      "zhHans": "Mandarín (simplificado)",
+      "zhHantHK": "Cantonés (Hong Kong)",
+      "zhHantTW": "Mandarín (tradicional)"
     },
     "fromMac": "Tomados de los idiomas preferidos de tu Mac.",
     "list": "{{items}} y {{last}}",
@@ -1311,6 +1314,9 @@
     "homeBodyBoth": "{{speech}} para el reconocimiento de voz y {{ai}} para el pulido con IA. Se ejecutan en este Mac; {{size}} de descarga.",
     "homeBodySpeech": "{{speech}} para el reconocimiento de voz. Se ejecuta en este Mac; {{size}} de descarga.",
     "homeBodyAi": "{{ai}} para el pulido con IA. Se ejecuta en este Mac; {{size}} de descarga.",
-    "dontShowAgain": "No volver a mostrar"
+    "dontShowAgain": "No volver a mostrar",
+    "generalHelp": "Cuando dictas o preguntas, OraType elige de esta lista el idioma en que hablaste y sigue su preajuste, con modelos integrados, tu propio servidor o una clave de API. El preajuste de un idioma también se usa al traducir a ese idioma.",
+    "useMac": "Añadir {{languages}}",
+    "changeLanguages": "Cambiar tus idiomas"
   }
 }

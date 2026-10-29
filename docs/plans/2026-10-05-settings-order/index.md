@@ -7,6 +7,10 @@ languages leave Settings → AI and get their own Translate section.
 
 Status: building — 2026-10-05
 
+Superseded in part by [languages-in-general](../2026-10-29-languages-in-general/index.md)
+(2026-10-29): General also holds Your languages, and the Translate section's list is used only
+by the Translate shortcut.
+
 ## Goals
 
 - Prompts and Search come before Speech and AI.

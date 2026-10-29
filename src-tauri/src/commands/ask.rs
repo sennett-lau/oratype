@@ -308,12 +308,15 @@ fn route_question(
     heard: &HeardSpeech,
 ) -> (String, Option<AnswerLanguage>) {
     let store = crate::commands::language_presets::library_store(app).ok();
+    // Plan `languages-in-general`: a language on the generic built-in text (translation
+    // wording) shapes no answer; the question-language detection decides, as before.
     let language = crate::pipeline::routed_language(
         config,
         store.as_ref(),
         &question,
         heard.detected_language.as_deref(),
     )
+    .filter(|profile| profile.writing_notes().is_some())
     .map(AnswerLanguage::from_profile);
     let question = match language.as_ref().and_then(AnswerLanguage::script) {
         Some(script) if heard.qwen3_asr => crate::stt::chinese_script::convert(&question, script),

@@ -408,14 +408,19 @@ fn language_parts(
     if !route_polish {
         return LanguageParts::default();
     }
+    // Plan `languages-in-general`: a routed language on the generic built-in text gets no notes.
+    let polish_notes =
+        routed_language(config, store, transcript, detected_language).and_then(|profile| {
+            profile
+                .writing_notes()
+                .map(|text| llm::PolishLanguageNotes {
+                    code: profile.code.clone(),
+                    text: text.to_string(),
+                })
+        });
     LanguageParts {
         translation_instructions: String::new(),
-        polish_notes: routed_language(config, store, transcript, detected_language).map(
-            |profile| llm::PolishLanguageNotes {
-                code: profile.code,
-                text: profile.instructions,
-            },
-        ),
+        polish_notes,
     }
 }
 
@@ -4525,7 +4530,8 @@ mod tests {
         );
     }
 
-    /// Hong Kong Chinese (Cantonese preset, stored in a temp library) and English (built-in).
+    /// Your languages: Hong Kong Chinese (Cantonese preset, stored in a temp library) and
+    /// English (built-in). Translate has the same two.
     fn config_with_cantonese_preset() -> (
         storage::AppConfig,
         llm::language_library::store::LibraryStore,
@@ -4538,6 +4544,7 @@ mod tests {
         .unwrap();
         let sha256 = store.store_preset("cantonese-hong-kong", &bytes).unwrap();
         let mut config = storage::AppConfig::default();
+        config.your_languages = Some(vec!["zh-Hant-HK".to_string(), "en".to_string()]);
         config.translation.targets = vec!["zh-Hant-HK".to_string(), "en".to_string()];
         config.translation.languages.insert(
             "zh-Hant-HK".to_string(),
@@ -4568,13 +4575,13 @@ mod tests {
     #[test]
     fn the_warm_up_reads_each_slot_languages_instructions_like_a_dictation() {
         let (mut config, store) = config_with_cantonese_preset();
-        config.translation.targets = vec!["zh-Hant-HK".to_string(), "en".to_string()];
+        config.your_languages = Some(vec!["zh-Hant-HK".to_string(), "en".to_string()]);
         with_hint(&mut config, "en", "meeting");
         let words = vec!["OraType".to_string()];
         let requests = warm_up_requests(&config, Some(&store), &words, &[]);
         assert_eq!(requests.len(), 2);
         for (index, (slot, request)) in requests.iter().enumerate() {
-            let code = &config.translation.targets[index];
+            let code = &config.your_languages.as_ref().unwrap()[index];
             let profile = llm::language_router::language_profile(&config, Some(&store), code);
             assert_eq!(*slot, Some(index as u32));
             assert_eq!(
@@ -4613,30 +4620,25 @@ mod tests {
     #[test]
     fn the_warm_up_reads_what_dictations_get_when_no_language_can_be_recognised() {
         let (mut config, store) = config_with_cantonese_preset();
-        // English has no preset and no hints; Cantonese without the library has no preset either.
-        config.translation.targets = vec!["en".to_string(), "zh-Hant-HK".to_string()];
-        let requests = warm_up_requests(&config, None, &[], &[]);
+        // Both languages switched off: nothing is routed, every dictation gets the plain
+        // instructions, and that is what the warm-up reads.
+        config.your_languages = Some(vec!["en".to_string(), "zh-Hant-HK".to_string()]);
+        for code in ["en", "zh-Hant-HK"] {
+            config
+                .translation
+                .languages
+                .entry(code.to_string())
+                .or_default()
+                .enabled = false;
+        }
+        let requests = warm_up_requests(&config, Some(&store), &[], &[]);
         assert_eq!(requests.len(), 1);
         assert_eq!(requests[0].0, None, "no slot of its own");
         assert_eq!(requests[0].1.polish_language_notes, None);
-        assert_eq!(llm::builtin::wanted_slots(&config, None), 1);
-
-        // With the library, only Cantonese can be recognised: one slot, its instructions.
-        let requests = warm_up_requests(&config, Some(&store), &[], &[]);
-        assert_eq!(requests.len(), 1);
-        assert_eq!(requests[0].0, None);
-        assert_eq!(
-            requests[0]
-                .1
-                .polish_language_notes
-                .as_ref()
-                .map(|n| n.code.as_str()),
-            Some("zh-Hant-HK")
-        );
         assert_eq!(llm::builtin::wanted_slots(&config, Some(&store)), 1);
 
         // No languages at all: the plain instructions.
-        config.translation.targets.clear();
+        config.your_languages = Some(Vec::new());
         let requests = warm_up_requests(&config, Some(&store), &[], &[]);
         assert_eq!(requests.len(), 1);
         assert_eq!(requests[0].1.polish_language_notes, None);
@@ -4686,7 +4688,7 @@ mod tests {
     #[tokio::test]
     async fn the_warm_up_sends_each_language_a_one_token_dictation_to_its_slot() {
         let (mut config, store) = config_with_cantonese_preset();
-        config.translation.targets = vec!["zh-Hant-HK".to_string(), "en".to_string()];
+        config.your_languages = Some(vec!["zh-Hant-HK".to_string(), "en".to_string()]);
         with_hint(&mut config, "en", "meeting");
         let requests = warm_up_requests(&config, Some(&store), &[], &[]);
         let expected: Vec<Vec<serde_json::Value>> = requests
@@ -4756,7 +4758,7 @@ mod tests {
     #[tokio::test]
     async fn a_recording_stops_the_warm_up() {
         let (mut config, store) = config_with_cantonese_preset();
-        config.translation.targets = vec!["zh-Hant-HK".to_string(), "en".to_string()];
+        config.your_languages = Some(vec!["zh-Hant-HK".to_string(), "en".to_string()]);
         with_hint(&mut config, "en", "meeting");
         let llm_config = |base_url: String| llm::LlmConfig {
             api_key: String::new(),
@@ -4908,6 +4910,7 @@ mod tests {
         .unwrap();
         let sha256 = store.store_preset("english", &bytes).unwrap();
         let mut config = config_with_speech_language("en");
+        config.your_languages = Some(vec!["en".to_string()]);
         config.translation.languages.insert(
             "en".to_string(),
             storage::TranslationLanguageSettings {
@@ -4921,6 +4924,136 @@ mod tests {
         );
         let parts = language_parts(&config, Some(&store), false, "en", true, "hello", None);
         assert_eq!(parts.polish_notes.unwrap().code, "en");
+    }
+
+    /// Plan `languages-in-general`: an AI service on the user's own server (not Built-in) gets
+    /// the routed language's preset in the request it is sent, as Built-in does; the language
+    /// is one of Your languages and not a Translate language.
+    #[tokio::test]
+    async fn a_server_ai_preset_gets_the_routed_language_preset() {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        // A one-request OpenAI-compatible chat server that returns the request body it got.
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut socket, _) = listener.accept().await.unwrap();
+            let mut request = Vec::new();
+            let mut buf = [0u8; 8192];
+            let body = loop {
+                let n = socket.read(&mut buf).await.unwrap();
+                assert!(n > 0, "the request ended early");
+                request.extend_from_slice(&buf[..n]);
+                let Some(end) = request.windows(4).position(|w| w == b"\r\n\r\n") else {
+                    continue;
+                };
+                let head = String::from_utf8_lossy(&request[..end]).to_ascii_lowercase();
+                let length: usize = head
+                    .lines()
+                    .find_map(|line| line.strip_prefix("content-length:"))
+                    .map(|value| value.trim().parse().unwrap())
+                    .unwrap_or(0);
+                if request.len() >= end + 4 + length {
+                    break request[end + 4..end + 4 + length].to_vec();
+                }
+            };
+            let reply =
+                r#"{"choices":[{"message":{"role":"assistant","content":"我哋聽日開會"}}]}"#;
+            socket
+                .write_all(
+                    format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\
+                         Content-Length: {}\r\nConnection: close\r\n\r\n{reply}",
+                        reply.len()
+                    )
+                    .as_bytes(),
+                )
+                .await
+                .unwrap();
+            body
+        });
+
+        let (mut config, store) = config_with_cantonese_preset();
+        config.translation.targets = vec!["ja".to_string()];
+        config.ai_presets.push(storage::AiPreset::server(
+            "pc",
+            "PC",
+            &format!("http://{address}/v1"),
+            "qwen3.5-4b",
+        ));
+        config.active_ai_preset_id = "pc".to_string();
+        assert_eq!(
+            config.active_ai_preset().kind,
+            storage::AiProviderKind::OpenaiCompatible
+        );
+
+        let transcript = "我哋听日开会";
+        let parts = language_parts(
+            &config,
+            Some(&store),
+            false,
+            "en",
+            true,
+            transcript,
+            Some("yue"),
+        );
+        let req = PolishRequest {
+            raw_text: transcript.to_string(),
+            context: crate::app_detector::types::ContextProfile::general_native().summary(),
+            dictionary: vec![],
+            correction_rules: vec![],
+            polish_style: "clean".to_string(),
+            mapped_scene_prompt: String::new(),
+            active_scene_prompt: String::new(),
+            polish_custom_prompt: String::new(),
+            polish_chinese_script: "preserve".to_string(),
+            translate_enabled: false,
+            target_lang: "en".to_string(),
+            translation_instructions: parts.translation_instructions,
+            polish_language_notes: parts.polish_notes,
+            selected_text: None,
+            voice_intent: crate::voice_intent::VoiceIntent::from_parts(
+                crate::voice_intent::VoiceIntentKind::DictateInsert,
+                crate::voice_intent::VoiceOutputPlacement::InsertAtCursor,
+                1.0,
+                None,
+                None,
+                None,
+                None,
+            )
+            .unwrap(),
+        };
+        let client = reqwest::Client::builder().no_proxy().build().unwrap();
+        let llm_config = llm::LlmConfig::from_preset(config.active_ai_preset(), String::new());
+        let response = llm::create_provider(Some(client))
+            .polish(&llm_config, &req, None)
+            .await
+            .unwrap();
+        assert_eq!(response.polished_text, "我哋聽日開會");
+
+        let sent: serde_json::Value = serde_json::from_slice(&server.await.unwrap()).unwrap();
+        assert_eq!(sent["model"], "qwen3.5-4b");
+        let system = sent["messages"][0]["content"].as_str().unwrap();
+        assert!(system.contains("<language_notes>\nWritten Cantonese"));
+    }
+
+    /// Plan `languages-in-general`: a language without a preset is recognised by its own code,
+    /// but its generic built-in text (translation wording) is not added to polish.
+    #[test]
+    fn a_language_on_the_generic_built_in_text_gets_no_polish_notes() {
+        let mut config = storage::AppConfig::default();
+        config.your_languages = Some(vec!["ja".to_string(), "zh-Hans".to_string()]);
+        assert_eq!(
+            routed_language(&config, None, "こんにちは", Some("ja")).map(|profile| profile.code),
+            Some("ja".to_string())
+        );
+        let parts = language_parts(&config, None, false, "en", true, "こんにちは", Some("ja"));
+        assert_eq!(parts.polish_notes, None);
+        // The Chinese built-in texts describe the writing, so they are added.
+        let notes = language_parts(&config, None, false, "en", true, "我今天很忙", Some("zh"))
+            .polish_notes
+            .unwrap();
+        assert_eq!(notes.code, "zh-Hans");
+        assert!(notes.text.starts_with("Write natural Mandarin"));
     }
 
     fn config_with_speech_language(language: &str) -> storage::AppConfig {

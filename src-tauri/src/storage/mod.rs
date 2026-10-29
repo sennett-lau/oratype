@@ -557,8 +557,8 @@ pub const LEGACY_OLLAMA_LOCAL_PRESET_ID: &str = "builtin-ai-ollama-local";
 /// Built-in preset; the old server and cloud templates are dropped unless the user edited or used
 /// them. 3: plan `ai-polish-setup`, the same for AI, which gets its own Built-in preset.
 pub const BUILTIN_PRESETS_VERSION: u32 = 3;
-/// Plan `language-model-suggestions`: the most spoken languages a config keeps.
-pub const MAX_SPOKEN_LANGUAGES: usize = 12;
+/// Plan `languages-in-general`: the most languages Your languages keeps.
+pub const MAX_YOUR_LANGUAGES: usize = 12;
 /// Speech preset language value that means "let the server detect the language".
 pub const SPEECH_LANGUAGE_AUTO: &str = "auto";
 /// Longest preset id; matches the limit of the credential account names in the Keychain.
@@ -1182,9 +1182,16 @@ pub struct AppConfig {
     /// Plan `auto-update`: check GitHub for a new version at start and every few hours, download
     /// it in the background and ask to restart. On by default; off means only Check for updates.
     pub auto_update: bool,
-    /// Plan `language-model-suggestions`: the languages the user speaks, as lower-case codes
-    /// (`en`, `yue`, `zh`). They decide which built-in models are suggested. `None` until the
-    /// user has chosen; the app then starts from the Mac's preferred languages.
+    /// Plan `languages-in-general`: Your languages (Settings → General), the languages the user
+    /// speaks and dictates in, as written-language codes like the translation languages (`en`,
+    /// `zh-Hant-HK`). Dictate and Ask pick from them (`llm::language_router`), and they decide
+    /// which built-in models are suggested. `None` until the user has chosen; the app then shows
+    /// the Mac's preferred languages.
+    pub your_languages: Option<Vec<String>>,
+    /// Plan `language-model-suggestions`: the old spoken languages (`en`, `yue`, `zh`), read from
+    /// older configs only to build `your_languages` once (see `migrate_your_languages`), never
+    /// written back.
+    #[serde(skip_serializing)]
     pub spoken_languages: Option<Vec<String>>,
     /// Plan `language-model-suggestions`: the suggested setup (its id, such as `cantonese`)
     /// whose Home card the user hid with "Don't show again".
@@ -1246,6 +1253,7 @@ impl Default for AppConfig {
             shortcut_tour_prompt_dismissed: false,
             measure_typing_speed: true,
             web_search: crate::web_search::WebSearchConfig::default(),
+            your_languages: None,
             spoken_languages: None,
             dismissed_language_setup: None,
             hands_free: crate::hands_free::HandsFreeConfig::default(),
@@ -1782,19 +1790,20 @@ impl AppConfig {
         self.recompute_recording_limit_mirror();
         self.input_device = self.input_device.trim().to_string();
         self.web_search.normalize();
-        self.normalize_spoken_languages();
+        self.normalize_your_languages();
     }
 
-    /// Plan `language-model-suggestions`: spoken languages are short lower-case codes, without
-    /// repeats, at most [`MAX_SPOKEN_LANGUAGES`]; a dismissed setup id is a short slug.
-    fn normalize_spoken_languages(&mut self) {
-        if let Some(languages) = self.spoken_languages.as_mut() {
+    /// Plan `languages-in-general`: Your languages are canonical translation codes (`zh` becomes
+    /// `zh-Hans`), without repeats, at most [`MAX_YOUR_LANGUAGES`]; unsupported codes are
+    /// dropped. Plan `language-model-suggestions`: a dismissed setup id is a short slug.
+    fn normalize_your_languages(&mut self) {
+        if let Some(languages) = self.your_languages.as_mut() {
             let mut kept: Vec<String> = Vec::new();
             for code in languages.iter() {
-                let code = code.trim().to_ascii_lowercase();
-                let valid =
-                    (2..=3).contains(&code.len()) && code.chars().all(|c| c.is_ascii_lowercase());
-                if valid && !kept.contains(&code) && kept.len() < MAX_SPOKEN_LANGUAGES {
+                let Some(code) = normalize_translation_code(code) else {
+                    continue;
+                };
+                if !kept.contains(&code) && kept.len() < MAX_YOUR_LANGUAGES {
                     kept.push(code);
                 }
             }
@@ -1812,6 +1821,63 @@ impl AppConfig {
                         .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
             })
             .map(str::to_string);
+    }
+
+    /// Every language the user chose: Your languages, then the Translate languages not already
+    /// among them (plan `languages-in-general`). Used where both lists count, such as automatic
+    /// preset updates.
+    pub fn chosen_language_codes(&self) -> Vec<String> {
+        let mut codes: Vec<String> = self.your_languages.clone().unwrap_or_default();
+        for target in &self.translation.targets {
+            if !codes.contains(target) {
+                codes.push(target.clone());
+            }
+        }
+        codes
+    }
+
+    /// Plan `languages-in-general`: Your languages for a config saved before they existed. Until
+    /// then dictation was routed by the Translate languages, so they are kept: the old spoken
+    /// languages as written codes (`yue` is Cantonese (Hong Kong); `zh` is the first Mandarin
+    /// code in the Translate list, else Simplified), then every Translate language not already
+    /// listed, at most [`MAX_YOUR_LANGUAGES`]. Without spoken languages, the Translate languages;
+    /// with neither, still unset. Runs once: the config is written back with `your_languages`.
+    fn migrate_your_languages(&mut self) {
+        let spoken = self.spoken_languages.take();
+        if spoken.is_none() && self.translation.targets.is_empty() {
+            return;
+        }
+        let mut languages: Vec<String> = Vec::new();
+        for code in spoken.iter().flatten() {
+            let written = match code.trim().to_ascii_lowercase().as_str() {
+                "yue" => Some("zh-Hant-HK".to_string()),
+                "zh" => Some(
+                    self.translation
+                        .targets
+                        .iter()
+                        .find(|target| matches!(target.as_str(), "zh-Hans" | "zh-Hant-TW"))
+                        .cloned()
+                        .unwrap_or_else(|| "zh-Hans".to_string()),
+                ),
+                other => normalize_translation_code(other),
+            };
+            if let Some(written) = written {
+                if !languages.contains(&written) {
+                    languages.push(written);
+                }
+            }
+        }
+        for target in &self.translation.targets {
+            if !languages.contains(target) {
+                languages.push(target.clone());
+            }
+        }
+        languages.truncate(MAX_YOUR_LANGUAGES);
+        tracing::info!(
+            "Your languages set from the spoken and Translate languages: {}",
+            languages.join(", ")
+        );
+        self.your_languages = Some(languages);
     }
 
     /// Plan `translation-language-presets` (2026-09-27): the "Always translate output" switch is
@@ -1920,6 +1986,9 @@ impl AppConfig {
         let has_builtin_presets_version = value
             .as_object()
             .is_some_and(|object| object.contains_key("builtin_presets_version"));
+        let has_your_languages = value
+            .as_object()
+            .is_some_and(|object| object.contains_key("your_languages"));
         let mut config: Self = serde_json::from_value(value)?;
         if !has_builtin_presets_version {
             config.builtin_presets_version = 0;
@@ -1953,6 +2022,11 @@ impl AppConfig {
             config.sync_legacy_hotkey_fields_from_typed();
         }
         config.normalize_values();
+        // After normalizing, so the Translate languages are the ones dictation was routed by.
+        if !has_your_languages {
+            config.migrate_your_languages();
+        }
+        config.spoken_languages = None;
         Ok(config)
     }
 }
@@ -2474,6 +2548,13 @@ fn stored_languages_need_migration(value: &serde_json::Value) -> bool {
         })
 }
 
+/// True when a stored config predates Your languages (plan `languages-in-general`) or still has
+/// the old spoken languages: the migrated config is written back at once, so the migration runs
+/// once and a language the user removes later stays removed.
+fn stored_your_languages_need_migration(value: &serde_json::Value) -> bool {
+    value.get("your_languages").is_none() || value.get("spoken_languages").is_some()
+}
+
 /// True when a stored config still says `translate_enabled: true`, saved by the removed "Always
 /// translate output" switch (plan `translation-language-presets`). Loading resets it (see
 /// `AppConfig::normalize_translate_enabled`); this makes the reset config be written back at
@@ -2521,6 +2602,7 @@ impl ConfigManager {
                         .unwrap_or(false);
                     migrated = stored_presets_need_migration(&val)
                         || stored_languages_need_migration(&val)
+                        || stored_your_languages_need_migration(&val)
                         || stored_translate_flag_needs_reset(&val);
                     AppConfig::from_stored_value_with_onboarding(val, onboarding_completed)
                         .unwrap_or_else(|_| AppConfig::new_install_default())
@@ -3961,27 +4043,33 @@ mod tests {
     }
 
     #[test]
-    fn spoken_languages_are_unset_until_chosen_and_normalized() {
+    fn your_languages_are_unset_until_chosen_and_normalized() {
         let config: AppConfig = serde_json::from_value(serde_json::json!({})).unwrap();
-        assert_eq!(config.spoken_languages, None);
+        assert_eq!(config.your_languages, None);
         assert_eq!(config.dismissed_language_setup, None);
+        assert_eq!(AppConfig::new_install_default().your_languages, None);
 
         let mut config = AppConfig {
-            spoken_languages: Some(vec![
+            your_languages: Some(vec![
                 " EN ".into(),
-                "yue".into(),
+                "zh-hant-hk".into(),
                 "en".into(),
-                "zh-Hant-HK".into(),
+                "zh".into(),
+                "yue".into(),
                 "".into(),
-                "x".into(),
+                "xx".into(),
             ]),
             dismissed_language_setup: Some(" cantonese ".into()),
             ..AppConfig::default()
         };
         config.normalize_values();
         assert_eq!(
-            config.spoken_languages,
-            Some(vec!["en".to_string(), "yue".to_string()])
+            config.your_languages,
+            Some(vec![
+                "en".to_string(),
+                "zh-Hant-HK".to_string(),
+                "zh-Hans".to_string()
+            ])
         );
         assert_eq!(
             config.dismissed_language_setup.as_deref(),
@@ -3990,24 +4078,164 @@ mod tests {
 
         // An empty choice stays a choice; a bad setup id is dropped.
         let mut config = AppConfig {
-            spoken_languages: Some(Vec::new()),
+            your_languages: Some(Vec::new()),
             dismissed_language_setup: Some("Not a slug!".into()),
             ..AppConfig::default()
         };
         config.normalize_values();
-        assert_eq!(config.spoken_languages, Some(Vec::new()));
+        assert_eq!(config.your_languages, Some(Vec::new()));
         assert_eq!(config.dismissed_language_setup, None);
 
         let mut config = AppConfig {
-            spoken_languages: Some(
-                (0..20)
-                    .map(|i| format!("a{}", (b'a' + i) as char))
+            your_languages: Some(
+                SUPPORTED_TRANSLATION_LANGUAGES
+                    .iter()
+                    .map(|code| code.to_string())
                     .collect(),
             ),
             ..AppConfig::default()
         };
         config.normalize_values();
-        assert_eq!(config.spoken_languages.unwrap().len(), MAX_SPOKEN_LANGUAGES);
+        assert_eq!(
+            config.your_languages.unwrap(),
+            SUPPORTED_TRANSLATION_LANGUAGES[..MAX_YOUR_LANGUAGES]
+        );
+    }
+
+    /// Your languages of a stored config from before plan `languages-in-general`.
+    fn migrated_languages(
+        spoken: Option<&[&str]>,
+        targets: &[&str],
+    ) -> (Option<Vec<String>>, Vec<String>) {
+        let mut stored = serde_json::json!({
+            "translation": {"targets": targets, "active_target": targets.first().copied().unwrap_or("")}
+        });
+        if let Some(spoken) = spoken {
+            stored["spoken_languages"] = serde_json::json!(spoken);
+        }
+        let config = AppConfig::from_stored_value(stored).unwrap();
+        (config.your_languages, config.translation.targets)
+    }
+
+    fn codes(codes: &[&str]) -> Option<Vec<String>> {
+        Some(codes.iter().map(|code| code.to_string()).collect())
+    }
+
+    /// Plan `languages-in-general`: the spoken languages as written codes, then the Translate
+    /// languages not already listed (dictation was routed by them), without repeats.
+    #[test]
+    fn your_languages_migrate_from_spoken_and_translate_languages() {
+        assert_eq!(
+            migrated_languages(Some(&["en", "yue"]), &["zh-Hant-HK", "en"]).0,
+            codes(&["en", "zh-Hant-HK"])
+        );
+        // Spoken Mandarin is the Mandarin already in the Translate list...
+        assert_eq!(
+            migrated_languages(Some(&["zh"]), &["ja", "zh-Hant-TW"]).0,
+            codes(&["zh-Hant-TW", "ja"])
+        );
+        assert_eq!(
+            migrated_languages(Some(&["zh"]), &["zh-Hant-HK", "zh-Hans"]).0,
+            codes(&["zh-Hans", "zh-Hant-HK"])
+        );
+        // ...else Simplified; other codes stay as they are.
+        assert_eq!(
+            migrated_languages(Some(&["zh", "ja"]), &["en"]).0,
+            codes(&["zh-Hans", "ja", "en"])
+        );
+        // Spoken Cantonese and Mandarin both, with a Translate list that has neither.
+        assert_eq!(
+            migrated_languages(Some(&["yue", "zh", "en"]), &["fr"]).0,
+            codes(&["zh-Hant-HK", "zh-Hans", "en", "fr"])
+        );
+        // The Translate list itself is unchanged.
+        assert_eq!(
+            migrated_languages(Some(&["yue"]), &["en", "ja"]).1,
+            ["en", "ja"]
+        );
+    }
+
+    #[test]
+    fn your_languages_migrate_without_spoken_languages() {
+        // Never set: the Translate languages.
+        assert_eq!(
+            migrated_languages(None, &["en", "ja"]).0,
+            codes(&["en", "ja"])
+        );
+        // Neither: still unset, so the Mac's languages are offered.
+        assert_eq!(migrated_languages(None, &[]).0, None);
+        // An empty choice counts as set.
+        assert_eq!(migrated_languages(Some(&[]), &["ja"]).0, codes(&["ja"]));
+        assert_eq!(migrated_languages(Some(&[]), &[]).0, codes(&[]));
+        // A config from before the Translate list: its one legacy target.
+        let legacy =
+            AppConfig::from_stored_value(serde_json::json!({"target_lang": "ko"})).unwrap();
+        assert_eq!(legacy.your_languages, codes(&["ko"]));
+    }
+
+    #[test]
+    fn your_languages_migration_drops_bad_codes_and_keeps_twelve() {
+        assert_eq!(
+            migrated_languages(Some(&[" EN ", "xx", "en", "zh-hant-hk", "YUE"]), &["en"]).0,
+            codes(&["en", "zh-Hant-HK"])
+        );
+        let spoken: Vec<&str> = SUPPORTED_TRANSLATION_LANGUAGES
+            .iter()
+            .copied()
+            .filter(|code| !code.starts_with("zh"))
+            .collect();
+        let (languages, _) = migrated_languages(Some(&spoken), &["zh-Hans", "en", "ja"]);
+        let languages = languages.unwrap();
+        assert_eq!(languages.len(), MAX_YOUR_LANGUAGES);
+        assert_eq!(languages[..2], ["en", "ja"]);
+        assert!(!languages.contains(&"zh-Hans".to_string()));
+    }
+
+    /// The migration runs once: the stored config keeps `your_languages` and no longer has
+    /// `spoken_languages`, and a language removed afterwards stays removed.
+    #[test]
+    fn your_languages_migration_runs_once() {
+        let stored = serde_json::json!({
+            "spoken_languages": ["en", "yue"],
+            "translation": {"targets": ["ja"], "active_target": "ja"}
+        });
+        assert!(stored_your_languages_need_migration(&stored));
+        let mut config = AppConfig::from_stored_value(stored).unwrap();
+        assert_eq!(config.your_languages, codes(&["en", "zh-Hant-HK", "ja"]));
+
+        let saved = serde_json::to_value(&config).unwrap();
+        assert!(saved.get("spoken_languages").is_none());
+        assert!(!stored_your_languages_need_migration(&saved));
+        let reloaded = AppConfig::from_stored_value(saved).unwrap();
+        assert_eq!(reloaded.your_languages, config.your_languages);
+
+        // The user removes Japanese (still a Translate language): it does not come back.
+        config.your_languages = codes(&["en", "zh-Hant-HK"]);
+        let reloaded =
+            AppConfig::from_stored_value(serde_json::to_value(&config).unwrap()).unwrap();
+        assert_eq!(reloaded.your_languages, codes(&["en", "zh-Hant-HK"]));
+        assert_eq!(reloaded.translation.targets, ["ja"]);
+
+        // A config that was never chosen keeps `null`, and is not migrated again.
+        let unset = serde_json::to_value(AppConfig::new_install_default()).unwrap();
+        assert_eq!(unset["your_languages"], serde_json::Value::Null);
+        assert!(!stored_your_languages_need_migration(&unset));
+        let mut later = unset.clone();
+        later["translation"] = serde_json::json!({"targets": ["en"], "active_target": "en"});
+        assert_eq!(
+            AppConfig::from_stored_value(later).unwrap().your_languages,
+            None
+        );
+    }
+
+    #[test]
+    fn chosen_language_codes_are_your_languages_then_the_translate_ones() {
+        let mut config = AppConfig::default();
+        config.your_languages = codes(&["zh-Hant-HK", "en"]);
+        config.translation.targets = vec!["en".to_string(), "ja".to_string()];
+        assert_eq!(config.chosen_language_codes(), ["zh-Hant-HK", "en", "ja"]);
+        config.your_languages = None;
+        assert_eq!(config.chosen_language_codes(), ["en", "ja"]);
     }
 
     #[test]

@@ -1193,6 +1193,15 @@ pub fn run() {
                 context_detector.clone(),
             );
 
+            // Plan `languages-in-general`: chosen languages without settings get their built-in
+            // preset, before any window loads the config.
+            tauri::async_runtime::block_on(
+                commands::language_presets::give_bundled_presets_at_startup(
+                    &app_handle,
+                    &config_manager,
+                ),
+            );
+
             // Load initial config to get hotkey
             let mut initial_config =
                 tauri::async_runtime::block_on(config_manager.load()).unwrap_or_default();
@@ -1583,7 +1592,7 @@ pub fn run() {
             commands::speech_setup::start_speech_setup,
             commands::speech_setup::cancel_speech_setup,
             commands::speech_setup::list_speech_models,
-            commands::language_setup::set_spoken_languages,
+            commands::language_setup::set_your_languages,
             commands::language_setup::dismiss_language_setup,
             commands::speech_setup::delete_speech_model,
             commands::speech_setup::get_speech_hardware,

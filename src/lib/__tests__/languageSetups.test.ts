@@ -8,11 +8,18 @@ import {
   suggestionFor,
 } from '../languageSetups'
 import {
-  SPOKEN_LANGUAGES,
-  effectiveSpokenLanguages,
+  MAX_YOUR_LANGUAGES,
+  YOUR_LANGUAGE_CODES,
+  effectiveYourLanguages,
   spokenCodeFor,
-  spokenLanguagesFromTags,
-} from '../spokenLanguages'
+  spokenCodesOf,
+  writtenCodeFor,
+  yourLanguageList,
+  yourLanguageName,
+  yourLanguagesFromTags,
+} from '../yourLanguages'
+import { TARGET_LANGUAGES } from '../constants'
+import { translate } from '../../test-utils/i18nMock'
 import { hardwareCheck } from '../../test-utils/speechHardware'
 
 const speechAll = hardwareCheck(['large-v3-turbo', 'small', QWEN3_ASR_MODEL])
@@ -20,39 +27,60 @@ const aiAll = hardwareCheck(['qwen3-4b', 'qwen3-1.7b', QWEN35_AI_MODEL])
 const builtin = (model: string | null) => ({ builtin: true, model })
 const ownServer = { builtin: false, model: null }
 
-describe('spoken languages (plan `language-model-suggestions`)', () => {
-  it('reads the Mac languages as spoken languages', () => {
-    expect(spokenCodeFor('zh-Hant-HK')).toBe('yue')
-    expect(spokenCodeFor('zh-HK')).toBe('yue')
-    expect(spokenCodeFor('zh_Hant_MO')).toBe('yue')
-    expect(spokenCodeFor('yue-Hant')).toBe('yue')
-    expect(spokenCodeFor('zh-Hant-TW')).toBe('zh')
-    expect(spokenCodeFor('zh-Hans-CN')).toBe('zh')
-    expect(spokenCodeFor('en-GB')).toBe('en')
-    expect(spokenCodeFor('ja-JP')).toBe('ja')
-    expect(spokenCodeFor('xx')).toBeNull()
-    expect(spokenLanguagesFromTags(['en-HK', 'zh-Hant-HK', 'en-US', 'zh-Hant-TW'])).toEqual([
+describe('Your languages (plan `languages-in-general`)', () => {
+  it('reads the Mac languages as written languages', () => {
+    expect(writtenCodeFor('zh-Hant-HK')).toBe('zh-Hant-HK')
+    expect(writtenCodeFor('zh-HK')).toBe('zh-Hant-HK')
+    expect(writtenCodeFor('zh_Hant_MO')).toBe('zh-Hant-HK')
+    expect(writtenCodeFor('yue-Hant')).toBe('zh-Hant-HK')
+    expect(writtenCodeFor('zh-Hant-TW')).toBe('zh-Hant-TW')
+    expect(writtenCodeFor('zh-TW')).toBe('zh-Hant-TW')
+    expect(writtenCodeFor('zh-Hans-CN')).toBe('zh-Hans')
+    expect(writtenCodeFor('zh')).toBe('zh-Hans')
+    expect(writtenCodeFor('en-GB')).toBe('en')
+    expect(writtenCodeFor('ja-JP')).toBe('ja')
+    expect(writtenCodeFor('xx')).toBeNull()
+    expect(writtenCodeFor('')).toBeNull()
+    expect(yourLanguagesFromTags(['en-HK', 'zh-Hant-HK', 'en-US', 'zh-Hant-TW'])).toEqual([
       'en',
-      'yue',
-      'zh',
+      'zh-Hant-HK',
+      'zh-Hant-TW',
     ])
   })
 
   it('uses the chosen list, even an empty one, over the Mac languages', () => {
-    expect(effectiveSpokenLanguages(null, ['en', 'zh-HK'])).toEqual(['en', 'yue'])
-    expect(effectiveSpokenLanguages(['ja'], ['en'])).toEqual(['ja'])
-    expect(effectiveSpokenLanguages([], ['en'])).toEqual([])
+    expect(effectiveYourLanguages(null, ['en', 'zh-HK'])).toEqual(['en', 'zh-Hant-HK'])
+    expect(effectiveYourLanguages(['ja'], ['en'])).toEqual(['ja'])
+    expect(effectiveYourLanguages([], ['en'])).toEqual([])
   })
 
-  it('lists each language once, the Chinese ones with a hint', () => {
-    const codes = SPOKEN_LANGUAGES.map((language) => language.code)
-    expect(new Set(codes).size).toBe(codes.length)
-    expect(codes.slice(0, 3)).toEqual(['en', 'yue', 'zh'])
-    expect(codes.some((code) => code.startsWith('zh-'))).toBe(false)
-    expect(SPOKEN_LANGUAGES.filter((language) => language.hintKey).map((l) => l.code)).toEqual([
+  it('offers every translation language, the Chinese ones named by the language spoken', () => {
+    expect(YOUR_LANGUAGE_CODES).toEqual(TARGET_LANGUAGES.map((language) => language.value))
+    expect(MAX_YOUR_LANGUAGES).toBe(12)
+    expect(yourLanguageName('zh-Hant-HK', translate)).toBe('Cantonese (Hong Kong)')
+    expect(yourLanguageName('zh-Hans', translate)).toBe('Mandarin (Simplified)')
+    expect(yourLanguageName('zh-Hant-TW', translate)).toBe('Mandarin (Traditional)')
+    expect(yourLanguageName('ja', translate)).toBe('日本語')
+    expect(yourLanguageList(['en', 'ja', 'zh-Hant-HK'], translate)).toBe(
+      'English, 日本語 and Cantonese (Hong Kong)',
+    )
+  })
+
+  it('reads written languages as spoken ones for the suggested setups', () => {
+    expect(spokenCodeFor('zh-Hant-HK')).toBe('yue')
+    expect(spokenCodeFor('zh-HK')).toBe('yue')
+    expect(spokenCodeFor('yue-Hant')).toBe('yue')
+    expect(spokenCodeFor('zh-Hant-TW')).toBe('zh')
+    expect(spokenCodeFor('zh-Hans')).toBe('zh')
+    expect(spokenCodeFor('en-GB')).toBe('en')
+    expect(spokenCodeFor('xx')).toBeNull()
+    expect(spokenCodesOf(['en', 'zh-Hant-HK', 'zh-Hans', 'zh-Hant-TW'])).toEqual([
+      'en',
       'yue',
       'zh',
     ])
+    expect(setupFor(spokenCodesOf(['en', 'zh-Hant-HK']))?.id).toBe('cantonese')
+    expect(setupFor(spokenCodesOf(['zh-Hans', 'zh-Hant-TW']))).toBeNull()
   })
 })
 

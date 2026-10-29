@@ -823,6 +823,8 @@
     "pillPosition": "言語 {{index}} / {{count}}",
     "addLanguage": "言語を追加",
     "chooseLanguage": "言語を選択",
+    "onlyForTranslate": "このリストを使うのは翻訳のショートカットだけです。話す言語は「一般」→「話す言語」にあります。",
+    "openYourLanguages": "「話す言語」を開く",
     "languages": {
       "zhHans": "中国語（簡体字）",
       "zhHantHK": "中国語（繁体字、香港）",
@@ -1289,9 +1291,10 @@
     "add": "+ 言語を追加",
     "addLabel": "話す言語を追加",
     "remove": "{{language}}を削除",
-    "hints": {
-      "yue": "広東語",
-      "zh": "標準中国語"
+    "names": {
+      "zhHans": "標準中国語（簡体字）",
+      "zhHantHK": "広東語（香港）",
+      "zhHantTW": "標準中国語（繁体字）"
     },
     "fromMac": "Mac の優先する言語から入力しました。",
     "list": "{{items}}と{{last}}",
@@ -1311,6 +1314,9 @@
     "homeBodyBoth": "音声認識に {{speech}}、AI 整形に {{ai}}。この Mac 上で動作し、ダウンロードは {{size}} です。",
     "homeBodySpeech": "音声認識に {{speech}}。この Mac 上で動作し、ダウンロードは {{size}} です。",
     "homeBodyAi": "AI 整形に {{ai}}。この Mac 上で動作し、ダウンロードは {{size}} です。",
-    "dontShowAgain": "今後表示しない"
+    "dontShowAgain": "今後表示しない",
+    "generalHelp": "音声入力や質問のとき、OraType はこのリストから話した言語を選び、その言語のプリセットに従います。内蔵モデル、自分のサーバ、API キーのどれを使っても同じです。言語のプリセットは、その言語に翻訳するときにも使います。",
+    "useMac": "{{languages}}を追加",
+    "changeLanguages": "話す言語を変更"
   }
 }

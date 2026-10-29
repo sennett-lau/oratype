@@ -43,6 +43,6 @@ Other services with an OpenAI-compatible chat API should work too. To add one to
 ## More
 
 - [AI polish models](../models/ai-polish.md): suggestions by hardware and by language.
-- [Languages](../languages/README.md): translation languages and per-language instructions.
+- [Languages](../languages/README.md): your languages, translation languages and per-language instructions.
 - [Troubleshooting](troubleshooting.md): Test fails, empty answers, slow polish.
 - [Sharing presets](../sharing-presets.md): export and import your AI presets.

@@ -10,6 +10,11 @@ Status: building - 2026-10-16.
 
 Model files superseded by [`faster-cantonese-models`](../2026-10-20-faster-cantonese-models/index.md) (Qwen3-ASR Q4_K_M, Qwen 3.5 4B Q4_0).
 
+Superseded in part by [languages-in-general](../2026-10-29-languages-in-general/index.md)
+(2026-10-29): Your languages moves to Settings → General, stores written-language codes
+(`zh-Hant-HK`, not `yue`) and also decides language routing; the built-in pages keep only the
+suggestion banner.
+
 ## Goals and non-goals
 
 - Offer more built-in models per step than "Best" and "Faster".

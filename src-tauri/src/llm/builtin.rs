@@ -1071,7 +1071,7 @@ mod tests {
     /// `codes` as the router's languages, each with a user hint so it can be recognised
     /// without a preset.
     fn languages_with_hints(config: &mut AppConfig, codes: &[&str]) {
-        config.translation.targets = codes.iter().map(|code| code.to_string()).collect();
+        config.your_languages = Some(codes.iter().map(|code| code.to_string()).collect());
         for code in codes {
             config
                 .translation
@@ -1108,20 +1108,31 @@ mod tests {
     /// gets a dictation, so it gets no slot either, and slot numbers skip it.
     #[test]
     fn only_languages_the_router_can_recognise_get_a_slot() {
+        // Plan `languages-in-general`: every listed language has speech codes, preset or not.
         let mut config = AppConfig::default();
-        config.translation.targets = vec!["en".to_string(), "zh-Hant-HK".to_string()];
-        assert_eq!(slot_languages(&config, None), Vec::<String>::new());
-        assert_eq!(wanted_slots(&config, None), 1);
+        config.your_languages = Some(["en", "zh-Hant-HK", "ja"].map(String::from).to_vec());
+        assert_eq!(slot_languages(&config, None), ["en", "zh-Hant-HK", "ja"]);
+        assert_eq!(slot_for_language(&config, None, "zh-Hant-HK"), Some(1));
 
-        languages_with_hints(&mut config, &["zh-Hant-HK", "ja"]);
-        config.translation.targets = ["en", "zh-Hant-HK", "ja"].map(String::from).to_vec();
+        // A language switched off is never routed: no slot, and the numbers skip it.
+        config
+            .translation
+            .languages
+            .entry("en".to_string())
+            .or_default()
+            .enabled = false;
         assert_eq!(slot_languages(&config, None), ["zh-Hant-HK", "ja"]);
         assert_eq!(slot_for_language(&config, None, "zh-Hant-HK"), Some(0));
-        assert_eq!(slot_for_language(&config, None, "ja"), Some(1));
         assert_eq!(slot_for_language(&config, None, "en"), None);
 
-        // A language that is switched off is not routed either.
-        config.translation.languages.get_mut("ja").unwrap().enabled = false;
+        for code in ["zh-Hant-HK", "ja"] {
+            config
+                .translation
+                .languages
+                .entry(code.to_string())
+                .or_default()
+                .enabled = false;
+        }
         assert_eq!(wanted_slots(&config, None), 1);
     }
 

@@ -21,7 +21,7 @@ starts the server and sends one test request.
   files of these) and are released by Qwen under the Apache-2.0 licence. They are stored in
   `~/Library/Application Support/dev.oratype.mac/models/`, next to the speech models.
 - Qwen 3.5 4B is the AI half of the setup suggested for Cantonese (see **Your languages** in
-  onboarding or Settings). In the polish evaluations it does better than Qwen3 4B on Cantonese
+  onboarding or Settings → General). In the polish evaluations it does better than Qwen3 4B on Cantonese
   and worse on English and Mandarin, so it is suggested only for combinations with Cantonese.
 - Qwen 3.5 4B is the Q4_0 file because it answers about a third faster than Q4_K_M on a Mac at
   the same quality ([report](../../benchmarks/reports/2026-10-20-cantonese-model-sizes/README.md)).
