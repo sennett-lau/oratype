@@ -25,6 +25,7 @@ Options for `polish` and `speech`:
 | `--split dev\|holdout\|all` | Which cases; default `dev`. |
 | `--tag numbers` / `--id en-011` | Only cases with this tag / these ids. |
 | `--n 3` | Samples per polish case (temperature noise); default 3. |
+| `--context prompt.chatgpt` | The app dictated into, a built-in profile id (`src-tauri/src/app_detector/profiles.rs`); default: a general app. |
 | `--languages en,zh-Hant-HK` | The user's language list for polish routing (default: the app's default list). |
 | `--baseline <file>\|none` | Compare with this baseline; default `evals/baselines/<kind>-<model>.json` if it exists. |
 | `--save-baseline` | Write the results into that baseline file (only when intended, see AGENTS.md). |
@@ -73,7 +74,7 @@ One JSON object per line:
 | `expected` | yes | The ideal polished text. |
 | `accept` | no | Other answers that are equally right. |
 | `must_contain` / `must_not_contain` | no | Words that must survive / must be gone (ASCII words match whole words, case-insensitive). |
-| `tags` | yes | From: `filler`, `self-correction`, `numbers`, `punctuation`, `newline`, `list`, `dash`, `keep-meaning`, `script`, `dialect`, `mixed-language`. |
+| `tags` | yes | From: `filler`, `self-correction`, `numbers`, `punctuation`, `newline`, `list`, `dash`, `keep-meaning`, `script`, `dialect`, `mixed-language`, `no-answer` (a dictated question or request that must be written down, not answered or carried out). |
 | `split` | yes | `dev` or `holdout`; must match the file. |
 | `max_error` | no | Allowed error rate for this case (default 0.3 words, 0.25 characters). |
 | `notes` | no | Why the case exists, and credit for its source. |

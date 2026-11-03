@@ -11,6 +11,7 @@
 //   --whisper-model <ggml .bin> (built-in speech)  --speech-url <url> --speech-model <name>
 //   --languages en,zh-Hant-HK  (the user's language list for polish routing; default: the app's)
 //   --presets  (those languages use their presets from presets/languages/, as downloaded ones)
+//   --context prompt.chatgpt  (the app dictated into, a built-in profile id; default: a general app)
 //   --baseline <file>|none  --save-baseline  --out <dir>
 // ORATYPE_EVAL_* environment variables work as well (see src-tauri/examples/eval_run.rs).
 import { createHash } from 'node:crypto'
@@ -207,6 +208,7 @@ function polish(options) {
   if (options['ai-model']) env.ORATYPE_EVAL_AI_MODEL = options['ai-model']
   if (options.languages) env.ORATYPE_EVAL_LANGUAGES = options.languages
   if (options.presets) env.ORATYPE_EVAL_PRESETS = '1'
+  if (options.context) env.ORATYPE_EVAL_CONTEXT = options.context
   const model = llama
     ? basename(llama)
     : (options['ai-model'] ?? process.env.ORATYPE_EVAL_AI_MODEL ?? 'server')
@@ -243,6 +245,7 @@ function polish(options) {
     langs: list(options.lang) ?? 'all',
     tag: options.tag ?? null,
     languages: options.languages ?? 'app default',
+    context: options.context ?? 'general',
   }
   finish('polish', model, scored, settings, options, outDir)
 }

@@ -20,6 +20,7 @@ export const POLISH_TAGS = [
   'script',
   'dialect',
   'mixed-language',
+  'no-answer',
 ]
 export const SPEECH_TAGS = [
   'clean',

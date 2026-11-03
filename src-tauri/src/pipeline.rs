@@ -2837,21 +2837,19 @@ impl PipelineHandle {
         let polish_outcome = match polish_result {
             Ok(mut response) => {
                 let elapsed = llm_start.elapsed();
-                // A dictated request carried out in another language (llm::output_guard) is
-                // replaced by the transcript, unless streaming already typed it.
+                // A dictated question answered, or a request carried out (in another language or
+                // the same one, llm::output_guard), is replaced by the transcript, unless
+                // streaming already typed it.
                 let streamed = streaming_report
                     .as_ref()
                     .is_some_and(|report| report.has_inserted_text());
-                if plain_dictation
-                    && !streamed
-                    && crate::llm::output_guard::changed_language(
-                        provider_text,
-                        &response.polished_text,
-                    )
-                {
-                    tracing::warn!(
-                        "Polish changed the language of the dictation; pasting the transcript"
-                    );
+                let rejection = (plain_dictation && !streamed)
+                    .then(|| {
+                        crate::llm::output_guard::rejection(provider_text, &response.polished_text)
+                    })
+                    .flatten();
+                if let Some(reason) = rejection {
+                    tracing::warn!("Polish {reason}; pasting the transcript");
                     response.polished_text =
                         crate::llm::output_guard::transcript_as_output(provider_text);
                 }

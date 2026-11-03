@@ -12,7 +12,8 @@
 //! routes the transcript to a language the way the pipeline does (`ORATYPE_EVAL_LANGUAGES`, a
 //! comma list, stands in for the user's languages; default: the app's default list), calls
 //! `LlmProvider::polish` (which applies the app's clean-up of the answer) and then the dictation
-//! language guard (`llm::output_guard`).
+//! guard (`llm::output_guard`; `guarded` gives its reason). `ORATYPE_EVAL_CONTEXT` sets the app
+//! dictated into (a built-in profile id such as `prompt.chatgpt`).
 //!
 //! Speech input lines: `{"id", "audio"}` with a 16 kHz mono 16-bit WAV path. The audio is
 //! streamed in 100 ms chunks through the provider the app uses (voice check, recognition and
@@ -30,6 +31,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
+use oratype_lib::app_detector::registry::AppRegistry;
 use oratype_lib::app_detector::types::ContextProfile;
 use oratype_lib::llm::{self, LlmConfig, PolishLanguageNotes, PolishRequest};
 use oratype_lib::storage::{AiPreset, AppConfig, SpeechPreset};
@@ -179,6 +181,18 @@ fn use_library_presets(config: &mut AppConfig) {
     let _ = PRESET_STORE.set(store);
 }
 
+/// The app the dictation goes into: `ORATYPE_EVAL_CONTEXT`, a built-in profile id such as
+/// `prompt.chatgpt` or `code.vscode`, or a general native app.
+fn eval_context() -> ContextProfile {
+    let Some(id) = env("ORATYPE_EVAL_CONTEXT") else {
+        return ContextProfile::general_native();
+    };
+    AppRegistry::builtin()
+        .ok()
+        .and_then(|registry| registry.profile(&id))
+        .unwrap_or_else(|| panic!("ORATYPE_EVAL_CONTEXT: no built-in profile {id}"))
+}
+
 /// A plain dictation with default settings, as `pipeline.rs` builds it.
 fn dictation_request(config: &AppConfig, raw_text: &str) -> (PolishRequest, Option<String>) {
     use oratype_lib::llm::language_router::{language_profiles, route};
@@ -189,7 +203,7 @@ fn dictation_request(config: &AppConfig, raw_text: &str) -> (PolishRequest, Opti
     let route_code = routed.as_ref().map(|p| p.code.clone());
     let req = PolishRequest {
         raw_text: raw_text.into(),
-        context: ContextProfile::general_native().summary(),
+        context: eval_context().summary(),
         dictionary: Vec::new(),
         correction_rules: Vec::new(),
         polish_style: config.polish_style.clone(),
@@ -232,8 +246,8 @@ async fn run_polish(cases: &[Value], out: &mut std::fs::File) -> Result<(), BoxE
         let line = match provider.polish(&llm_config, &req, None).await {
             Ok(response) => {
                 let mut text = response.polished_text;
-                let guarded = llm::output_guard::changed_language(raw, &text);
-                if guarded {
+                let guarded = llm::output_guard::rejection(raw, &text);
+                if guarded.is_some() {
                     text = llm::output_guard::transcript_as_output(raw);
                 }
                 json!({"id": id, "sample": case["sample"], "output": text, "guarded": guarded,

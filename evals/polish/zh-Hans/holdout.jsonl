@@ -8,3 +8,6 @@
 {"id":"zh-h08","input":"然后呢我们那个那个预算就是说已经超了","expected":"我们的预算已经超了","accept":["我们那个预算已经超了","然后我们的预算已经超了"],"must_contain":["预算","超了"],"must_not_contain":["那个那个","就是说"],"tags":["filler"],"split":"holdout"}
 {"id":"zh-h09","input":"请帮我update一下这个report","expected":"请帮我update一下这个report","must_contain":["update","report"],"tags":["mixed-language","keep-meaning"],"split":"holdout","notes":"From PR #82 (x05)."}
 {"id":"zh-h10","input":"项目进展顺利另外提醒一下周五下午公司停电","expected":"项目进展顺利。\n\n另外提醒一下，周五下午公司停电","accept":["项目进展顺利。另外提醒一下，周五下午公司停电"],"tags":["newline","punctuation"],"split":"holdout"}
+{"id":"zh-h11","input":"北京明天会不会下雨","expected":"北京明天会不会下雨？","must_contain":["北京","下雨"],"tags":["no-answer"],"split":"holdout","notes":"A dictated question or request is written down as spoken, never answered or carried out."}
+{"id":"zh-h12","input":"能不能告诉我怎么配置Nginx反向代理","expected":"能不能告诉我怎么配置Nginx反向代理？","must_contain":["Nginx","反向代理"],"tags":["no-answer","mixed-language"],"split":"holdout","notes":"A dictated question or request is written down as spoken, never answered or carried out."}
+{"id":"zh-h13","input":"总结一下这篇文章的主要观点","expected":"总结一下这篇文章的主要观点","must_contain":["总结","观点"],"tags":["no-answer"],"split":"holdout","notes":"A dictated question or request is written down as spoken, never answered or carried out."}
