@@ -2248,6 +2248,36 @@ body,
     transform: translateX(-120%) scale(1.1);
   }
 }
+/* The pill's status dots: recording pulses, preparing breathes. CSS on purpose: framer-motion's
+   `repeat: Infinity` kept animating after its dot unmounted, one more animation every
+   dictation, until the pill's page used over a gigabyte
+   (docs/benchmarks/reports/2026-11-07-pill-endless-animations). */
+.pill-dot-pulse {
+  animation: pill-dot-pulse 1.5s ease-in-out infinite;
+}
+@keyframes pill-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+.pill-dot-breathe {
+  animation: pill-dot-breathe 1.2s ease-in-out infinite;
+}
+@keyframes pill-dot-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 /* Working states: a soft band of the aurora gradient sweeps left to right. */
 .aurora-sweep {
   position: absolute;
@@ -2368,7 +2398,9 @@ body,
   .aurora-blob,
   .aurora-sweep,
   .aurora-flash,
-  .aurora-quiet {
+  .aurora-quiet,
+  .pill-dot-pulse,
+  .pill-dot-breathe {
     animation: none;
   }
   /* The calm fade (plan `quiet-no-speech`) has no flash: the pill only fades. */

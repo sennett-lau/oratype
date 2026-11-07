@@ -1,11 +1,10 @@
 import { useTranslation } from 'react-i18next'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { abortRecording } from '../../lib/tauri'
 
 export function CapsulePreparing() {
   const { t } = useTranslation()
-  const reduced = useReducedMotion()
 
   const handleCancel = async (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -22,11 +21,7 @@ export function CapsulePreparing() {
 
   return (
     <motion.div className="relative z-10 flex items-center gap-2 h-full pl-3.5 pr-3">
-      <motion.span
-        className="w-2 h-2 rounded-full bg-white/75 flex-shrink-0"
-        animate={reduced ? undefined : { opacity: [0.45, 1, 0.45], scale: [0.92, 1, 0.92] }}
-        transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
-      />
+      <span className="pill-dot-breathe w-2 h-2 rounded-full bg-white/75 flex-shrink-0" />
       <p className="text-[10.5px] text-white/90 leading-[14px] truncate flex-1 min-w-0">
         {t('capsule.preparing')}
       </p>
