@@ -1,12 +1,10 @@
 # The offline gate from CONTRIBUTING.md, on macOS (Apple Silicon).
 #
-# macOS runners are free on public repositories. On a private repository each macOS minute
-# counts ten times against the free Actions quota; to run this only by hand there, delete the
-# `pull_request:` trigger below and keep `workflow_dispatch:`.
+# It runs only by hand (Actions → CI → Run workflow), for example before a release. Pull
+# requests do not start it; run the offline gate locally before merging (CONTRIBUTING.md).
 name: CI
 
 on:
-  pull_request:
   workflow_dispatch:
 
 permissions:

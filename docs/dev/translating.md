@@ -24,7 +24,7 @@ machine translations, so corrections from people who speak the language are very
    it in; you may move it within the sentence.
 4. Leave names as they are: OraType, macOS, Whisper, Ollama, file names, URLs and key names.
 5. Run `npx vitest run src/i18n` and open a pull request. You can also edit the file on GitHub
-   in the browser; CI runs the same check.
+   in the browser; a maintainer runs the same check before merging.
 
 The check (`src/i18n/__tests__/localeParity.test.ts`) fails when a file is not valid JSON, lacks
 a key that `en.json` has, has an extra key, has an empty value, or changes a placeholder.
