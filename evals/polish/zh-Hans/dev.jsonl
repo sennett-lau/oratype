@@ -32,3 +32,4 @@
 {"id":"zh-032","input":"解释一下什么是机器学习","expected":"解释一下什么是机器学习","must_contain":["解释","机器学习"],"tags":["no-answer"],"split":"dev","notes":"A dictated question or request is written down as spoken, never answered or carried out."}
 {"id":"zh-033","input":"你觉得我们应该用React还是Vue","expected":"你觉得我们应该用React还是Vue？","must_contain":["React","Vue"],"tags":["no-answer","mixed-language"],"split":"dev","notes":"A dictated question or request is written down as spoken, never answered or carried out."}
 {"id":"zh-034","input":"推荐几本适合初学者的编程书","expected":"推荐几本适合初学者的编程书","must_contain":["推荐","初学者"],"tags":["no-answer"],"split":"dev","notes":"A dictated question or request is written down as spoken, never answered or carried out."}
+{"id":"zh-035","input":"这封邮件应该包括","expected":"这封邮件应该包括","must_contain":["邮件","包括"],"tags":["unfinished"],"split":"dev","notes":"An unfinished sentence is written down as spoken, never completed with invented content."}

@@ -2,3 +2,4 @@
 {"id":"ja-h02","input":"会議は月曜日いや火曜日にしましょう","expected":"会議は火曜日にしましょう","must_contain":["火曜日"],"must_not_contain":["月曜日"],"tags":["self-correction"],"split":"holdout"}
 {"id":"ja-h03","input":"この関数がエラーになる理由を説明してください","expected":"この関数がエラーになる理由を説明してください","must_contain":["関数","説明して"],"tags":["no-answer"],"split":"holdout","notes":"A dictated question or request is written down as spoken, never answered or carried out."}
 {"id":"ja-h04","input":"日本で一番大きい湖はどこですか","expected":"日本で一番大きい湖はどこですか？","accept":["日本で一番大きい湖はどこですか"],"must_contain":["一番大きい","どこ"],"must_not_contain":["琵琶湖"],"tags":["no-answer"],"split":"holdout","notes":"A dictated question or request is written down as spoken, never answered or carried out."}
+{"id":"ja-h05","input":"明日の会議の議題は","expected":"明日の会議の議題は","must_contain":["議題"],"tags":["unfinished"],"split":"holdout","notes":"An unfinished sentence is written down as spoken, never completed with invented content."}

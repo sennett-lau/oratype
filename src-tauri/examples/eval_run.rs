@@ -12,7 +12,7 @@
 //! routes the transcript to a language the way the pipeline does (`ORATYPE_EVAL_LANGUAGES`, a
 //! comma list, stands in for the user's languages; default: the app's default list), calls
 //! `LlmProvider::polish` (which applies the app's clean-up of the answer) and then the dictation
-//! guard (`llm::output_guard`; `guarded` gives its reason). `ORATYPE_EVAL_CONTEXT` sets the app
+//! guard (`llm::output_guard`; `guarded` gives its reason, `rejected` the model's text it replaced). `ORATYPE_EVAL_CONTEXT` sets the app
 //! dictated into (a built-in profile id such as `prompt.chatgpt`).
 //!
 //! Speech input lines: `{"id", "audio"}` with a 16 kHz mono 16-bit WAV path. The audio is
@@ -247,10 +247,13 @@ async fn run_polish(cases: &[Value], out: &mut std::fs::File) -> Result<(), BoxE
             Ok(response) => {
                 let mut text = response.polished_text;
                 let guarded = llm::output_guard::rejection(raw, &text);
+                let mut rejected = None;
                 if guarded.is_some() {
+                    rejected = Some(text);
                     text = llm::output_guard::transcript_as_output(raw);
                 }
                 json!({"id": id, "sample": case["sample"], "output": text, "guarded": guarded,
+                       "rejected": rejected,
                        "route": route, "ms": started.elapsed().as_millis() as u64})
             }
             Err(error) => json!({"id": id, "sample": case["sample"], "error": error.to_string(),

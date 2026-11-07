@@ -225,7 +225,14 @@ function polish(options) {
         if (a.error)
           return { output: '', pass: false, error: 1, failed: [['request', a.error]], ms: a.ms }
         const score = scorePolish(c, a.output, languages[c.lang])
-        return { output: a.output, ...score, ms: a.ms, guarded: a.guarded, route: a.route }
+        return {
+          output: a.output,
+          ...score,
+          ms: a.ms,
+          guarded: a.guarded,
+          rejected: a.rejected,
+          route: a.route,
+        }
       })
     return {
       id: c.id,

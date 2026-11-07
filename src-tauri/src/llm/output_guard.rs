@@ -127,11 +127,18 @@ fn unit_tokens(text: &str) -> Vec<String> {
     tokens
 }
 
-/// The items of the numbered list lines in `text` ("1. Sunscreen" -> "Sunscreen").
+/// The items of the numbered or bulleted list lines in `text` ("1. Sunscreen" and
+/// "- Sunscreen" -> "Sunscreen").
 fn list_items(text: &str) -> Vec<&str> {
     text.lines()
         .filter_map(|line| {
             let line = line.trim_start();
+            if let Some(item) = ["- ", "* ", "• "]
+                .iter()
+                .find_map(|bullet| line.strip_prefix(bullet))
+            {
+                return Some(item);
+            }
             let digits = line.chars().take_while(char::is_ascii_digit).count();
             let rest = &line[digits..];
             let item = rest
@@ -143,7 +150,7 @@ fn list_items(text: &str) -> Vec<&str> {
         .collect()
 }
 
-/// True when the output has a numbered list (two or more items) made mostly of words the
+/// True when the output has a list (two or more items) made mostly of words the
 /// transcript does not have.
 fn invented_list(transcript: &str, output: &str) -> bool {
     let items = list_items(output);
@@ -234,6 +241,20 @@ mod tests {
             "帮我总结一下今天会议的重点",
             "帮我总结一下今天会议的重点：\n1. 项目进度\n2. 预算情况\n3. 人员安排"
         ));
+        // An unfinished sentence completed with items nobody said.
+        assert!(answered_instead(
+            "the message should include",
+            "The message should include:\n1. a clear statement of purpose\n2. key facts and \
+             figures\n3. a concise call to action"
+        ));
+        assert!(answered_instead(
+            "the message should include",
+            "The message should include:\n- A greeting\n- The purpose\n- A closing"
+        ));
+        assert!(answered_instead(
+            "封email入面要包括",
+            "封 email 入面要包括：\n1. 主題\n2. 收信人\n3. 日期\n4. 正文"
+        ));
         assert_eq!(
             rejection(
                 "what is two plus two",
@@ -281,6 +302,11 @@ mod tests {
                 "我们要做三件事第一检查数据第二发报告第三约老板开会",
                 "我們要做三件事：\n1. 檢查數據\n2. 發報告\n3. 約老闆開會",
             ),
+            (
+                "the agenda covers the budget the hiring plan and the office move",
+                "The agenda covers:\n- The budget\n- The hiring plan\n- The office move",
+            ),
+            ("the message should include", "The message should include:"),
             ("", "anything"),
         ] {
             assert!(

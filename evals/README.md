@@ -74,7 +74,7 @@ One JSON object per line:
 | `expected` | yes | The ideal polished text. |
 | `accept` | no | Other answers that are equally right. |
 | `must_contain` / `must_not_contain` | no | Words that must survive / must be gone (ASCII words match whole words, case-insensitive). |
-| `tags` | yes | From: `filler`, `self-correction`, `numbers`, `punctuation`, `newline`, `list`, `dash`, `keep-meaning`, `script`, `dialect`, `mixed-language`, `no-answer` (a dictated question or request that must be written down, not answered or carried out). |
+| `tags` | yes | From: `filler`, `self-correction`, `numbers`, `punctuation`, `newline`, `list`, `dash`, `keep-meaning`, `script`, `dialect`, `mixed-language`, `no-answer` (a dictated question or request that must be written down, not answered or carried out), `unfinished` (a sentence the user stopped mid-way, which must not be completed). |
 | `split` | yes | `dev` or `holdout`; must match the file. |
 | `max_error` | no | Allowed error rate for this case (default 0.3 words, 0.25 characters). |
 | `notes` | no | Why the case exists, and credit for its source. |
