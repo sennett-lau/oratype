@@ -224,6 +224,11 @@ export function sentenceBreaks(text) {
   return (body.match(/[.?!。？！]+(?=\s|\p{Script=Han}|\p{Lu}|$)/gu) ?? []).length
 }
 
+/** Commas and other clause marks (not the separators inside numbers such as 1,000). */
+export function clauseMarks(text) {
+  return (text.match(/(?<!\d),|,(?!\d)|[，、;；:：]/gu) ?? []).length
+}
+
 /**
  * Checks that depend on the reference text. Returns a list of failed check names with details.
  */
@@ -250,6 +255,15 @@ function referenceChecks(reference, output, caseTags, lang) {
     const want = sentenceBreaks(reference)
     const got = sentenceBreaks(output)
     if (want !== got) failed.push(['punctuation', `want ${want} sentence breaks, got ${got}`])
+  }
+  if (caseTags.includes('over-punctuation')) {
+    const want = sentenceBreaks(reference)
+    const got = sentenceBreaks(output)
+    if (got > want) failed.push(['over-punctuation', `want ${want} sentence breaks, got ${got}`])
+    const wantMarks = clauseMarks(reference)
+    const gotMarks = clauseMarks(output)
+    if (gotMarks > wantMarks)
+      failed.push(['over-punctuation', `want at most ${wantMarks} commas, got ${gotMarks}`])
   }
   if (lang?.dialect) {
     const other = lang.dialect === 'yue' ? MANDARIN_MARKERS : CANTONESE_MARKERS

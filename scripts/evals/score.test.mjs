@@ -95,6 +95,18 @@ describe('polish scoring', () => {
     ])
     expect(scorePolish({ ...c, tags: [] }, 'It was down, we restarted it', EN).pass).toBe(true)
   })
+  it('fails extra commas and sentence breaks for cases tagged over-punctuation', () => {
+    const c = { expected: '我想問下你聽日得唔得閒', tags: ['over-punctuation'] }
+    expect(scorePolish(c, '我想問下你聽日得唔得閒', YUE).pass).toBe(true)
+    expect(scorePolish(c, '我想問下你，聽日得唔得閒', YUE).failed.map(([n]) => n)).toEqual([
+      'over-punctuation',
+    ])
+    const en = { expected: 'Send me the slides and the notes', tags: ['over-punctuation'] }
+    expect(scorePolish(en, 'Send me the slides. And the notes', EN).pass).toBe(false)
+    expect(scorePolish(en, 'Send me the slides and the 1,000 notes', EN).failed).not.toContainEqual(
+      expect.arrayContaining(['over-punctuation']),
+    )
+  })
   it('keeps Cantonese Cantonese and the script of the reference', () => {
     const c = { expected: '佢唔喺屋企，你遲啲再打俾佢啦', tags: ['dialect'] }
     expect(scorePolish(c, '佢唔喺屋企，你遲啲再打俾佢啦', YUE).pass).toBe(true)

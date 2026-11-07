@@ -75,7 +75,10 @@ pub fn polish_messages(req: &PolishRequest) -> Vec<serde_json::Value> {
     }
     messages.push(serde_json::json!({
         "role": "user",
-        "content": format!("<transcription>\n{}\n</transcription>", req.raw_text)
+        "content": format!(
+            "<transcription>\n{}\n</transcription>",
+            super::pause_commas::without_pause_commas(&req.raw_text)
+        )
     }));
     messages
 }

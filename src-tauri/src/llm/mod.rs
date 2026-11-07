@@ -9,6 +9,7 @@ pub mod live_question;
 pub mod models;
 pub mod openai;
 pub mod output_guard;
+pub mod pause_commas;
 pub mod prompt;
 pub mod protocol;
 pub mod question_language;

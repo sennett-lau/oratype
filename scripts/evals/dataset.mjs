@@ -22,6 +22,7 @@ export const POLISH_TAGS = [
   'mixed-language',
   'no-answer',
   'unfinished',
+  'over-punctuation',
 ]
 export const SPEECH_TAGS = [
   'clean',
