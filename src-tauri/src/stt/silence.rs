@@ -119,6 +119,9 @@ pub enum NoSpeechGuard {
     Hallucination,
     /// The speech engine returned no text.
     EmptyTranscript,
+    /// The transcript was only the dictionary words the recognizer was given (plan
+    /// `dictionary-to-speech`).
+    PromptEcho,
 }
 
 impl NoSpeechGuard {
@@ -128,6 +131,7 @@ impl NoSpeechGuard {
             Self::WhisperNoSpeech => "whisper no-speech",
             Self::Hallucination => "hallucination guard",
             Self::EmptyTranscript => "empty transcript",
+            Self::PromptEcho => "dictionary echo",
         }
     }
 }
@@ -154,8 +158,23 @@ pub fn accept_transcript(
     activity: &VoiceActivity,
     text: Option<String>,
 ) -> Option<String> {
+    accept_transcript_given(provider, activity, text, &[])
+}
+
+/// [`accept_transcript`] for a recognizer that was given the dictionary's words: a transcript
+/// that is only those words read back is dropped as well.
+pub fn accept_transcript_given(
+    provider: &str,
+    activity: &VoiceActivity,
+    text: Option<String>,
+    vocabulary: &[String],
+) -> Option<String> {
     let text = text.filter(|t| !t.trim().is_empty());
     match text {
+        Some(text) if super::vocabulary::is_prompt_echo(&text, vocabulary) => {
+            log_decision(provider, activity, Some(NoSpeechGuard::PromptEcho));
+            None
+        }
         Some(text) if super::hallucination::is_likely_hallucination(&text, activity.voiced_ms) => {
             log_decision(provider, activity, Some(NoSpeechGuard::Hallucination));
             None

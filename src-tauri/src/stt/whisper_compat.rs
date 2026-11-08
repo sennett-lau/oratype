@@ -2,7 +2,7 @@ use async_trait::async_trait;
 
 use crate::error::AppError;
 
-use super::silence::{accept_transcript, log_decision, NoSpeechGuard, VoiceActivity};
+use super::silence::{accept_transcript_given, log_decision, NoSpeechGuard, VoiceActivity};
 use super::transcript::{normalize_transcript, split_language_tag};
 use super::{SttConfig, SttProvider, TranscriptEvent};
 
@@ -213,10 +213,11 @@ impl SttProvider for WhisperCompatProvider {
                 self.provider_config.provider_name
             );
         }
-        Ok(accept_transcript(
+        Ok(accept_transcript_given(
             &self.provider_config.provider_name,
             &activity,
             answer.text,
+            &config.vocabulary,
         ))
     }
 
@@ -263,6 +264,10 @@ impl WhisperCompatProvider {
             }
             if verbose {
                 form = form.text("response_format", "verbose_json");
+            }
+            // Plan `dictionary-to-speech`: the words to expect, as OpenAI's `prompt` field.
+            if let Some(prompt) = super::vocabulary::speech_prompt(&config.vocabulary) {
+                form = form.text("prompt", prompt);
             }
 
             let mut request = self
@@ -407,6 +412,7 @@ mod tests {
                 api_key: String::new(),
                 language: None,
                 sample_rate: 16000,
+                ..SttConfig::default()
             })
             .await;
 
@@ -538,6 +544,100 @@ mod tests {
             }
         });
         (url, verbose_hits)
+    }
+
+    /// A transcription server that answers every request with `body` and keeps the last
+    /// request's bytes.
+    async fn recording_server(
+        body: &'static str,
+    ) -> (String, std::sync::Arc<std::sync::Mutex<Vec<u8>>>) {
+        use tokio::io::{AsyncReadExt, AsyncWriteExt};
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let url = format!(
+            "http://{}/v1/audio/transcriptions",
+            listener.local_addr().unwrap()
+        );
+        let seen = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let keep = seen.clone();
+        tokio::spawn(async move {
+            while let Ok((mut socket, _)) = listener.accept().await {
+                let mut request = Vec::new();
+                let mut buf = [0u8; 65536];
+                let header_end = loop {
+                    let Ok(n) = socket.read(&mut buf).await else {
+                        break None;
+                    };
+                    if n == 0 {
+                        break None;
+                    }
+                    request.extend_from_slice(&buf[..n]);
+                    if let Some(at) = request.windows(4).position(|w| w == b"\r\n\r\n") {
+                        break Some(at + 4);
+                    }
+                };
+                let Some(header_end) = header_end else {
+                    continue;
+                };
+                let headers = String::from_utf8_lossy(&request[..header_end]).to_lowercase();
+                let length: usize = headers
+                    .lines()
+                    .find_map(|line| line.strip_prefix("content-length:"))
+                    .and_then(|value| value.trim().parse().ok())
+                    .unwrap_or(0);
+                while request.len() < header_end + length {
+                    match socket.read(&mut buf).await {
+                        Ok(n) if n > 0 => request.extend_from_slice(&buf[..n]),
+                        _ => break,
+                    }
+                }
+                *keep.lock().unwrap() = request;
+                let reply = format!(
+                    "HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+                    body.len()
+                );
+                let _ = socket.write_all(reply.as_bytes()).await;
+            }
+        });
+        (url, seen)
+    }
+
+    async fn transcribe_given(endpoint: &str, vocabulary: &[&str]) -> Option<String> {
+        let mut provider = WhisperCompatProvider::new(WhisperCompatConfig {
+            provider_name: "test-whisper".to_string(),
+            endpoint: endpoint.to_string(),
+            model: "test-model".to_string(),
+            verbose_json: false,
+        });
+        provider
+            .connect(&SttConfig {
+                vocabulary: vocabulary.iter().map(|w| w.to_string()).collect(),
+                ..SttConfig::default()
+            })
+            .await
+            .unwrap();
+        let mut audio = vec![0u8; 16_000];
+        audio.extend(pcm_tone(0.3, 1.0, 16_000));
+        audio.extend(vec![0u8; 16_000]);
+        provider.send_audio(&audio).await.unwrap();
+        provider.disconnect().await.unwrap()
+    }
+
+    /// Plan `dictionary-to-speech`: the dictionary goes as the `prompt` field, only when there
+    /// is one, and a transcript that is only those words is dropped.
+    #[tokio::test]
+    async fn the_dictionary_goes_as_the_prompt_field() {
+        let (url, seen) = recording_server(r#"{"text":"Ask Sennett about OraType."}"#).await;
+        let text = transcribe_given(&url, &["OraType", "Sennett"]).await;
+        assert_eq!(text.as_deref(), Some("Ask Sennett about OraType."));
+        let request = String::from_utf8_lossy(&seen.lock().unwrap()).to_string();
+        assert!(request.contains("name=\"prompt\"\r\n\r\nOraType, Sennett\r\n"));
+
+        transcribe_given(&url, &[]).await;
+        let request = String::from_utf8_lossy(&seen.lock().unwrap()).to_string();
+        assert!(!request.contains("name=\"prompt\""));
+
+        let (echo, _) = recording_server(r#"{"text":"OraType, Sennett."}"#).await;
+        assert_eq!(transcribe_given(&echo, &["OraType", "Sennett"]).await, None);
     }
 
     async fn transcribe_with(endpoint: &str, language: Option<&str>) -> WhisperCompatProvider {

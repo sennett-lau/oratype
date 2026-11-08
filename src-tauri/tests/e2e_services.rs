@@ -120,6 +120,7 @@ async fn transcribe(pcm: &[u8]) -> (Option<String>, Duration) {
         api_key: String::new(),
         language: None,
         sample_rate: SAMPLE_RATE,
+        ..SttConfig::default()
     };
     provider.connect(&stt_config).await.expect("connect");
     for chunk in pcm.chunks(CHUNK_BYTES) {
@@ -483,6 +484,7 @@ async fn transcribe_builtin(model: &std::path::Path, pcm: &[u8]) -> (Option<Stri
         api_key: String::new(),
         language: None,
         sample_rate: SAMPLE_RATE,
+        ..SttConfig::default()
     };
     provider.connect(&stt_config).await.expect("connect");
     for chunk in pcm.chunks(CHUNK_BYTES) {
@@ -765,6 +767,7 @@ async fn transcribe_qwen(
         api_key: key.to_string(),
         language: None,
         sample_rate: SAMPLE_RATE,
+        ..SttConfig::default()
     };
     provider.connect(&stt_config).await.expect("connect");
     for chunk in pcm.chunks(CHUNK_BYTES) {
@@ -1165,6 +1168,7 @@ async fn transcribe_elevenlabs(
         api_key: key.to_string(),
         language: None,
         sample_rate: SAMPLE_RATE,
+        ..SttConfig::default()
     };
     provider.connect(&stt_config).await.expect("connect");
     for chunk in pcm.chunks(CHUNK_BYTES) {

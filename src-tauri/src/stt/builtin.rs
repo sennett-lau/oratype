@@ -13,7 +13,7 @@ use std::time::{Duration, Instant};
 use async_trait::async_trait;
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 
-use super::silence::{accept_transcript, log_decision, NoSpeechGuard, VoiceActivity};
+use super::silence::{accept_transcript_given, log_decision, NoSpeechGuard, VoiceActivity};
 use super::{SttConfig, SttProvider, TranscriptEvent};
 use crate::error::AppError;
 
@@ -54,8 +54,13 @@ fn audio_ctx_for(samples: usize) -> i32 {
 pub const NO_SPEECH_THRESHOLD: f32 = 0.6;
 pub const LOGPROB_THRESHOLD: f32 = -1.0;
 
+/// Whisper reads at most half its 448-token text context as prompt.
+const MAX_PROMPT_TOKENS: usize = 224;
+
 struct Loaded {
     path: PathBuf,
+    /// Kept for its tokenizer (the dictionary prompt); the state shares its model.
+    context: WhisperContext,
     state: whisper_rs::WhisperState,
     /// Token ids from this one up are special (end of text, timestamps, language tags).
     eot: whisper_rs::WhisperTokenId,
@@ -174,6 +179,7 @@ impl LocalWhisper {
         );
         *slot = Some(Loaded {
             path: path.to_path_buf(),
+            context,
             state,
             eot,
             last_used: Instant::now(),
@@ -192,13 +198,15 @@ impl LocalWhisper {
         Ok(took)
     }
 
-    /// Transcribes 16 kHz 16-bit mono PCM (blocking). `language` `None` means auto-detect.
-    /// Greedy decoding. Does not apply the voice check; the provider does.
+    /// Transcribes 16 kHz 16-bit mono PCM (blocking). `language` `None` means auto-detect;
+    /// `prompt` is the dictionary's words to expect (plan `dictionary-to-speech`). Greedy
+    /// decoding. Does not apply the voice check; the provider does.
     pub fn transcribe(
         &'static self,
         path: &Path,
         pcm: &[u8],
         language: Option<&str>,
+        prompt: Option<&str>,
     ) -> Result<Transcription, String> {
         let mut slot = self.lock();
         let load = self.ensure_loaded(&mut slot, path)?;
@@ -214,7 +222,24 @@ impl LocalWhisper {
             samples.resize(MIN_SAMPLES, 0.0);
         }
 
+        // Plan `dictionary-to-speech`: the words go in as prompt tokens, which Whisper reads as
+        // text said just before. Tokenized here rather than with `set_initial_prompt`, which
+        // leaks its string on every run.
+        let prompt_tokens: Vec<std::ffi::c_int> = match prompt {
+            Some(prompt) => loaded
+                .context
+                .tokenize(&format!(" {prompt}."), MAX_PROMPT_TOKENS)
+                .unwrap_or_else(|error| {
+                    tracing::warn!("Built-in speech: could not tokenize the dictionary: {error}");
+                    Vec::new()
+                }),
+            None => Vec::new(),
+        };
+
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
+        if !prompt_tokens.is_empty() {
+            params.set_tokens(&prompt_tokens);
+        }
         let threads = std::thread::available_parallelism()
             .map(|n| n.get().min(8))
             .unwrap_or(4) as i32;
@@ -368,7 +393,7 @@ pub async fn self_test(model_file: &str) -> Result<u32, String> {
     let mut clip = super::silence::pcm_tone(0.2, 0.5, 16_000);
     clip.extend(std::iter::repeat_n(0u8, 32_000));
     let started = Instant::now();
-    tokio::task::spawn_blocking(move || engine().transcribe(&path, &clip, Some("en")))
+    tokio::task::spawn_blocking(move || engine().transcribe(&path, &clip, Some("en"), None))
         .await
         .map_err(|error| load_error_message(&error.to_string()))??;
     Ok(started.elapsed().as_millis() as u32)
@@ -481,9 +506,10 @@ impl SttProvider for BuiltinProvider {
         }
         let path = engine().model_path(&self.config.model_file);
         let language = config.language.clone();
+        let prompt = super::vocabulary::speech_prompt(&config.vocabulary);
         let result = match path {
             Ok(path) => tokio::task::spawn_blocking(move || {
-                engine().transcribe(&path, &pcm, language.as_deref())
+                engine().transcribe(&path, &pcm, language.as_deref(), prompt.as_deref())
             })
             .await
             .map_err(|error| format!("Built-in speech recognition failed: {error}"))
@@ -509,10 +535,11 @@ impl SttProvider for BuiltinProvider {
             );
             return Ok(None);
         }
-        Ok(accept_transcript(
+        Ok(accept_transcript_given(
             &self.config.provider_name,
             &activity,
             Some(transcription.text),
+            &config.vocabulary,
         ))
     }
 
@@ -602,7 +629,9 @@ mod tests {
         let path = dir.join("ggml-broken.bin");
         std::fs::write(&path, b"not a model").unwrap();
 
-        let error = engine.transcribe(&path, &[0u8; 3200], None).unwrap_err();
+        let error = engine
+            .transcribe(&path, &[0u8; 3200], None, None)
+            .unwrap_err();
         assert!(
             error.starts_with("Could not load the speech model:"),
             "{error}"

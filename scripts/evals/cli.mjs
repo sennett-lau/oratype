@@ -9,6 +9,7 @@
 // Options: --lang en,yue  --split dev|holdout|all  --tag numbers  --id en-011  --n 3
 //   --llama-model <gguf>  (built-in AI)    --ai-url <url> --ai-model <name>  (any OpenAI-compatible)
 //   --whisper-model <ggml .bin> (built-in speech)  --speech-url <url> --speech-model <name>
+//   --dictionary off  (speech: do not give clips their dictionary words)
 //   --languages en,zh-Hant-HK  (the user's language list for polish routing; default: the app's)
 //   --presets  (those languages use their presets from presets/languages/, as downloaded ones)
 //   --context prompt.chatgpt  (the app dictated into, a built-in profile id; default: a general app)
@@ -272,11 +273,19 @@ function speech(options) {
   const model = whisper
     ? basename(whisper)
     : (options['speech-model'] ?? process.env.ORATYPE_EVAL_SPEECH_MODEL ?? 'server')
+  // Plan `dictionary-to-speech`: `--dictionary off` measures the recognizer without the words.
+  const dictionary = (options.dictionary ?? 'on') !== 'off'
   const outDir = outputDir('speech', options)
-  console.log(`evals: ${clips.length} speech clip(s) with ${model}`)
+  console.log(
+    `evals: ${clips.length} speech clip(s) with ${model}${dictionary ? '' : ', no dictionary'}`,
+  )
   const answers = runDriver(
     'speech',
-    clips.map((c) => ({ id: c.id, audio: c.audio_path })),
+    clips.map((c) => ({
+      id: c.id,
+      audio: c.audio_path,
+      dictionary: dictionary ? (c.dictionary ?? []) : [],
+    })),
     env,
     outDir,
   )
@@ -301,7 +310,7 @@ function speech(options) {
     'speech',
     model,
     scored,
-    { split, n: 1, langs: list(options.lang) ?? 'all' },
+    { split, n: 1, langs: list(options.lang) ?? 'all', dictionary: dictionary ? 'on' : 'off' },
     options,
     outDir,
   )

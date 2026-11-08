@@ -912,11 +912,16 @@ fn should_use_byok(config: &storage::AppConfig) -> bool {
     !preset.base_url.trim().is_empty() && !preset.model.trim().is_empty()
 }
 
-fn build_ask_stt_config(config: &storage::AppConfig, api_key: String) -> SttConfig {
+fn build_ask_stt_config(
+    config: &storage::AppConfig,
+    api_key: String,
+    vocabulary: Vec<String>,
+) -> SttConfig {
     SttConfig {
         api_key,
         language: config.speech_language().map(str::to_string),
         sample_rate: 16000,
+        vocabulary,
     }
 }
 
@@ -1495,7 +1500,12 @@ pub(crate) async fn start_reserved_ask_dictation(
         let stt_api_key =
             resolve_stt_config_secret(&config, &SystemCredentialVault).map_err(|e| e.to_string())?;
         let operation_id = synthetic_operation_id();
-        let stt_config = build_ask_stt_config(&config, stt_api_key);
+        // Plan `dictionary-to-speech`: names in a spoken question come out as the user writes them.
+        let vocabulary = match app.try_state::<storage::DictionaryStore>() {
+            Some(dictionary) => dictionary.words().await,
+            None => Vec::new(),
+        };
+        let stt_config = build_ask_stt_config(&config, stt_api_key, vocabulary);
         let mut provider =
             stt::provider_for_preset(config.active_speech_preset(), Some(client.inner().clone()))?;
         let upload_probe = crate::timing::UploadProbe::default();
@@ -2757,12 +2767,14 @@ mod tests {
     fn ask_dictation_stt_config_uses_key_and_preset_language() {
         let mut config = storage::AppConfig::default();
 
-        let stt_config = build_ask_stt_config(&config, "sk-test".to_string());
+        let stt_config =
+            build_ask_stt_config(&config, "sk-test".to_string(), vec!["OraType".into()]);
         assert_eq!(stt_config.api_key, "sk-test");
         assert_eq!(stt_config.language, None);
+        assert_eq!(stt_config.vocabulary, vec!["OraType".to_string()]);
 
         config.speech_presets[0].language = "en".to_string();
-        let stt_config = build_ask_stt_config(&config, String::new());
+        let stt_config = build_ask_stt_config(&config, String::new(), Vec::new());
         assert_eq!(stt_config.language.as_deref(), Some("en"));
     }
 

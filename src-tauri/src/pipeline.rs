@@ -1757,10 +1757,17 @@ impl PipelineHandle {
             };
 
         // Prepare STT configuration before starting the shared audio/STT readiness phase.
+        // Plan `dictionary-to-speech`: the dictionary goes to the recognizer as well as polish.
         let stt_config = SttConfig {
             api_key: stt_api_key,
             language: config_data.speech_language().map(str::to_string),
             sample_rate: 16000,
+            vocabulary: self
+                .preloaded_dictionary
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .clone()
+                .unwrap_or_default(),
         };
 
         // Plan `speed-board`: the provider notes when its upload starts and ends, for the Speed

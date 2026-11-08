@@ -10,6 +10,7 @@ import {
   chineseScript,
   contains,
   errorRate,
+  hasTerm,
   numbers,
   scorePolish,
   scoreSpeech,
@@ -128,6 +129,35 @@ describe('speech scoring', () => {
     expect(score.error).toBe(0)
     expect(score.raw_error).toBeGreaterThan(0)
     expect(score.failed.map(([n]) => n)).toEqual(['script'])
+  })
+})
+
+describe('speech dictionary checks', () => {
+  const clip = {
+    text: 'Please ask Niamh to update OraType.',
+    terms: ['Niamh', 'OraType'],
+    dictionary: ['Niamh', 'OraType'],
+  }
+  it('needs each term spelled exactly', () => {
+    expect(scoreSpeech(clip, { output: 'Please ask Niamh to update OraType.' }, EN).pass).toBe(true)
+    const wrong = scoreSpeech(clip, { output: 'Please ask Niamh to update Oratype.' }, EN)
+    expect(wrong.pass).toBe(false)
+    expect(wrong.failed).toContainEqual(['terms', 'OraType'])
+  })
+  it('fails a dictionary word that was not said', () => {
+    const negative = {
+      text: 'Please sign here or type your name.',
+      dictionary: ['OraType'],
+      must_not_contain: ['OraType'],
+    }
+    const forced = scoreSpeech(negative, { output: 'Please sign here OraType your name.' }, EN)
+    expect(forced.failed).toContainEqual(['must_not_contain', 'OraType'])
+    expect(forced.pass).toBe(false)
+  })
+  it('matches ASCII terms as whole words and Chinese terms anywhere', () => {
+    expect(hasTerm('OraTypes', 'OraType')).toBe(false)
+    expect(hasTerm('同OraType講', 'OraType')).toBe(true)
+    expect(hasTerm('同葉梓聰開會', '葉梓聰')).toBe(true)
   })
 })
 

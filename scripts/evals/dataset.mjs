@@ -3,7 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { scorePolish } from './score.mjs'
+import { contains, scorePolish } from './score.mjs'
 
 export const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 export const EVALS = join(REPO, 'evals')
@@ -32,6 +32,7 @@ export const SPEECH_TAGS = [
   'mixed-language',
   'noisy',
   'accent',
+  'dictionary',
 ]
 export const SPLITS = ['dev', 'holdout']
 export const LICENCES = ['CC0-1.0', 'CC-BY-4.0']
@@ -43,7 +44,16 @@ const POLISH_KEYS = {
 }
 const SPEECH_KEYS = {
   required: ['id', 'audio', 'text', 'tags', 'source', 'licence', 'speaker', 'split'],
-  optional: ['accept', 'notes', 'max_error', 'say_voice', 'say_text'],
+  optional: [
+    'accept',
+    'notes',
+    'max_error',
+    'say_voice',
+    'say_text',
+    'dictionary',
+    'terms',
+    'must_not_contain',
+  ],
 }
 
 export function loadLanguages(root = EVALS) {
@@ -235,6 +245,24 @@ export function validate(root = EVALS) {
         errors.push(`${where}: source must be one of ${SPEECH_SOURCES.join(', ')}`)
       for (const tag of row.tags ?? []) {
         if (!SPEECH_TAGS.includes(tag)) errors.push(`${where}: unknown tag "${tag}"`)
+      }
+      // Plan `dictionary-to-speech`: terms are dictionary words the clip says; must_not_contain
+      // are dictionary words it does not say, which the recognizer must not force in.
+      for (const key of ['dictionary', 'terms', 'must_not_contain']) {
+        if (row[key] !== undefined && !(isStringList(row[key]) && row[key].length))
+          errors.push(`${where}: ${key} must be a non-empty list of strings`)
+      }
+      if ((row.terms || row.must_not_contain) && !row.dictionary)
+        errors.push(`${where}: terms and must_not_contain need a dictionary`)
+      if (row.dictionary && !row.tags?.includes('dictionary'))
+        errors.push(`${where}: a clip with a dictionary needs the "dictionary" tag`)
+      for (const term of isStringList(row.terms) ? row.terms : []) {
+        if (typeof row.text === 'string' && !row.text.includes(term))
+          errors.push(`${where}: term "${term}" is not in text`)
+      }
+      for (const word of isStringList(row.must_not_contain) ? row.must_not_contain : []) {
+        if (typeof row.text === 'string' && contains(row.text, word))
+          errors.push(`${where}: must_not_contain "${word}" is in text`)
       }
       if (
         typeof row.audio !== 'string' ||

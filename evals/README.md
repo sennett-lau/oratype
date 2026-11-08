@@ -29,6 +29,7 @@ Options for `polish` and `speech`:
 | `--languages en,zh-Hant-HK` | The user's language list for polish routing (default: the app's default list). |
 | `--baseline <file>\|none` | Compare with this baseline; default `evals/baselines/<kind>-<model>.json` if it exists. |
 | `--save-baseline` | Write the results into that baseline file (only when intended, see AGENTS.md). |
+| `--dictionary off` | Speech: do not give clips their `dictionary` words, to measure what the words change. |
 | `--out <dir>` | Where results go; default `output/evals/<time>-<kind>/` (git-ignored). |
 
 The built-in AI needs `src-tauri/binaries/llama-server-<triple>` (`bash scripts/build-llama-server.sh`)
@@ -102,13 +103,23 @@ a case cannot demand something its own answer fails.
 
 `manifest.jsonl`, one clip per line: `id`, `audio` (path under `audio/`), `text` (the exact
 words), optional `accept`, `tags` (`clean`, `numbers`, `names`, `dialect`, `mixed-language`,
-`noisy`, `accent`), `source` (`recording`, `synthetic-say` or `external`), `licence`, `speaker`,
+`noisy`, `accent`, `dictionary`), `source` (`recording`, `synthetic-say` or `external`), `licence`, `speaker`,
 `split`, and for synthetic clips `say_voice` (and `say_text` when the spoken text differs).
+
+Dictionary clips (plan
+[`dictionary-to-speech`](../docs/plans/2026-11-08-dictionary-to-speech/index.md), tag
+`dictionary`) also have `dictionary`, the user's words that the recognizer is given, and one
+or both of:
+
+- `terms`: dictionary words the clip says. Each must appear spelled exactly as written, case
+  included (ASCII terms as whole words).
+- `must_not_contain`: dictionary words the clip does not say, usually because a sound-alike is
+  said ("or type" for OraType). The recognizer must not force them in.
 
 The score is the error rate after converting the answer into the reference's script (Whisper
 often writes Cantonese in the wrong script; that is reported as a separate `script` check, and
 the raw error is kept as `raw_error`). A clip passes at 15% error or less with no Mandarin words in
-a Cantonese answer.
+a Cantonese answer, and with its `terms` and `must_not_contain` checks met.
 
 Synthetic clips are made with macOS `say` and are not committed; they are a smoke test, far
 cleaner than real speech. **Real recordings are preferred**: short (under 15 s), 16 kHz mono

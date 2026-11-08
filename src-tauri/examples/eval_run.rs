@@ -15,7 +15,8 @@
 //! guard (`llm::output_guard`; `guarded` gives its reason, `rejected` the model's text it replaced). `ORATYPE_EVAL_CONTEXT` sets the app
 //! dictated into (a built-in profile id such as `prompt.chatgpt`).
 //!
-//! Speech input lines: `{"id", "audio"}` with a 16 kHz mono 16-bit WAV path. The audio is
+//! Speech input lines: `{"id", "audio", "dictionary"}` with a 16 kHz mono 16-bit WAV path and
+//! the personal dictionary's words (optional; plan `dictionary-to-speech`). The audio is
 //! streamed in 100 ms chunks through the provider the app uses (voice check, recognition and
 //! hallucination filters included).
 //!
@@ -323,12 +324,21 @@ async fn run_speech(clips: &[Value], out: &mut std::fs::File) -> Result<(), BoxE
             ..Default::default()
         },
     };
-    let stt_config = SttConfig {
-        api_key: String::new(),
-        language: None,
-        sample_rate: SAMPLE_RATE,
-    };
     for (done, clip) in clips.iter().enumerate() {
+        let stt_config = SttConfig {
+            api_key: String::new(),
+            language: None,
+            sample_rate: SAMPLE_RATE,
+            vocabulary: clip["dictionary"]
+                .as_array()
+                .map(|words| {
+                    words
+                        .iter()
+                        .filter_map(|w| w.as_str().map(str::to_string))
+                        .collect()
+                })
+                .unwrap_or_default(),
+        };
         let id = clip["id"].as_str().unwrap_or_default();
         let audio = clip["audio"].as_str().unwrap_or_default();
         let pcm =

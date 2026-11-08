@@ -336,6 +336,15 @@ export const DEFAULT_SPEECH_MAX_ERROR = { word: 0.15, char: 0.15 }
  * is taken on the copy in the reference's script (`error`), and on the raw text (`raw_error`), so
  * a wrong script is reported apart from wrong words.
  */
+const SPEECH_FAILS = ['error', 'dialect', 'terms', 'must_not_contain']
+
+/** `term` in `text` with its exact spelling and case; ASCII terms as whole words. */
+export function hasTerm(text, term) {
+  if (!/^[\x20-\x7e]+$/.test(term)) return text.includes(term)
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`(^|[^A-Za-z0-9])${escaped}(?=$|[^A-Za-z0-9])`).test(text)
+}
+
 export function scoreSpeech(clip, answer, lang) {
   const unit = lang?.unit ?? 'word'
   const maxError = clip.max_error ?? DEFAULT_SPEECH_MAX_ERROR[unit]
@@ -360,7 +369,15 @@ export function scoreSpeech(clip, answer, lang) {
       const leaked = MANDARIN_MARKERS.filter((m) => converted.includes(m) && !reference.includes(m))
       if (leaked.length) failed.push(['dialect', `Mandarin words ${leaked.join(' ')}`])
     }
-    const pass = !failed.some(([name]) => name === 'error' || name === 'dialect')
+    // Plan `dictionary-to-speech`: a dictionary word said must come out spelled exactly as the
+    // dictionary has it (case too); one not said must not appear.
+    for (const term of clip.terms ?? []) {
+      if (!hasTerm(converted, term)) failed.push(['terms', term])
+    }
+    for (const word of clip.must_not_contain ?? []) {
+      if (contains(converted, word)) failed.push(['must_not_contain', word])
+    }
+    const pass = !failed.some(([name]) => SPEECH_FAILS.includes(name))
     const candidate = { pass, error, raw_error: rawError, reference, failed }
     if (
       !best ||
