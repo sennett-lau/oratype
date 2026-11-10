@@ -147,6 +147,7 @@ fn dictation_request(raw_text: &str) -> PolishRequest {
         translation_instructions: String::new(),
         polish_language_notes: None,
         selected_text: None,
+        text_before_cursor: None,
         voice_intent: VoiceIntent::from_parts(
             VoiceIntentKind::DictateInsert,
             VoiceOutputPlacement::InsertAtCursor,

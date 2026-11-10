@@ -466,6 +466,8 @@
     "tryAsk": "Essayer Demander",
     "selectedTextContext": "Utiliser le texte sélectionné en dictée",
     "selectedTextContextDesc": "La dictée lit la sélection et l’envoie à l’IA comme contexte, pour que vous puissiez dire « raccourcis ceci » dessus. Utilise plus de jetons d’IA. Demander et Traduire lisent toujours la sélection.",
+    "cursorContext": "Utiliser le texte avant le curseur",
+    "cursorContextDesc": "La dictée lit jusqu’à environ 300 caractères avant le curseur dans le champ et les envoie à l’IA avec vos mots, pour qu’ils prolongent ce qui est déjà écrit : majuscules, ponctuation, langue. Jamais dans les champs de mot de passe.",
     "targetLanguage": "Traduire en",
     "aboutDescription": "Outil de saisie vocale par IA open source. Parlez pour écrire — transformez votre voix en texte soigné en temps réel.",
     "openSource": "Open source",

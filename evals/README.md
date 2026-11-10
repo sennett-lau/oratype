@@ -29,6 +29,7 @@ Options for `polish` and `speech`:
 | `--languages en,zh-Hant-HK` | The user's language list for polish routing (default: the app's default list). |
 | `--baseline <file>\|none` | Compare with this baseline; default `evals/baselines/<kind>-<model>.json` if it exists. |
 | `--save-baseline` | Write the results into that baseline file (only when intended, see AGENTS.md). |
+| `--cursor-context off` | Polish: do not give cases their `before_cursor` text. |
 | `--dictionary off` | Speech: do not give clips their `dictionary` words, to measure what the words change. |
 | `--out <dir>` | Where results go; default `output/evals/<time>-<kind>/` (git-ignored). |
 
@@ -75,9 +76,10 @@ One JSON object per line:
 | `expected` | yes | The ideal polished text. |
 | `accept` | no | Other answers that are equally right. |
 | `must_contain` / `must_not_contain` | no | Words that must survive / must be gone (ASCII words match whole words, case-insensitive). |
-| `tags` | yes | From: `filler`, `self-correction`, `numbers`, `punctuation`, `newline`, `list`, `dash`, `keep-meaning`, `script`, `dialect`, `mixed-language`, `no-answer` (a dictated question or request that must be written down, not answered or carried out), `unfinished` (a sentence the user stopped mid-way, which must not be completed), `over-punctuation` (one flowing thought: no more commas or sentence breaks than the reference, also when the transcript has pause commas). |
+| `tags` | yes | From: `filler`, `self-correction`, `numbers`, `punctuation`, `newline`, `list`, `dash`, `keep-meaning`, `script`, `dialect`, `mixed-language`, `no-answer` (a dictated question or request that must be written down, not answered or carried out), `unfinished` (a sentence the user stopped mid-way, which must not be completed), `over-punctuation` (one flowing thought: no more commas or sentence breaks than the reference, also when the transcript has pause commas), `cursor-context` (a case with `before_cursor`). |
 | `split` | yes | `dev` or `holdout`; must match the file. |
 | `max_error` | no | Allowed error rate for this case (default 0.3 words, 0.25 characters). |
+| `before_cursor` | no | The field's text before the cursor, given to polish as context (plan [`cursor-context`](../docs/plans/2026-11-08-cursor-context/index.md)); needs the `cursor-context` tag. |
 | `notes` | no | Why the case exists, and credit for its source. |
 
 A sample **passes** when, for at least one of `expected` and `accept`, all checks pass:
@@ -93,6 +95,8 @@ A sample **passes** when, for at least one of `expected` and `accept`, all check
 - **over-punctuation** (cases tagged `over-punctuation` only): no more sentence breaks and no more
   commas (also 、 ; :) than the reference;
 - **script** (Chinese): no characters of the other script (Simplified vs Traditional);
+- **continuation** (cases tagged `cursor-context` only): the first letter has the reference's
+  case, so a dictation continues the field's sentence or starts a new one as it should;
 - **dialect** (Chinese): no Mandarin-only words in Cantonese, no Cantonese words in Mandarin,
   unless the reference has them.
 

@@ -466,6 +466,8 @@
     "tryAsk": "Probar Preguntar",
     "selectedTextContext": "Usar el texto seleccionado al dictar",
     "selectedTextContextDesc": "Dictar lee la selección y la envía a la IA como contexto, para que puedas decir «hazlo más corto» sobre ella. Usa más tokens de IA. Preguntar y Traducir siempre leen la selección.",
+    "cursorContext": "Usar el texto antes del cursor",
+    "cursorContextDesc": "Dictar lee hasta unos 300 caracteres antes del cursor en el campo y los envía a la IA con tus palabras, para que continúen lo que ya hay: mayúsculas, puntuación, idioma. Nunca en campos de contraseña.",
     "targetLanguage": "Traducir a",
     "aboutDescription": "Herramienta de código abierto de dictado por voz con IA. Habla para escribir: convierte tu voz en texto pulido en tiempo real.",
     "openSource": "Código abierto",

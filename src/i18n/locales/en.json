@@ -466,6 +466,8 @@
     "tryAsk": "Try Ask",
     "selectedTextContext": "Use selected text when dictating",
     "selectedTextContextDesc": "Dictate reads the highlight and sends it to the AI as context, so you can say “make this shorter” over it. Uses more AI tokens. Ask and Translate always read the highlight.",
+    "cursorContext": "Use text before the cursor",
+    "cursorContextDesc": "Dictate reads up to about 300 characters before the cursor in the field and sends them to the AI with your words, so they continue what is there: capital letters, punctuation, language. Never from password fields.",
     "targetLanguage": "Translate to",
     "aboutDescription": "Open-source AI voice input tool. Speak to write — turn your voice into polished text in real time.",
     "openSource": "Open Source",

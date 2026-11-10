@@ -232,6 +232,9 @@ export function clauseMarks(text) {
 /**
  * Checks that depend on the reference text. Returns a list of failed check names with details.
  */
+const firstLetter = (text) => text.match(/^[\s"'“‘(]*([A-Za-z])/)?.[1] ?? null
+const isUpper = (letter) => letter === letter.toUpperCase()
+
 function referenceChecks(reference, output, caseTags, lang) {
   const failed = []
   const refNumbers = numbers(reference).join(' ')
@@ -264,6 +267,17 @@ function referenceChecks(reference, output, caseTags, lang) {
     const gotMarks = clauseMarks(output)
     if (gotMarks > wantMarks)
       failed.push(['over-punctuation', `want at most ${wantMarks} commas, got ${gotMarks}`])
+  }
+  // Plan `cursor-context`: the dictation continues the field's text, so its first letter has the
+  // reference's case (no capital in the middle of a sentence, a capital after one ends).
+  if (caseTags.includes('cursor-context')) {
+    const want = firstLetter(reference)
+    const got = firstLetter(output)
+    if (want && got && isUpper(want) !== isUpper(got))
+      failed.push([
+        'continuation',
+        `starts with "${got}", want ${isUpper(want) ? 'upper' : 'lower'} case`,
+      ])
   }
   if (lang?.dialect) {
     const other = lang.dialect === 'yue' ? MANDARIN_MARKERS : CANTONESE_MARKERS

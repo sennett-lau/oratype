@@ -23,6 +23,7 @@ export const POLISH_TAGS = [
   'no-answer',
   'unfinished',
   'over-punctuation',
+  'cursor-context',
 ]
 export const SPEECH_TAGS = [
   'clean',
@@ -40,7 +41,7 @@ export const SPEECH_SOURCES = ['synthetic-say', 'recording', 'external']
 const ID = /^[a-z0-9]+(-[a-z0-9]+)*$/
 const POLISH_KEYS = {
   required: ['id', 'input', 'expected', 'tags', 'split'],
-  optional: ['accept', 'must_contain', 'must_not_contain', 'notes', 'max_error'],
+  optional: ['accept', 'must_contain', 'must_not_contain', 'notes', 'max_error', 'before_cursor'],
 }
 const SPEECH_KEYS = {
   required: ['id', 'audio', 'text', 'tags', 'source', 'licence', 'speaker', 'split'],
@@ -204,6 +205,12 @@ export function validate(root = EVALS) {
           if (row[key] !== undefined && !isStringList(row[key]))
             errors.push(`${where}: "${key}" must be a list of text`)
         }
+        // Plan `cursor-context`: the field's text before the cursor, given to polish as context.
+        const hasBefore = typeof row.before_cursor === 'string' && row.before_cursor.trim() !== ''
+        if (row.before_cursor !== undefined && !hasBefore)
+          errors.push(`${where}: before_cursor must be text`)
+        if (hasBefore !== Boolean(row.tags?.includes('cursor-context')))
+          errors.push(`${where}: before_cursor and the "cursor-context" tag go together`)
         if (row.max_error !== undefined && !(row.max_error > 0 && row.max_error <= 1)) {
           errors.push(`${where}: max_error must be in (0, 1]`)
         }

@@ -4,6 +4,7 @@ pub mod audio;
 pub mod commands;
 pub mod copy_pill;
 pub mod credentials;
+pub mod cursor_context;
 pub mod dictionary_io;
 pub mod error;
 pub mod hands_free;

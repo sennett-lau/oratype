@@ -132,6 +132,24 @@ describe('speech scoring', () => {
   })
 })
 
+describe('cursor context', () => {
+  const c = {
+    input: 'and then I sent it',
+    expected: 'and then I sent it.',
+    tags: ['cursor-context'],
+    before_cursor: 'I finished it, ',
+  }
+  it('wants the first letter in the reference case', () => {
+    expect(scorePolish(c, 'and then I sent it.', EN).pass).toBe(true)
+    const capital = scorePolish(c, 'And then I sent it.', EN)
+    expect(capital.pass).toBe(false)
+    expect(capital.failed.map(([n]) => n)).toContain('continuation')
+  })
+  it('ignores case on cases without the tag', () => {
+    expect(scorePolish({ ...c, tags: ['filler'] }, 'And then I sent it.', EN).pass).toBe(true)
+  })
+})
+
 describe('speech dictionary checks', () => {
   const clip = {
     text: 'Please ask Niamh to update OraType.',

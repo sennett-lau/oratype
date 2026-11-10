@@ -444,6 +444,8 @@ export interface AppConfig {
   windows_sendinput_newline_mode: WindowsSendInputNewlineMode
   streaming_insert_enabled: boolean
   selected_text_enabled: boolean
+  /** Plan `cursor-context`: Dictate sends the text before the cursor to polish. */
+  cursor_context_enabled: boolean
   theme: Theme
   auto_start: boolean
   close_to_tray: boolean
@@ -1323,6 +1325,7 @@ const defaultConfig: AppConfig = {
   windows_sendinput_newline_mode: 'enter',
   streaming_insert_enabled: false,
   selected_text_enabled: false,
+  cursor_context_enabled: false,
   theme: 'system',
   auto_start: true,
   close_to_tray: true,

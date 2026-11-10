@@ -460,7 +460,21 @@ fn polish_request(
         polish_language_notes: language.polish_notes,
         target_lang,
         selected_text,
+        text_before_cursor: None,
         voice_intent: voice_intent.clone(),
+    }
+}
+
+/// Plan `cursor-context`: the read started at recording start, or `None` when there was none, it
+/// failed, or it is still waiting on a hung app after the recording (polish does not wait more
+/// than half a second for it).
+async fn take_text_before_cursor(
+    read: Option<tauri::async_runtime::JoinHandle<Option<String>>>,
+) -> Option<String> {
+    let read = read?;
+    match tokio::time::timeout(std::time::Duration::from_millis(500), read).await {
+        Ok(Ok(text)) => text,
+        _ => None,
     }
 }
 
@@ -1105,6 +1119,9 @@ pub struct PipelineHandle {
     preloaded_correction_rules: Arc<Mutex<Option<Vec<llm::CorrectionRule>>>>,
     preloaded_selected_text: Arc<Mutex<Option<String>>>,
     preloaded_voice_mode: Arc<Mutex<Option<crate::voice_intent::VoiceMode>>>,
+    /// Plan `cursor-context`: the read of the text before the cursor, started when a Dictate
+    /// recording starts with "Use text before the cursor" on; taken by its polish.
+    text_before_cursor: Arc<Mutex<Option<tauri::async_runtime::JoinHandle<Option<String>>>>>,
     recording_start: Arc<Mutex<Option<std::time::Instant>>>,
     /// Plan `speed-board`: where the current run's speech provider notes its upload moments.
     stt_upload_probe: Arc<Mutex<Option<crate::timing::UploadProbe>>>,
@@ -1398,6 +1415,7 @@ impl PipelineHandle {
             preloaded_correction_rules: Arc::new(Mutex::new(None)),
             preloaded_selected_text: Arc::new(Mutex::new(None)),
             preloaded_voice_mode: Arc::new(Mutex::new(None)),
+            text_before_cursor: Arc::new(Mutex::new(None)),
             recording_start: Arc::new(Mutex::new(None)),
             stt_upload_probe: Arc::new(Mutex::new(None)),
             active_translation_operation: Arc::new(Mutex::new(None)),
@@ -1657,6 +1675,15 @@ impl PipelineHandle {
             .preloaded_voice_mode
             .lock()
             .unwrap_or_else(|e| e.into_inner()) = Some(voice_mode);
+        // Plan `cursor-context`: read while the field still has focus and the user speaks, off
+        // the async thread (each Accessibility message can wait up to 150 ms).
+        *self
+            .text_before_cursor
+            .lock()
+            .unwrap_or_else(|e| e.into_inner()) = (config_data.cursor_context_enabled
+            && config_data.polish_enabled
+            && voice_mode == crate::voice_intent::VoiceMode::Dictate)
+            .then(|| tauri::async_runtime::spawn_blocking(crate::cursor_context::capture));
         *self
             .preloaded_config
             .lock()
@@ -2809,7 +2836,7 @@ impl PipelineHandle {
             .and_then(|notes| {
                 llm::builtin::slot_for_language(config, library_store.as_ref(), &notes.code)
             });
-        let req = polish_request(
+        let mut req = polish_request(
             config,
             app_ctx.summary(),
             mapped_scene_prompt,
@@ -2823,6 +2850,15 @@ impl PipelineHandle {
             &voice_intent,
             hands_free_name,
         );
+        // Plan `cursor-context`: only a plain dictation continues the field's text.
+        let read = self
+            .text_before_cursor
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .take();
+        if plain_dictation {
+            req.text_before_cursor = take_text_before_cursor(read).await;
+        }
 
         let polish_result = match llm_config {
             Ok(mut llm_config) => {
@@ -2859,6 +2895,12 @@ impl PipelineHandle {
                     tracing::warn!("Polish {reason}; pasting the transcript");
                     response.polished_text =
                         crate::llm::output_guard::transcript_as_output(provider_text);
+                }
+                // Plan `cursor-context`: fitted after the field's text (no copy of it, sentence case, one
+                // space where they meet).
+                if let (Some(before), false) = (req.text_before_cursor.as_deref(), streamed) {
+                    response.polished_text =
+                        crate::cursor_context::fit(before, &response.polished_text);
                 }
                 if let Some(report) = streaming_report.as_ref() {
                     if report.has_inserted_text() {
@@ -4690,6 +4732,33 @@ mod tests {
         (format!("http://127.0.0.1:{port}/v1"), bodies)
     }
 
+    /// Plan `cursor-context`: the field's text goes in its own message before the transcript;
+    /// the system prompt, which the built-in AI keeps read, stays the same. A selection wins.
+    #[test]
+    fn text_before_the_cursor_is_its_own_message() {
+        let (config, store) = config_with_cantonese_preset();
+        let (_, plain) = warm_up_requests(&config, Some(&store), &[], &[])
+            .into_iter()
+            .next()
+            .unwrap();
+        let mut with_context = plain.clone();
+        with_context.text_before_cursor = Some("Hi Sarah,\n\n".to_string());
+        let before = llm::openai::polish_messages(&plain);
+        let after = llm::openai::polish_messages(&with_context);
+        assert_eq!(after.len(), before.len() + 1);
+        assert_eq!(after[0], before[0]);
+        let context = after[after.len() - 2]["content"].as_str().unwrap();
+        assert!(context.starts_with("<text_before_cursor>\nHi Sarah,"));
+        assert_eq!(after.last(), before.last());
+
+        with_context.selected_text = Some("old text".to_string());
+        let selected = llm::openai::polish_messages(&with_context);
+        assert!(selected.iter().all(|m| !m["content"]
+            .as_str()
+            .unwrap()
+            .contains("text_before_cursor")));
+    }
+
     #[tokio::test]
     async fn the_warm_up_sends_each_language_a_one_token_dictation_to_its_slot() {
         let (mut config, store) = config_with_cantonese_preset();
@@ -5016,6 +5085,7 @@ mod tests {
             translation_instructions: parts.translation_instructions,
             polish_language_notes: parts.polish_notes,
             selected_text: None,
+            text_before_cursor: None,
             voice_intent: crate::voice_intent::VoiceIntent::from_parts(
                 crate::voice_intent::VoiceIntentKind::DictateInsert,
                 crate::voice_intent::VoiceOutputPlacement::InsertAtCursor,

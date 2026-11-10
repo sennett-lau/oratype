@@ -282,6 +282,17 @@ export function LlmPane() {
           </Row>
 
           {config.polish_enabled && (
+            <Row label={t('settings.cursorContext')} help={t('settings.cursorContextDesc')}>
+              <Toggle
+                checked={config.cursor_context_enabled}
+                onChange={(checked) => updateConfig({ cursor_context_enabled: checked })}
+                label={t('settings.cursorContext')}
+                hideLabel
+              />
+            </Row>
+          )}
+
+          {config.polish_enabled && (
             <Row
               label={t('settings.customPolishInstructions')}
               help={t('settings.customPolishInstructionsCount', { count: polishPromptLength })}

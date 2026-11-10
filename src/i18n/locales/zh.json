@@ -466,6 +466,8 @@
     "tryAsk": "试用 Ask",
     "selectedTextContext": "听写时读取选中文本",
     "selectedTextContextDesc": "听写会读取选中的文字并作为上下文传给 AI，可以对它说“改短一点”。会增加 AI 用量。提问和翻译总会读取选中文字。",
+    "cursorContext": "参考光标前的文字",
+    "cursorContextDesc": "听写会读取输入框里光标前约 300 个字符，与你的话一起发给 AI，让结果接得上前文：大小写、标点、语言。不会读取密码框。",
     "targetLanguage": "翻译为",
     "aboutDescription": "开源 AI 语音输入工具。说话即写作 — 实时将语音转化为润色文本。",
     "openSource": "开源",

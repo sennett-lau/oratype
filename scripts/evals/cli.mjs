@@ -10,6 +10,7 @@
 //   --llama-model <gguf>  (built-in AI)    --ai-url <url> --ai-model <name>  (any OpenAI-compatible)
 //   --whisper-model <ggml .bin> (built-in speech)  --speech-url <url> --speech-model <name>
 //   --dictionary off  (speech: do not give clips their dictionary words)
+//   --cursor-context off  (polish: do not give cases their before_cursor text)
 //   --languages en,zh-Hant-HK  (the user's language list for polish routing; default: the app's)
 //   --presets  (those languages use their presets from presets/languages/, as downloaded ones)
 //   --context prompt.chatgpt  (the app dictated into, a built-in profile id; default: a general app)
@@ -214,8 +215,15 @@ function polish(options) {
     ? basename(llama)
     : (options['ai-model'] ?? process.env.ORATYPE_EVAL_AI_MODEL ?? 'server')
   const outDir = outputDir('polish', options)
+  // Plan `cursor-context`: `--cursor-context off` polishes without the field's text.
+  const cursorContext = (options['cursor-context'] ?? 'on') !== 'off'
   const rows = cases.flatMap((c) =>
-    Array.from({ length: n }, (_, sample) => ({ id: c.id, input: c.input, sample })),
+    Array.from({ length: n }, (_, sample) => ({
+      id: c.id,
+      input: c.input,
+      sample,
+      ...(cursorContext && c.before_cursor ? { before_cursor: c.before_cursor } : {}),
+    })),
   )
   console.log(`evals: ${cases.length} polish case(s) × ${n} sample(s) with ${model}`)
   const answers = runDriver('polish', rows, env, outDir)
@@ -254,6 +262,7 @@ function polish(options) {
     tag: options.tag ?? null,
     languages: options.languages ?? 'app default',
     context: options.context ?? 'general',
+    cursor_context: cursorContext ? 'on' : 'off',
   }
   finish('polish', model, scored, settings, options, outDir)
 }

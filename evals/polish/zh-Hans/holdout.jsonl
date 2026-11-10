@@ -13,3 +13,4 @@
 {"id":"zh-h13","input":"总结一下这篇文章的主要观点","expected":"总结一下这篇文章的主要观点","must_contain":["总结","观点"],"tags":["no-answer"],"split":"holdout","notes":"A dictated question or request is written down as spoken, never answered or carried out."}
 {"id":"zh-h14","input":"明天出差要带的东西有","expected":"明天出差要带的东西有","must_contain":["出差"],"tags":["unfinished"],"split":"holdout","notes":"An unfinished sentence is written down as spoken, never completed with invented content."}
 {"id":"zh-h15","input":"周末我们打算带孩子去公园放风筝","expected":"周末我们打算带孩子去公园放风筝","must_contain":["风筝"],"tags":["over-punctuation"],"split":"holdout","notes":"One flowing thought: no comma or sentence break that the reference does not have, also when the transcript has pause commas."}
+{"id": "zh-h16", "before_cursor": "明天的会议改到", "input": "下午三点在三楼会议室", "expected": "下午三点在三楼会议室。", "accept": ["下午3点在3楼会议室。", "下午三点，在三楼会议室。"], "tags": ["cursor-context", "numbers"], "split": "holdout", "notes": "Plan cursor-context: "}

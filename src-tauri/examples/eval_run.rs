@@ -220,6 +220,7 @@ fn dictation_request(config: &AppConfig, raw_text: &str) -> (PolishRequest, Opti
             text: profile.instructions,
         }),
         selected_text: None,
+        text_before_cursor: None,
         voice_intent: VoiceIntent::from_parts(
             VoiceIntentKind::DictateInsert,
             VoiceOutputPlacement::InsertAtCursor,
@@ -242,7 +243,9 @@ async fn run_polish(cases: &[Value], out: &mut std::fs::File) -> Result<(), BoxE
     for (done, case) in cases.iter().enumerate() {
         let id = case["id"].as_str().unwrap_or_default();
         let raw = case["input"].as_str().unwrap_or_default();
-        let (req, route) = dictation_request(&config, raw);
+        let (mut req, route) = dictation_request(&config, raw);
+        // Plan `cursor-context`: the field's text before the cursor, when the case has one.
+        req.text_before_cursor = case["before_cursor"].as_str().map(str::to_string);
         let started = Instant::now();
         let line = match provider.polish(&llm_config, &req, None).await {
             Ok(response) => {
@@ -252,6 +255,10 @@ async fn run_polish(cases: &[Value], out: &mut std::fs::File) -> Result<(), BoxE
                 if guarded.is_some() {
                     rejected = Some(text);
                     text = llm::output_guard::transcript_as_output(raw);
+                }
+                // Plan `cursor-context`: fitted after the field's text, as the pipeline does.
+                if let Some(before) = req.text_before_cursor.as_deref() {
+                    text = oratype_lib::cursor_context::fit(before, &text);
                 }
                 json!({"id": id, "sample": case["sample"], "output": text, "guarded": guarded,
                        "rejected": rejected,
