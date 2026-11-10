@@ -157,6 +157,14 @@ pub fn focused_selected_text() -> SelectedText {
     platform::focused_selected_text()
 }
 
+/// Plan `cursor-context`: the text just before the caret in the focused field, at most
+/// `max_units` UTF-16 units of it, or `None` when there is none or it cannot be read. Never
+/// reads a password field (`AXSecureTextField`). Each attribute is a message to the focused app,
+/// capped by the same short timeout as the focus check.
+pub fn focused_text_before_cursor(max_units: usize) -> Option<String> {
+    platform::focused_text_before_cursor(max_units)
+}
+
 /// Asks Accessibility about the focused element and decides. Takes a few milliseconds (each
 /// attribute is a message to the focused app, capped by a short timeout). Logs the decision
 /// with the role name only.
@@ -213,6 +221,14 @@ mod platform {
             settable: *mut Boolean,
         ) -> AXError;
         fn AXUIElementSetMessagingTimeout(element: AXUIElementRef, timeout: f32) -> AXError;
+        fn AXUIElementCopyParameterizedAttributeValue(
+            element: AXUIElementRef,
+            parameterized_attribute: CFStringRef,
+            parameter: CFTypeRef,
+            result: *mut CFTypeRef,
+        ) -> AXError;
+        fn AXValueGetValue(value: CFTypeRef, the_type: u32, value_ptr: *mut c_void) -> Boolean;
+        fn AXValueCreate(the_type: u32, value_ptr: *const c_void) -> CFTypeRef;
     }
 
     #[link(name = "CoreFoundation", kind = "framework")]
@@ -241,7 +257,23 @@ mod platform {
             value_ptr: *mut c_void,
         ) -> Boolean;
         fn CFRelease(cf: CFTypeRef);
+        fn CFStringCreateWithSubstring(
+            allocator: *const c_void,
+            string: CFStringRef,
+            range: CFRange,
+        ) -> CFStringRef;
     }
+
+    /// Core Foundation's `CFRange`: a start and a length in UTF-16 units.
+    #[repr(C)]
+    #[derive(Clone, Copy, Debug)]
+    struct CFRange {
+        location: isize,
+        length: isize,
+    }
+
+    /// `kAXValueCFRangeType`: an `AXValue` that wraps a `CFRange`.
+    const AX_VALUE_CF_RANGE: u32 = 4;
 
     /// A Core Foundation object this code owns; released on drop.
     struct Owned(CFTypeRef);
@@ -405,6 +437,74 @@ mod platform {
         }
     }
 
+    /// Plan `cursor-context`: the caret from `AXSelectedTextRange`, then the text before it,
+    /// through `AXStringForRange` (only that part crosses to OraType), or, for an app without
+    /// it, a substring of `AXValue`. A selection counts from its start.
+    pub(super) fn focused_text_before_cursor(max_units: usize) -> Option<String> {
+        let system = Owned::new(unsafe { AXUIElementCreateSystemWide() })?;
+        unsafe { AXUIElementSetMessagingTimeout(system.0, MESSAGING_TIMEOUT_SECONDS) };
+        let focused = copy_attribute(system.0, "AXFocusedUIElement")?;
+        unsafe { AXUIElementSetMessagingTimeout(focused.0, MESSAGING_TIMEOUT_SECONDS) };
+        let role = string_attribute(focused.0, "AXRole");
+        let subrole = string_attribute(focused.0, "AXSubrole");
+        if [role.as_deref(), subrole.as_deref()].contains(&Some("AXSecureTextField")) {
+            return None;
+        }
+        let caret = copy_attribute(focused.0, "AXSelectedTextRange")?;
+        let mut selection = CFRange {
+            location: 0,
+            length: 0,
+        };
+        let ok = unsafe {
+            AXValueGetValue(
+                caret.0,
+                AX_VALUE_CF_RANGE,
+                &mut selection as *mut CFRange as *mut c_void,
+            )
+        };
+        if ok == 0 || selection.location <= 0 {
+            return None;
+        }
+        let start = (selection.location - max_units as isize).max(0);
+        let range = CFRange {
+            location: start,
+            length: selection.location - start,
+        };
+        if let Some(text) = string_for_range(focused.0, range) {
+            return Some(text);
+        }
+        let value = copy_attribute(focused.0, "AXValue")?;
+        if unsafe { CFGetTypeID(value.0) != CFStringGetTypeID() }
+            || unsafe { CFStringGetLength(value.0) } < selection.location
+        {
+            return None;
+        }
+        let part = Owned::new(unsafe { CFStringCreateWithSubstring(ptr::null(), value.0, range) })?;
+        rust_string(part.0)
+    }
+
+    /// The parameterized attribute `AXStringForRange`, or `None` when the app has none.
+    fn string_for_range(element: AXUIElementRef, range: CFRange) -> Option<String> {
+        let attribute = cf_string("AXStringForRange")?;
+        let parameter = Owned::new(unsafe {
+            AXValueCreate(AX_VALUE_CF_RANGE, &range as *const CFRange as *const c_void)
+        })?;
+        let mut value: CFTypeRef = ptr::null();
+        let error = unsafe {
+            AXUIElementCopyParameterizedAttributeValue(
+                element,
+                attribute.0,
+                parameter.0,
+                &mut value,
+            )
+        };
+        if error != AX_ERROR_SUCCESS {
+            return None;
+        }
+        let value = Owned::new(value)?;
+        rust_string(value.0)
+    }
+
     /// Reads the focused element's role and flags, or `None` when no element is focused or
     /// Accessibility is not available (for example without the permission).
     pub(super) fn focused_element_info() -> Option<FocusedElementInfo> {
@@ -444,6 +544,10 @@ mod platform {
 
     pub(super) fn focused_selected_text() -> super::SelectedText {
         super::SelectedText::Unknown
+    }
+
+    pub(super) fn focused_text_before_cursor(_max_units: usize) -> Option<String> {
+        None
     }
 }
 

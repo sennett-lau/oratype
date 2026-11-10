@@ -1,17 +1,11 @@
-# Docs check on pull requests that touch the docs: step folders and Services tables in their
-# format, language guides valid, every relative link resolving, generated tables up to date, and
-# language presets valid (CONTRIBUTING.md#docs-formats). Plain Node, no install, so it runs in
-# seconds on Linux; the full gate in ci.yml runs the same checks again on macOS.
+# Docs check: step folders and Services tables in their format, language guides valid, every
+# relative link resolving, generated tables up to date, and language presets valid
+# (CONTRIBUTING.md#docs-formats). Plain Node, no install, so it runs in seconds on Linux; the full
+# gate in ci.yml runs the same checks again on macOS. It runs only by hand (Actions → Docs → Run
+# workflow); locally, `npm run docs:check` does the same.
 name: Docs
 
 on:
-  pull_request:
-    paths:
-      - '**/*.md'
-      - 'presets/**'
-      - 'scripts/docs-cards.mjs'
-      - 'scripts/language-presets.mjs'
-      - '.github/workflows/docs.yml'
   workflow_dispatch:
 
 permissions:

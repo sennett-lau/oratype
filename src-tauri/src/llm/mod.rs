@@ -9,6 +9,7 @@ pub mod live_question;
 pub mod models;
 pub mod openai;
 pub mod output_guard;
+pub mod pause_commas;
 pub mod prompt;
 pub mod protocol;
 pub mod question_language;
@@ -67,6 +68,10 @@ pub struct PolishRequest {
     #[serde(default)]
     pub polish_language_notes: Option<PolishLanguageNotes>,
     pub selected_text: Option<String>,
+    /// Plan `cursor-context`: the text before the cursor in the field a plain dictation goes
+    /// into, when the user turned that on.
+    #[serde(default)]
+    pub text_before_cursor: Option<String>,
     pub voice_intent: crate::voice_intent::VoiceIntent,
 }
 

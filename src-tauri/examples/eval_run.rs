@@ -12,9 +12,11 @@
 //! routes the transcript to a language the way the pipeline does (`ORATYPE_EVAL_LANGUAGES`, a
 //! comma list, stands in for the user's languages; default: the app's default list), calls
 //! `LlmProvider::polish` (which applies the app's clean-up of the answer) and then the dictation
-//! language guard (`llm::output_guard`).
+//! guard (`llm::output_guard`; `guarded` gives its reason, `rejected` the model's text it replaced). `ORATYPE_EVAL_CONTEXT` sets the app
+//! dictated into (a built-in profile id such as `prompt.chatgpt`).
 //!
-//! Speech input lines: `{"id", "audio"}` with a 16 kHz mono 16-bit WAV path. The audio is
+//! Speech input lines: `{"id", "audio", "dictionary"}` with a 16 kHz mono 16-bit WAV path and
+//! the personal dictionary's words (optional; plan `dictionary-to-speech`). The audio is
 //! streamed in 100 ms chunks through the provider the app uses (voice check, recognition and
 //! hallucination filters included).
 //!
@@ -30,6 +32,7 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
+use oratype_lib::app_detector::registry::AppRegistry;
 use oratype_lib::app_detector::types::ContextProfile;
 use oratype_lib::llm::{self, LlmConfig, PolishLanguageNotes, PolishRequest};
 use oratype_lib::storage::{AiPreset, AppConfig, SpeechPreset};
@@ -179,6 +182,18 @@ fn use_library_presets(config: &mut AppConfig) {
     let _ = PRESET_STORE.set(store);
 }
 
+/// The app the dictation goes into: `ORATYPE_EVAL_CONTEXT`, a built-in profile id such as
+/// `prompt.chatgpt` or `code.vscode`, or a general native app.
+fn eval_context() -> ContextProfile {
+    let Some(id) = env("ORATYPE_EVAL_CONTEXT") else {
+        return ContextProfile::general_native();
+    };
+    AppRegistry::builtin()
+        .ok()
+        .and_then(|registry| registry.profile(&id))
+        .unwrap_or_else(|| panic!("ORATYPE_EVAL_CONTEXT: no built-in profile {id}"))
+}
+
 /// A plain dictation with default settings, as `pipeline.rs` builds it.
 fn dictation_request(config: &AppConfig, raw_text: &str) -> (PolishRequest, Option<String>) {
     use oratype_lib::llm::language_router::{language_profiles, route};
@@ -189,7 +204,7 @@ fn dictation_request(config: &AppConfig, raw_text: &str) -> (PolishRequest, Opti
     let route_code = routed.as_ref().map(|p| p.code.clone());
     let req = PolishRequest {
         raw_text: raw_text.into(),
-        context: ContextProfile::general_native().summary(),
+        context: eval_context().summary(),
         dictionary: Vec::new(),
         correction_rules: Vec::new(),
         polish_style: config.polish_style.clone(),
@@ -205,6 +220,7 @@ fn dictation_request(config: &AppConfig, raw_text: &str) -> (PolishRequest, Opti
             text: profile.instructions,
         }),
         selected_text: None,
+        text_before_cursor: None,
         voice_intent: VoiceIntent::from_parts(
             VoiceIntentKind::DictateInsert,
             VoiceOutputPlacement::InsertAtCursor,
@@ -227,16 +243,25 @@ async fn run_polish(cases: &[Value], out: &mut std::fs::File) -> Result<(), BoxE
     for (done, case) in cases.iter().enumerate() {
         let id = case["id"].as_str().unwrap_or_default();
         let raw = case["input"].as_str().unwrap_or_default();
-        let (req, route) = dictation_request(&config, raw);
+        let (mut req, route) = dictation_request(&config, raw);
+        // Plan `cursor-context`: the field's text before the cursor, when the case has one.
+        req.text_before_cursor = case["before_cursor"].as_str().map(str::to_string);
         let started = Instant::now();
         let line = match provider.polish(&llm_config, &req, None).await {
             Ok(response) => {
                 let mut text = response.polished_text;
-                let guarded = llm::output_guard::changed_language(raw, &text);
-                if guarded {
+                let guarded = llm::output_guard::rejection(raw, &text);
+                let mut rejected = None;
+                if guarded.is_some() {
+                    rejected = Some(text);
                     text = llm::output_guard::transcript_as_output(raw);
                 }
+                // Plan `cursor-context`: fitted after the field's text, as the pipeline does.
+                if let Some(before) = req.text_before_cursor.as_deref() {
+                    text = oratype_lib::cursor_context::fit(before, &text);
+                }
                 json!({"id": id, "sample": case["sample"], "output": text, "guarded": guarded,
+                       "rejected": rejected,
                        "route": route, "ms": started.elapsed().as_millis() as u64})
             }
             Err(error) => json!({"id": id, "sample": case["sample"], "error": error.to_string(),
@@ -306,12 +331,21 @@ async fn run_speech(clips: &[Value], out: &mut std::fs::File) -> Result<(), BoxE
             ..Default::default()
         },
     };
-    let stt_config = SttConfig {
-        api_key: String::new(),
-        language: None,
-        sample_rate: SAMPLE_RATE,
-    };
     for (done, clip) in clips.iter().enumerate() {
+        let stt_config = SttConfig {
+            api_key: String::new(),
+            language: None,
+            sample_rate: SAMPLE_RATE,
+            vocabulary: clip["dictionary"]
+                .as_array()
+                .map(|words| {
+                    words
+                        .iter()
+                        .filter_map(|w| w.as_str().map(str::to_string))
+                        .collect()
+                })
+                .unwrap_or_default(),
+        };
         let id = clip["id"].as_str().unwrap_or_default();
         let audio = clip["audio"].as_str().unwrap_or_default();
         let pcm =

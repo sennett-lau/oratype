@@ -10,6 +10,7 @@ pub mod models;
 pub mod qwen_cloud;
 pub mod silence;
 pub mod transcript;
+pub mod vocabulary;
 pub mod whisper_compat;
 
 use async_trait::async_trait;
@@ -27,6 +28,10 @@ pub struct SttConfig {
     /// Language hint (ISO code). `None` lets the server auto-detect.
     pub language: Option<String>,
     pub sample_rate: u32,
+    /// Plan `dictionary-to-speech`: the personal dictionary's words, which the recognizer is
+    /// told to expect (see [`vocabulary::speech_prompt`]). Empty sends nothing.
+    #[serde(default)]
+    pub vocabulary: Vec<String>,
 }
 
 impl Default for SttConfig {
@@ -35,6 +40,7 @@ impl Default for SttConfig {
             api_key: String::new(),
             language: None,
             sample_rate: 16000,
+            vocabulary: Vec::new(),
         }
     }
 }

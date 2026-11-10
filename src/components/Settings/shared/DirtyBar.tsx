@@ -117,14 +117,7 @@ export function DirtyBar() {
             {t('common.reset')}
           </button>
           <button onClick={handleSave} disabled={saving} className="btn-accent">
-            {saving && (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }}
-              >
-                <Loader2 size={12} />
-              </motion.div>
-            )}
+            {saving && <Loader2 size={12} className="animate-spin" />}
             {saving ? t('common.saving') : t('common.save')}
           </button>
         </div>

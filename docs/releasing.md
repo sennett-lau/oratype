@@ -26,7 +26,8 @@ a **draft** release. Nothing is public until you publish the draft by hand.
 - **Every patch bumps the version and adds its What's New entry on the release branch.** The same
   What's New entry also goes to `main` (the version on `main` stays at its line's last value until
   the next minor or major is prepared), so later releases keep the whole list.
-- Pull requests into `release/*` run the same CI as pull requests into `main`.
+- CI does not start on pull requests. Run the offline gate locally, and start the
+  [CI workflow](../.github/workflows/ci.yml) by hand on the release branch before tagging.
 
 ## What the workflow builds
 

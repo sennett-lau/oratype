@@ -10,7 +10,7 @@ export const FASTER_AI_MODEL = 'qwen3-1.7b'
 const MODEL_LABELS: Record<string, string> = {
   'large-v3-turbo': 'Whisper large-v3-turbo',
   small: 'Whisper small',
-  [QWEN3_ASR_MODEL]: 'Qwen3-ASR 1.7B',
+  [QWEN3_ASR_MODEL]: 'Qwen3-ASR-1.7B-HK-Cantonese',
   'qwen3-4b': 'Qwen3 4B Instruct',
   [FASTER_AI_MODEL]: 'Qwen3 1.7B',
   [QWEN35_AI_MODEL]: 'Qwen 3.5 4B',

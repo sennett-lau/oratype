@@ -224,9 +224,17 @@ export function sentenceBreaks(text) {
   return (body.match(/[.?!。？！]+(?=\s|\p{Script=Han}|\p{Lu}|$)/gu) ?? []).length
 }
 
+/** Commas and other clause marks (not the separators inside numbers such as 1,000). */
+export function clauseMarks(text) {
+  return (text.match(/(?<!\d),|,(?!\d)|[，、;；:：]/gu) ?? []).length
+}
+
 /**
  * Checks that depend on the reference text. Returns a list of failed check names with details.
  */
+const firstLetter = (text) => text.match(/^[\s"'“‘(]*([A-Za-z])/)?.[1] ?? null
+const isUpper = (letter) => letter === letter.toUpperCase()
+
 function referenceChecks(reference, output, caseTags, lang) {
   const failed = []
   const refNumbers = numbers(reference).join(' ')
@@ -250,6 +258,26 @@ function referenceChecks(reference, output, caseTags, lang) {
     const want = sentenceBreaks(reference)
     const got = sentenceBreaks(output)
     if (want !== got) failed.push(['punctuation', `want ${want} sentence breaks, got ${got}`])
+  }
+  if (caseTags.includes('over-punctuation')) {
+    const want = sentenceBreaks(reference)
+    const got = sentenceBreaks(output)
+    if (got > want) failed.push(['over-punctuation', `want ${want} sentence breaks, got ${got}`])
+    const wantMarks = clauseMarks(reference)
+    const gotMarks = clauseMarks(output)
+    if (gotMarks > wantMarks)
+      failed.push(['over-punctuation', `want at most ${wantMarks} commas, got ${gotMarks}`])
+  }
+  // Plan `cursor-context`: the dictation continues the field's text, so its first letter has the
+  // reference's case (no capital in the middle of a sentence, a capital after one ends).
+  if (caseTags.includes('cursor-context')) {
+    const want = firstLetter(reference)
+    const got = firstLetter(output)
+    if (want && got && isUpper(want) !== isUpper(got))
+      failed.push([
+        'continuation',
+        `starts with "${got}", want ${isUpper(want) ? 'upper' : 'lower'} case`,
+      ])
   }
   if (lang?.dialect) {
     const other = lang.dialect === 'yue' ? MANDARIN_MARKERS : CANTONESE_MARKERS
@@ -322,6 +350,15 @@ export const DEFAULT_SPEECH_MAX_ERROR = { word: 0.15, char: 0.15 }
  * is taken on the copy in the reference's script (`error`), and on the raw text (`raw_error`), so
  * a wrong script is reported apart from wrong words.
  */
+const SPEECH_FAILS = ['error', 'dialect', 'terms', 'must_not_contain']
+
+/** `term` in `text` with its exact spelling and case; ASCII terms as whole words. */
+export function hasTerm(text, term) {
+  if (!/^[\x20-\x7e]+$/.test(term)) return text.includes(term)
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`(^|[^A-Za-z0-9])${escaped}(?=$|[^A-Za-z0-9])`).test(text)
+}
+
 export function scoreSpeech(clip, answer, lang) {
   const unit = lang?.unit ?? 'word'
   const maxError = clip.max_error ?? DEFAULT_SPEECH_MAX_ERROR[unit]
@@ -346,7 +383,15 @@ export function scoreSpeech(clip, answer, lang) {
       const leaked = MANDARIN_MARKERS.filter((m) => converted.includes(m) && !reference.includes(m))
       if (leaked.length) failed.push(['dialect', `Mandarin words ${leaked.join(' ')}`])
     }
-    const pass = !failed.some(([name]) => name === 'error' || name === 'dialect')
+    // Plan `dictionary-to-speech`: a dictionary word said must come out spelled exactly as the
+    // dictionary has it (case too); one not said must not appear.
+    for (const term of clip.terms ?? []) {
+      if (!hasTerm(converted, term)) failed.push(['terms', term])
+    }
+    for (const word of clip.must_not_contain ?? []) {
+      if (contains(converted, word)) failed.push(['must_not_contain', word])
+    }
+    const pass = !failed.some(([name]) => SPEECH_FAILS.includes(name))
     const candidate = { pass, error, raw_error: rawError, reference, failed }
     if (
       !best ||

@@ -16,20 +16,23 @@ loads it. A download that breaks off resumes where it stopped.
 |---|---|---|---|
 | Best accuracy | whisper large-v3-turbo, q5_0 (`ggml-large-v3-turbo-q5_0.bin`) | 574 MB | Apple Silicon with 8 GB of memory or more |
 | Faster | whisper small, q5_1 (`ggml-small-q5_1.bin`) | 190 MB | Every Mac |
-| Qwen3-ASR | Qwen3-ASR 1.7B, Q4_K_M, with its Q8_0 audio projector (`Qwen3-ASR-1.7B.Q4_K_M.gguf`, `Qwen3-ASR-1.7B.mmproj-Q8_0.gguf`) | 1.6 GB | Apple Silicon with 8 GB of memory or more |
+| Qwen3-ASR-1.7B-HK-Cantonese | Qwen3-ASR 1.7B fine-tuned for Hong Kong Cantonese, version 2, Q6_K, with its Q8_0 audio projector (`Qwen3-ASR-1.7B-Cantonese-HK.Q6_K.gguf`, `Qwen3-ASR-1.7B-Cantonese-HK.mmproj-Q8_0.gguf`) | 1.8 GB | Apple Silicon with 8 GB of memory or more |
 
-- The whisper models come from the official whisper.cpp repository on Hugging Face, Qwen3-ASR
-  from mradermacher's (Apache-2.0). They are stored in
+- The whisper models come from the official whisper.cpp repository on Hugging Face,
+  Qwen3-ASR-1.7B-HK-Cantonese from
+  [joe2643/Qwen3-ASR-1.7B-Cantonese-HK-GGUF](https://huggingface.co/joe2643/Qwen3-ASR-1.7B-Cantonese-HK-GGUF)
+  (Apache-2.0), a fine-tune of Qwen3-ASR 1.7B by the OraType team. They are stored in
   `~/Library/Application Support/dev.oratype.mac/models/`.
-- Qwen3-ASR is the Q4_K_M file because it is 21–28% faster than Q8_0 on long dictations with the
-  same results in our evaluation
-  ([report](../../benchmarks/reports/2026-10-20-cantonese-model-sizes/README.md)). If you set it up
-  with OraType 1.2.0 or earlier you have ggml-org's Q8_0 files: they keep working, and Settings
-  shows **Update** to download the faster ones (the old files are deleted once the new ones pass
-  their test).
+- The fine-tune writes Hong Kong Cantonese in Hong Kong Traditional characters and keeps English
+  words in English. It is the Q6_K file: its Q4_K_M wrote some English clips in Chinese, and its
+  Q8_0 is slower with no better results
+  ([report](../../benchmarks/reports/2026-11-10-hk-cantonese-asr/README.md)). If you set up
+  Qwen3-ASR with OraType 1.2.1 or earlier you have the stock Qwen3-ASR files: they keep working,
+  and Settings shows **Update** to download the new model (the old files are deleted once the new
+  ones pass their test).
 - When you tell OraType the languages you speak (onboarding or Settings → General → **Your
   languages**) and it has a suggested setup for them, that model is chosen and tagged **Suggested
-  for your languages**. Today: Qwen3-ASR for any combination with Cantonese.
+  for your languages**. Today: Qwen3-ASR-1.7B-HK-Cantonese for any combination with Cantonese.
 - OraType checks the chip, the memory and the free disk space (1.1 × the model size) and offers
   only the models that suit your computer. With both offered, Best accuracy is selected.
 - **Delete** in Settings removes a model file.

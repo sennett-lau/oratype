@@ -61,8 +61,10 @@ pub fn known_model_by_file(file_name: &str) -> Option<&'static KnownModel> {
         .find(|model| model.file_name == file_name)
 }
 
-/// Plan `language-model-suggestions`: id of Qwen3-ASR 1.7B, which writes spoken Cantonese the way
-/// it was said (Whisper writes it as standard written Chinese).
+/// Plan `language-model-suggestions`: id of the built-in Qwen3-ASR model, which writes spoken
+/// Cantonese the way it was said (Whisper writes it as standard written Chinese). Since plan
+/// `hk-cantonese-asr` it is Qwen3-ASR-1.7B-HK-Cantonese, a fine-tune of Qwen3-ASR 1.7B; the id
+/// stays so that presets and earlier files keep working.
 pub const QWEN3_ASR_MODEL_ID: &str = "qwen3-asr-1.7b";
 
 const GIB: u64 = 1024 * 1024 * 1024;
@@ -96,39 +98,59 @@ pub struct AsrFiles {
 }
 
 /// The `llama-server` speech models, pinned to one commit of their Hugging Face repository; sizes
-/// and SHA-256 values are the files' LFS size and object id. Qwen3-ASR 1.7B is mradermacher's
-/// Q4_K_M with its Q8_0 audio projector: 21-28% faster than ggml-org's Q8_0 on long Cantonese
-/// dictations with the same transcripts (benchmark report `2026-10-20-cantonese-model-sizes`).
+/// and SHA-256 values are the files' LFS size and object id. Plan `hk-cantonese-asr`: the
+/// Qwen3-ASR model is Qwen3-ASR-1.7B-HK-Cantonese (`joe2643/Qwen3-ASR-1.7B-Cantonese-HK-GGUF`), a
+/// fine-tune for Hong Kong Cantonese with English mixed in, which writes Hong Kong Traditional
+/// characters. Version 2, Q6_K: its Q4_K_M wrote some English clips in Chinese, and its Q8_0 is
+/// slower for no gain (benchmark report `2026-11-10-hk-cantonese-asr`).
 pub const ASR_MODELS: &[AsrModel] = &[AsrModel {
     file: KnownModel {
         id: QWEN3_ASR_MODEL_ID,
-        file_name: "Qwen3-ASR-1.7B.Q4_K_M.gguf",
-        size_bytes: 1_282_435_552,
-        sha256: "3893b8926065bbff3da7586d21d8711a9b4fa4fa8f12cd0cefad58e31b2660b6",
+        file_name: "Qwen3-ASR-1.7B-Cantonese-HK.Q6_K.gguf",
+        size_bytes: 1_417_750_464,
+        sha256: "1e8cc6a8fe4970eca1eaceaac5a60eaa5383e1044057e0d11a3348ecb2cf6ea4",
     },
     projector: KnownModel {
         id: QWEN3_ASR_MODEL_ID,
-        file_name: "Qwen3-ASR-1.7B.mmproj-Q8_0.gguf",
-        size_bytes: 355_709_472,
-        sha256: "780b5b48dfbc23c219cc9d3da9fdaccc7da567fa661b3724d19bda50fbcfc8c3",
+        file_name: "Qwen3-ASR-1.7B-Cantonese-HK.mmproj-Q8_0.gguf",
+        size_bytes: 355_709_216,
+        sha256: "0ec38c2b7a8a81b6a011af5203197a4df3e61fd63cea780ff2004eef1ef7265e",
     },
-    base_url: "https://huggingface.co/mradermacher/Qwen3-ASR-1.7B-GGUF/resolve/664b960e358348943aefcdc26b3cf09eff1fb0ac",
+    base_url: "https://huggingface.co/joe2643/Qwen3-ASR-1.7B-Cantonese-HK-GGUF/resolve/c2b90a46d61a5fc93ec07955aeaf18b8ffdc5ed9",
     min_memory_bytes: 8 * GIB,
-    // OraType 1.1.3 to 1.2.0: ggml-org's Q8_0 (2.17 GB) and its projector.
-    previous: &[AsrFiles {
-        file: KnownModel {
-            id: QWEN3_ASR_MODEL_ID,
-            file_name: "Qwen3-ASR-1.7B-Q8_0.gguf",
-            size_bytes: 2_165_034_944,
-            sha256: "58e22d0532d4eacaf034cfac17a6fed159f37c41390c710186783be439d1fc57",
+    previous: &[
+        // OraType 1.2.1: Qwen3-ASR 1.7B, mradermacher's Q4_K_M (1.28 GB) and its Q8_0 projector
+        // (plan `faster-cantonese-models`).
+        AsrFiles {
+            file: KnownModel {
+                id: QWEN3_ASR_MODEL_ID,
+                file_name: "Qwen3-ASR-1.7B.Q4_K_M.gguf",
+                size_bytes: 1_282_435_552,
+                sha256: "3893b8926065bbff3da7586d21d8711a9b4fa4fa8f12cd0cefad58e31b2660b6",
+            },
+            projector: KnownModel {
+                id: QWEN3_ASR_MODEL_ID,
+                file_name: "Qwen3-ASR-1.7B.mmproj-Q8_0.gguf",
+                size_bytes: 355_709_472,
+                sha256: "780b5b48dfbc23c219cc9d3da9fdaccc7da567fa661b3724d19bda50fbcfc8c3",
+            },
         },
-        projector: KnownModel {
-            id: QWEN3_ASR_MODEL_ID,
-            file_name: "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf",
-            size_bytes: 355_709_344,
-            sha256: "46c1d533af3f354ceb37ce855dbceff7da7fa7cf1e6a523df3b13440bd164c0d",
+        // OraType 1.1.3 to 1.2.0: Qwen3-ASR 1.7B, ggml-org's Q8_0 (2.17 GB) and its projector.
+        AsrFiles {
+            file: KnownModel {
+                id: QWEN3_ASR_MODEL_ID,
+                file_name: "Qwen3-ASR-1.7B-Q8_0.gguf",
+                size_bytes: 2_165_034_944,
+                sha256: "58e22d0532d4eacaf034cfac17a6fed159f37c41390c710186783be439d1fc57",
+            },
+            projector: KnownModel {
+                id: QWEN3_ASR_MODEL_ID,
+                file_name: "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf",
+                size_bytes: 355_709_344,
+                sha256: "46c1d533af3f354ceb37ce855dbceff7da7fa7cf1e6a523df3b13440bd164c0d",
+            },
         },
-    }],
+    ],
 }];
 
 impl AsrModel {
@@ -682,39 +704,42 @@ mod tests {
             assert!(file.file_name.ends_with(".gguf"));
             assert!(known_model_by_file(file.file_name).is_none());
         }
-        assert_eq!(qwen.size_bytes(), 1_638_145_024);
+        assert_eq!(qwen.size_bytes(), 1_773_459_680);
         assert_eq!(qwen.as_known_model().size_bytes, qwen.size_bytes());
         assert_eq!(
             qwen.as_known_model().file_name,
-            "Qwen3-ASR-1.7B.Q4_K_M.gguf"
+            "Qwen3-ASR-1.7B-Cantonese-HK.Q6_K.gguf"
         );
         let [(model, model_url), (projector, projector_url)] = qwen.downloads();
         assert_eq!(model, qwen.file);
         assert_eq!(projector, qwen.projector);
-        assert!(model_url
-            .starts_with("https://huggingface.co/mradermacher/Qwen3-ASR-1.7B-GGUF/resolve/"));
-        assert!(model_url.ends_with("/Qwen3-ASR-1.7B.Q4_K_M.gguf"));
-        assert!(projector_url.ends_with("/Qwen3-ASR-1.7B.mmproj-Q8_0.gguf"));
-        // Plan `faster-cantonese-models`: the files OraType 1.1.3 to 1.2.0 downloaded.
-        let earlier = qwen.previous[0];
-        assert_eq!(earlier.file.file_name, "Qwen3-ASR-1.7B-Q8_0.gguf");
+        assert!(model_url.starts_with(
+            "https://huggingface.co/joe2643/Qwen3-ASR-1.7B-Cantonese-HK-GGUF/resolve/"
+        ));
+        assert!(model_url.ends_with("/Qwen3-ASR-1.7B-Cantonese-HK.Q6_K.gguf"));
+        assert!(projector_url.ends_with("/Qwen3-ASR-1.7B-Cantonese-HK.mmproj-Q8_0.gguf"));
+        // Plans `faster-cantonese-models` and `hk-cantonese-asr`: the files OraType 1.2.1 and
+        // OraType 1.1.3 to 1.2.0 downloaded.
+        let names: Vec<_> = qwen.previous.iter().map(|f| f.file.file_name).collect();
         assert_eq!(
-            earlier.projector.file_name,
-            "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf"
+            names,
+            ["Qwen3-ASR-1.7B.Q4_K_M.gguf", "Qwen3-ASR-1.7B-Q8_0.gguf"]
         );
-        for file in [earlier.file, earlier.projector] {
-            assert_eq!(file.id, QWEN3_ASR_MODEL_ID);
-            assert_eq!(file.sha256.len(), 64);
-            assert_ne!(file.file_name, qwen.file.file_name);
-            assert_ne!(file.file_name, qwen.projector.file_name);
+        for earlier in qwen.previous {
+            for file in [earlier.file, earlier.projector] {
+                assert_eq!(file.id, QWEN3_ASR_MODEL_ID);
+                assert_eq!(file.sha256.len(), 64);
+                assert_ne!(file.file_name, qwen.file.file_name);
+                assert_ne!(file.file_name, qwen.projector.file_name);
+            }
+            assert_eq!(
+                qwen.projector_for(earlier.file.file_name),
+                earlier.projector
+            );
         }
         assert_eq!(qwen.projector_for(qwen.file.file_name), qwen.projector);
-        assert_eq!(
-            qwen.projector_for(earlier.file.file_name),
-            earlier.projector
-        );
         assert_eq!(qwen.projector_for("something-else.gguf"), qwen.projector);
-        assert_eq!(qwen.all_files().len(), 4);
+        assert_eq!(qwen.all_files().len(), 6);
         assert!(runs_in_llama_server(QWEN3_ASR_MODEL_ID));
         assert!(!runs_in_llama_server("large-v3-turbo"));
         assert!(known_model(QWEN3_ASR_MODEL_ID).is_none());

@@ -9,8 +9,11 @@
 // Options: --lang en,yue  --split dev|holdout|all  --tag numbers  --id en-011  --n 3
 //   --llama-model <gguf>  (built-in AI)    --ai-url <url> --ai-model <name>  (any OpenAI-compatible)
 //   --whisper-model <ggml .bin> (built-in speech)  --speech-url <url> --speech-model <name>
+//   --dictionary off  (speech: do not give clips their dictionary words)
+//   --cursor-context off  (polish: do not give cases their before_cursor text)
 //   --languages en,zh-Hant-HK  (the user's language list for polish routing; default: the app's)
 //   --presets  (those languages use their presets from presets/languages/, as downloaded ones)
+//   --context prompt.chatgpt  (the app dictated into, a built-in profile id; default: a general app)
 //   --baseline <file>|none  --save-baseline  --out <dir>
 // ORATYPE_EVAL_* environment variables work as well (see src-tauri/examples/eval_run.rs).
 import { createHash } from 'node:crypto'
@@ -207,12 +210,20 @@ function polish(options) {
   if (options['ai-model']) env.ORATYPE_EVAL_AI_MODEL = options['ai-model']
   if (options.languages) env.ORATYPE_EVAL_LANGUAGES = options.languages
   if (options.presets) env.ORATYPE_EVAL_PRESETS = '1'
+  if (options.context) env.ORATYPE_EVAL_CONTEXT = options.context
   const model = llama
     ? basename(llama)
     : (options['ai-model'] ?? process.env.ORATYPE_EVAL_AI_MODEL ?? 'server')
   const outDir = outputDir('polish', options)
+  // Plan `cursor-context`: `--cursor-context off` polishes without the field's text.
+  const cursorContext = (options['cursor-context'] ?? 'on') !== 'off'
   const rows = cases.flatMap((c) =>
-    Array.from({ length: n }, (_, sample) => ({ id: c.id, input: c.input, sample })),
+    Array.from({ length: n }, (_, sample) => ({
+      id: c.id,
+      input: c.input,
+      sample,
+      ...(cursorContext && c.before_cursor ? { before_cursor: c.before_cursor } : {}),
+    })),
   )
   console.log(`evals: ${cases.length} polish case(s) × ${n} sample(s) with ${model}`)
   const answers = runDriver('polish', rows, env, outDir)
@@ -223,7 +234,14 @@ function polish(options) {
         if (a.error)
           return { output: '', pass: false, error: 1, failed: [['request', a.error]], ms: a.ms }
         const score = scorePolish(c, a.output, languages[c.lang])
-        return { output: a.output, ...score, ms: a.ms, guarded: a.guarded, route: a.route }
+        return {
+          output: a.output,
+          ...score,
+          ms: a.ms,
+          guarded: a.guarded,
+          rejected: a.rejected,
+          route: a.route,
+        }
       })
     return {
       id: c.id,
@@ -243,6 +261,8 @@ function polish(options) {
     langs: list(options.lang) ?? 'all',
     tag: options.tag ?? null,
     languages: options.languages ?? 'app default',
+    context: options.context ?? 'general',
+    cursor_context: cursorContext ? 'on' : 'off',
   }
   finish('polish', model, scored, settings, options, outDir)
 }
@@ -262,11 +282,19 @@ function speech(options) {
   const model = whisper
     ? basename(whisper)
     : (options['speech-model'] ?? process.env.ORATYPE_EVAL_SPEECH_MODEL ?? 'server')
+  // Plan `dictionary-to-speech`: `--dictionary off` measures the recognizer without the words.
+  const dictionary = (options.dictionary ?? 'on') !== 'off'
   const outDir = outputDir('speech', options)
-  console.log(`evals: ${clips.length} speech clip(s) with ${model}`)
+  console.log(
+    `evals: ${clips.length} speech clip(s) with ${model}${dictionary ? '' : ', no dictionary'}`,
+  )
   const answers = runDriver(
     'speech',
-    clips.map((c) => ({ id: c.id, audio: c.audio_path })),
+    clips.map((c) => ({
+      id: c.id,
+      audio: c.audio_path,
+      dictionary: dictionary ? (c.dictionary ?? []) : [],
+    })),
     env,
     outDir,
   )
@@ -291,7 +319,7 @@ function speech(options) {
     'speech',
     model,
     scored,
-    { split, n: 1, langs: list(options.lang) ?? 'all' },
+    { split, n: 1, langs: list(options.lang) ?? 'all', dictionary: dictionary ? 'on' : 'off' },
     options,
     outDir,
   )

@@ -72,10 +72,18 @@ pub fn polish_messages(req: &PolishRequest) -> Vec<serde_json::Value> {
                 "role": "user",
                 "content": format!("<selected_text>\n{}\n</selected_text>", req.selected_text.as_ref().unwrap())
             }));
+    } else if let Some(before) = req.text_before_cursor.as_deref() {
+        messages.push(serde_json::json!({
+            "role": "user",
+            "content": crate::cursor_context::polish_message(before),
+        }));
     }
     messages.push(serde_json::json!({
         "role": "user",
-        "content": format!("<transcription>\n{}\n</transcription>", req.raw_text)
+        "content": format!(
+            "<transcription>\n{}\n</transcription>",
+            super::pause_commas::without_pause_commas(&req.raw_text)
+        )
     }));
     messages
 }

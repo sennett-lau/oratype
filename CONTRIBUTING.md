@@ -396,7 +396,9 @@ Open an issue on GitHub with:
 
 Releases are built by GitHub Actions when a `vX.Y.Z` tag is pushed, and land as a draft to review
 and publish. The steps, checksums and the unsigned-app caveat are in [Releasing](docs/releasing.md).
-The [CI workflow](.github/workflows/ci.yml) runs the offline gate on pull requests.
+The [CI workflow](.github/workflows/ci.yml) runs the offline gate when started by hand (Actions → CI
+→ Run workflow), for example before a release; pull requests do not start it, so run the gate
+locally before merging.
 
 ## Code of conduct
 

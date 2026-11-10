@@ -10,6 +10,7 @@ import {
   chineseScript,
   contains,
   errorRate,
+  hasTerm,
   numbers,
   scorePolish,
   scoreSpeech,
@@ -95,6 +96,18 @@ describe('polish scoring', () => {
     ])
     expect(scorePolish({ ...c, tags: [] }, 'It was down, we restarted it', EN).pass).toBe(true)
   })
+  it('fails extra commas and sentence breaks for cases tagged over-punctuation', () => {
+    const c = { expected: '我想問下你聽日得唔得閒', tags: ['over-punctuation'] }
+    expect(scorePolish(c, '我想問下你聽日得唔得閒', YUE).pass).toBe(true)
+    expect(scorePolish(c, '我想問下你，聽日得唔得閒', YUE).failed.map(([n]) => n)).toEqual([
+      'over-punctuation',
+    ])
+    const en = { expected: 'Send me the slides and the notes', tags: ['over-punctuation'] }
+    expect(scorePolish(en, 'Send me the slides. And the notes', EN).pass).toBe(false)
+    expect(scorePolish(en, 'Send me the slides and the 1,000 notes', EN).failed).not.toContainEqual(
+      expect.arrayContaining(['over-punctuation']),
+    )
+  })
   it('keeps Cantonese Cantonese and the script of the reference', () => {
     const c = { expected: '佢唔喺屋企，你遲啲再打俾佢啦', tags: ['dialect'] }
     expect(scorePolish(c, '佢唔喺屋企，你遲啲再打俾佢啦', YUE).pass).toBe(true)
@@ -116,6 +129,53 @@ describe('speech scoring', () => {
     expect(score.error).toBe(0)
     expect(score.raw_error).toBeGreaterThan(0)
     expect(score.failed.map(([n]) => n)).toEqual(['script'])
+  })
+})
+
+describe('cursor context', () => {
+  const c = {
+    input: 'and then I sent it',
+    expected: 'and then I sent it.',
+    tags: ['cursor-context'],
+    before_cursor: 'I finished it, ',
+  }
+  it('wants the first letter in the reference case', () => {
+    expect(scorePolish(c, 'and then I sent it.', EN).pass).toBe(true)
+    const capital = scorePolish(c, 'And then I sent it.', EN)
+    expect(capital.pass).toBe(false)
+    expect(capital.failed.map(([n]) => n)).toContain('continuation')
+  })
+  it('ignores case on cases without the tag', () => {
+    expect(scorePolish({ ...c, tags: ['filler'] }, 'And then I sent it.', EN).pass).toBe(true)
+  })
+})
+
+describe('speech dictionary checks', () => {
+  const clip = {
+    text: 'Please ask Niamh to update OraType.',
+    terms: ['Niamh', 'OraType'],
+    dictionary: ['Niamh', 'OraType'],
+  }
+  it('needs each term spelled exactly', () => {
+    expect(scoreSpeech(clip, { output: 'Please ask Niamh to update OraType.' }, EN).pass).toBe(true)
+    const wrong = scoreSpeech(clip, { output: 'Please ask Niamh to update Oratype.' }, EN)
+    expect(wrong.pass).toBe(false)
+    expect(wrong.failed).toContainEqual(['terms', 'OraType'])
+  })
+  it('fails a dictionary word that was not said', () => {
+    const negative = {
+      text: 'Please sign here or type your name.',
+      dictionary: ['OraType'],
+      must_not_contain: ['OraType'],
+    }
+    const forced = scoreSpeech(negative, { output: 'Please sign here OraType your name.' }, EN)
+    expect(forced.failed).toContainEqual(['must_not_contain', 'OraType'])
+    expect(forced.pass).toBe(false)
+  })
+  it('matches ASCII terms as whole words and Chinese terms anywhere', () => {
+    expect(hasTerm('OraTypes', 'OraType')).toBe(false)
+    expect(hasTerm('同OraType講', 'OraType')).toBe(true)
+    expect(hasTerm('同葉梓聰開會', '葉梓聰')).toBe(true)
   })
 })
 

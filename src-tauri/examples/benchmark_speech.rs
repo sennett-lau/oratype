@@ -18,7 +18,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let request: Value = serde_json::from_str(&line?)?;
         let pcm = std::fs::read(request["pcm"].as_str().ok_or("expected pcm path")?)?;
         let start = Instant::now();
-        let result = engine().transcribe(Path::new(&model), &pcm, request["language"].as_str())?;
+        let result =
+            engine().transcribe(Path::new(&model), &pcm, request["language"].as_str(), None)?;
         println!(
             "{}",
             json!({

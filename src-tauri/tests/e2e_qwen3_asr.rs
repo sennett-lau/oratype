@@ -89,6 +89,7 @@ async fn builtin_qwen3_asr_keeps_spoken_cantonese() {
         api_key: String::new(),
         language: None,
         sample_rate: SAMPLE_RATE,
+        ..SttConfig::default()
     };
     provider.connect(&stt_config).await.expect("connect");
     for chunk in pcm.chunks(CHUNK_BYTES) {

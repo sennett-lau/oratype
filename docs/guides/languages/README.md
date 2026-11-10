@@ -17,7 +17,7 @@ them: anyone can add one for their language.
 
 | Language | Codes | Speech recognition | AI polish | Language preset | Tier | Tested |
 |---|---|---|---|---|---|---|
-| [Cantonese (Hong Kong)](cantonese.md) | `zh-Hant-HK`, `yue` | Qwen3-ASR-1.7B | Huihui Qwen3.5 4B abliterated (uncensored) | [cantonese-hong-kong](../../../presets/languages/cantonese-hong-kong/preset.md) | Official | 2026-09-27 |
+| [Cantonese (Hong Kong)](cantonese.md) | `zh-Hant-HK`, `yue` | Qwen3-ASR-1.7B-HK-Cantonese | Huihui Qwen3.5 4B abliterated (uncensored) | [cantonese-hong-kong](../../../presets/languages/cantonese-hong-kong/preset.md) | Official | 2026-09-27 |
 
 <!-- END GENERATED: language-guides -->
 

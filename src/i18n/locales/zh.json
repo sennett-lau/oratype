@@ -466,6 +466,8 @@
     "tryAsk": "试用 Ask",
     "selectedTextContext": "听写时读取选中文本",
     "selectedTextContextDesc": "听写会读取选中的文字并作为上下文传给 AI，可以对它说“改短一点”。会增加 AI 用量。提问和翻译总会读取选中文字。",
+    "cursorContext": "参考光标前的文字",
+    "cursorContextDesc": "听写会读取输入框里光标前约 300 个字符，与你的话一起发给 AI，让结果接得上前文：大小写、标点、语言。不会读取密码框。",
     "targetLanguage": "翻译为",
     "aboutDescription": "开源 AI 语音输入工具。说话即写作 — 实时将语音转化为润色文本。",
     "openSource": "开源",
@@ -970,6 +972,12 @@
     "failed": "无法开始录制快捷键：{{error}}"
   },
   "whatsNew": {
+    "hkCantoneseModel": "粤语的内置语音识别改用 Qwen3-ASR-1.7B-HK-Cantonese，这是 OraType 团队自己为香港粤语微调的 Qwen3-ASR：直接写出香港字，并保留你夹杂的英文。只要语言列表里有粤语，都会推荐它。如果你之前已设置 Qwen3-ASR，设置里会显示“更新”（1.8 GB）；更新前原有文件照常可用。",
+    "dictionaryToSpeech": "你的词典现在也会传给语音识别（内置及 OpenAI 兼容服务器），人名和术语在润色之前就已按你的写法拼出。",
+    "textBeforeCursor": "使用光标前的文字（设置 → AI → 高级，默认关闭）：听写会把光标前约 300 个字符发给 AI，让听写内容接上原有句子，大小写和标点都正确。绝不读取密码框。",
+    "polishWritesDown": "听写的问题和请求会照写下来，不会被回答；说到一半的句子也不会再被补上你没说过的要点。",
+    "polishLighterCommas": "中文和日文少了多余的逗号：语音识别在每次停顿写下的逗号，不会再把一句话切成碎片。",
+    "pillMemory": "使用多日后，胶囊不会再占用超过 1 GB 内存。",
     "fasterCantoneseModels": "内置粤语设置更小更快：长篇听写的语音识别快 21–28%（1.6 GB，原为 2.5 GB），润色的输出快约三分之一。如果你之前已经设置过，设置里会显示“更新”；更新前原有文件照常可用。",
     "readyFirstDictation": "内置 AI 会为你的第一次听写准备好。它启动时会在后台先读一遍你各种语言的指令，所以第一次润色只需约 1 秒，而不是 5–11 秒。如果你马上开始听写，它会让路，不会拖慢你。",
     "fastLanguageSwitching": "快速切换语言（设置 → AI → 内置 AI，默认开启）：你的每种语言都随时就绪，切换语言只需约 1 秒，而不是最长 15 秒。每多一种语言约多用 1–2 GB 内存；内存紧张的 Mac 可以关闭。",
@@ -1075,12 +1083,12 @@
     "download": "下载",
     "use": "使用",
     "update": "更新",
-    "updateAvailable": "有更快的版本（{{size}}）",
+    "updateAvailable": "有新版本（{{size}}）",
     "model": "模型",
     "models": {
       "large-v3-turbo": "最准确",
       "small": "更快",
-      "qwen3Asr": "Qwen3-ASR"
+      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "正在检查这台电脑…",
@@ -1110,7 +1118,7 @@
       }
     },
     "modelDetails": {
-      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
+      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese · {{size}}"
     }
   },
   "speech": {

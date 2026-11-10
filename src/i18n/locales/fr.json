@@ -466,6 +466,8 @@
     "tryAsk": "Essayer Demander",
     "selectedTextContext": "Utiliser le texte sélectionné en dictée",
     "selectedTextContextDesc": "La dictée lit la sélection et l’envoie à l’IA comme contexte, pour que vous puissiez dire « raccourcis ceci » dessus. Utilise plus de jetons d’IA. Demander et Traduire lisent toujours la sélection.",
+    "cursorContext": "Utiliser le texte avant le curseur",
+    "cursorContextDesc": "La dictée lit jusqu’à environ 300 caractères avant le curseur dans le champ et les envoie à l’IA avec vos mots, pour qu’ils prolongent ce qui est déjà écrit : majuscules, ponctuation, langue. Jamais dans les champs de mot de passe.",
     "targetLanguage": "Traduire en",
     "aboutDescription": "Outil de saisie vocale par IA open source. Parlez pour écrire — transformez votre voix en texte soigné en temps réel.",
     "openSource": "Open source",
@@ -970,6 +972,12 @@
     "failed": "Impossible de commencer l’enregistrement du raccourci : {{error}}"
   },
   "whatsNew": {
+    "hkCantoneseModel": "La reconnaissance vocale intégrée pour le cantonais est maintenant Qwen3-ASR-1.7B-HK-Cantonese, le fine-tuning de Qwen3-ASR fait par l'équipe d'OraType pour le cantonais de Hong Kong : il écrit les caractères de Hong Kong et garde les mots anglais que vous y mêlez. C'est le modèle suggéré pour toute liste de langues avec le cantonais. Si vous aviez configuré Qwen3-ASR, les Réglages affichent Mettre à jour (1,8 Go) ; d'ici là, vos fichiers continuent de fonctionner.",
+    "dictionaryToSpeech": "Votre dictionnaire parvient maintenant aussi à la reconnaissance vocale (intégrée et serveurs compatibles OpenAI) : noms et termes sont écrits à votre façon avant même la mise en forme.",
+    "textBeforeCursor": "Utiliser le texte avant le curseur (Réglages → IA → Avancé, désactivé par défaut) : la dictée envoie à l'IA jusqu'à environ 300 caractères avant le curseur, pour que la dictée continue la phrase déjà là, avec les bonnes majuscules et la bonne ponctuation. Jamais depuis un champ de mot de passe.",
+    "polishWritesDown": "Les questions et demandes dictées sont écrites, pas traitées, et une phrase laissée en suspens n'est plus complétée par des points que vous n'avez jamais dits.",
+    "polishLighterCommas": "Moins de virgules parasites en chinois et en japonais : celles que la reconnaissance vocale place à chaque pause ne découpent plus une idée en morceaux.",
+    "pillMemory": "La pastille ne grimpe plus au-delà d'un gigaoctet de mémoire après des jours d'utilisation.",
     "fasterCantoneseModels": "La configuration intégrée pour le cantonais est plus légère et plus rapide : reconnaissance vocale 21 à 28 % plus rapide sur les longues dictées (1,6 Go au lieu de 2,5 Go), amélioration qui écrit environ un tiers plus vite. Si vous l’aviez déjà, les Réglages affichent Mettre à jour ; vos fichiers fonctionnent jusque-là.",
     "readyFirstDictation": "L’IA intégrée est prête pour votre première dictée. Au démarrage, elle lit en arrière-plan les instructions de vos langues : la première amélioration prend environ une seconde au lieu de 5 à 11 secondes. Si vous dictez tout de suite, elle s’arrête et ne vous ralentit jamais.",
     "fastLanguageSwitching": "Changement de langue rapide (Réglages → IA → IA intégrée, activé par défaut) : chacune de vos langues reste prête, et passer de l’une à l’autre prend environ une seconde au lieu de 15 au maximum. Environ 1 à 2 Go de mémoire en plus par langue supplémentaire ; désactivez-le sur un Mac à court de mémoire.",
@@ -1075,12 +1083,12 @@
     "download": "Télécharger",
     "use": "Utiliser",
     "update": "Mettre à jour",
-    "updateAvailable": "version plus rapide disponible ({{size}})",
+    "updateAvailable": "nouvelle version disponible ({{size}})",
     "model": "Modèle",
     "models": {
       "large-v3-turbo": "Meilleure précision",
       "small": "Plus rapide",
-      "qwen3Asr": "Qwen3-ASR"
+      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "Vérification de cet ordinateur…",
@@ -1110,7 +1118,7 @@
       }
     },
     "modelDetails": {
-      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
+      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese · {{size}}"
     }
   },
   "speech": {

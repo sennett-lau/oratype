@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { motion, useReducedMotion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { abortAskDictation, abortRecording } from '../../lib/tauri'
 import { Waveform } from './Waveform'
@@ -16,7 +16,6 @@ interface CapsuleRecordingProps {
 
 export function CapsuleRecording({ handsFree = false }: CapsuleRecordingProps) {
   const { t } = useTranslation()
-  const reduced = useReducedMotion()
   const translating = useAppStore((state) => !handsFree && state.activeVoiceMode === 'translate')
 
   const handleCancel = async (e: React.MouseEvent) => {
@@ -34,12 +33,8 @@ export function CapsuleRecording({ handsFree = false }: CapsuleRecordingProps) {
 
   return (
     <motion.div className="relative z-10 flex items-center gap-2 h-full pl-3.5 pr-3">
-      {/* Recording dot — gentle opacity loop */}
-      <motion.div
-        className="w-2 h-2 rounded-full bg-recording flex-shrink-0"
-        animate={reduced ? undefined : { opacity: [1, 0.5, 1] }}
-        transition={{ repeat: Infinity, duration: 1.5, ease: 'easeInOut' }}
-      />
+      {/* Recording dot — gentle opacity loop (CSS, see `.pill-dot-pulse`) */}
+      <div className="pill-dot-pulse w-2 h-2 rounded-full bg-recording flex-shrink-0" />
       <Waveform />
       {translating && <TranslatePillLanguage />}
       <div className="flex-1" />

@@ -25,9 +25,12 @@ Options for `polish` and `speech`:
 | `--split dev\|holdout\|all` | Which cases; default `dev`. |
 | `--tag numbers` / `--id en-011` | Only cases with this tag / these ids. |
 | `--n 3` | Samples per polish case (temperature noise); default 3. |
+| `--context prompt.chatgpt` | The app dictated into, a built-in profile id (`src-tauri/src/app_detector/profiles.rs`); default: a general app. |
 | `--languages en,zh-Hant-HK` | The user's language list for polish routing (default: the app's default list). |
 | `--baseline <file>\|none` | Compare with this baseline; default `evals/baselines/<kind>-<model>.json` if it exists. |
 | `--save-baseline` | Write the results into that baseline file (only when intended, see AGENTS.md). |
+| `--cursor-context off` | Polish: do not give cases their `before_cursor` text. |
+| `--dictionary off` | Speech: do not give clips their `dictionary` words, to measure what the words change. |
 | `--out <dir>` | Where results go; default `output/evals/<time>-<kind>/` (git-ignored). |
 
 The built-in AI needs `src-tauri/binaries/llama-server-<triple>` (`bash scripts/build-llama-server.sh`)
@@ -73,9 +76,10 @@ One JSON object per line:
 | `expected` | yes | The ideal polished text. |
 | `accept` | no | Other answers that are equally right. |
 | `must_contain` / `must_not_contain` | no | Words that must survive / must be gone (ASCII words match whole words, case-insensitive). |
-| `tags` | yes | From: `filler`, `self-correction`, `numbers`, `punctuation`, `newline`, `list`, `dash`, `keep-meaning`, `script`, `dialect`, `mixed-language`. |
+| `tags` | yes | From: `filler`, `self-correction`, `numbers`, `punctuation`, `newline`, `list`, `dash`, `keep-meaning`, `script`, `dialect`, `mixed-language`, `no-answer` (a dictated question or request that must be written down, not answered or carried out), `unfinished` (a sentence the user stopped mid-way, which must not be completed), `over-punctuation` (one flowing thought: no more commas or sentence breaks than the reference, also when the transcript has pause commas), `cursor-context` (a case with `before_cursor`). |
 | `split` | yes | `dev` or `holdout`; must match the file. |
 | `max_error` | no | Allowed error rate for this case (default 0.3 words, 0.25 characters). |
+| `before_cursor` | no | The field's text before the cursor, given to polish as context (plan [`cursor-context`](../docs/plans/2026-11-08-cursor-context/index.md)); needs the `cursor-context` tag. |
 | `notes` | no | Why the case exists, and credit for its source. |
 
 A sample **passes** when, for at least one of `expected` and `accept`, all checks pass:
@@ -88,7 +92,11 @@ A sample **passes** when, for at least one of `expected` and `accept`, all check
 - **numbers**: the same digit numbers as the reference (list numbering ignored);
 - **list** and **layout**: the same number of list lines, lines and paragraphs as the reference;
 - **punctuation** (cases tagged `punctuation` only): the same number of sentence breaks;
+- **over-punctuation** (cases tagged `over-punctuation` only): no more sentence breaks and no more
+  commas (also 、 ; :) than the reference;
 - **script** (Chinese): no characters of the other script (Simplified vs Traditional);
+- **continuation** (cases tagged `cursor-context` only): the first letter has the reference's
+  case, so a dictation continues the field's sentence or starts a new one as it should;
 - **dialect** (Chinese): no Mandarin-only words in Cantonese, no Cantonese words in Mandarin,
   unless the reference has them.
 
@@ -99,13 +107,23 @@ a case cannot demand something its own answer fails.
 
 `manifest.jsonl`, one clip per line: `id`, `audio` (path under `audio/`), `text` (the exact
 words), optional `accept`, `tags` (`clean`, `numbers`, `names`, `dialect`, `mixed-language`,
-`noisy`, `accent`), `source` (`recording`, `synthetic-say` or `external`), `licence`, `speaker`,
+`noisy`, `accent`, `dictionary`), `source` (`recording`, `synthetic-say` or `external`), `licence`, `speaker`,
 `split`, and for synthetic clips `say_voice` (and `say_text` when the spoken text differs).
+
+Dictionary clips (plan
+[`dictionary-to-speech`](../docs/plans/2026-11-08-dictionary-to-speech/index.md), tag
+`dictionary`) also have `dictionary`, the user's words that the recognizer is given, and one
+or both of:
+
+- `terms`: dictionary words the clip says. Each must appear spelled exactly as written, case
+  included (ASCII terms as whole words).
+- `must_not_contain`: dictionary words the clip does not say, usually because a sound-alike is
+  said ("or type" for OraType). The recognizer must not force them in.
 
 The score is the error rate after converting the answer into the reference's script (Whisper
 often writes Cantonese in the wrong script; that is reported as a separate `script` check, and
 the raw error is kept as `raw_error`). A clip passes at 15% error or less with no Mandarin words in
-a Cantonese answer.
+a Cantonese answer, and with its `terms` and `must_not_contain` checks met.
 
 Synthetic clips are made with macOS `say` and are not committed; they are a smoke test, far
 cleaner than real speech. **Real recordings are preferred**: short (under 15 s), 16 kHz mono

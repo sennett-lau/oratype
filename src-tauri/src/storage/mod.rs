@@ -1150,6 +1150,9 @@ pub struct AppConfig {
     pub windows_sendinput_newline_mode: String,
     pub streaming_insert_enabled: bool,
     pub selected_text_enabled: bool,
+    /// Plan `cursor-context`: Dictate sends the text before the cursor to polish as context.
+    /// Off by default: it sends what the field holds to the AI on every dictation.
+    pub cursor_context_enabled: bool,
     pub theme: String,
     pub auto_start: bool,
     pub close_to_tray: bool,
@@ -1235,6 +1238,7 @@ impl Default for AppConfig {
             windows_sendinput_newline_mode: "enter".to_string(),
             streaming_insert_enabled: false,
             selected_text_enabled: false,
+            cursor_context_enabled: false,
             theme: "system".to_string(),
             auto_start: true,
             close_to_tray: true,

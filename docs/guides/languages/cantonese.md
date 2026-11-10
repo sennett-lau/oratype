@@ -2,19 +2,19 @@
 id: cantonese
 language: Cantonese (Hong Kong)
 codes: zh-Hant-HK, yue
-speech: Qwen3-ASR-1.7B
+speech: Qwen3-ASR-1.7B-HK-Cantonese
 polish: Huihui Qwen3.5 4B abliterated (uncensored)
 tier: official
 authors: sennett-lau
 preset: cantonese-hong-kong
 tested: 2026-09-27
-notes: Whisper writes Cantonese as formal written Chinese; Qwen3-ASR keeps it as spoken, with English words.
+notes: Whisper writes Cantonese as formal written Chinese; the HK fine-tune keeps it as spoken, with English words.
 ---
 
 # Cantonese (Hong Kong)
 
 For people who dictate in Hong Kong Cantonese, often mixed with English, and want it written the
-way Hongkongers type messages: 我哋聽日開會，你記得send個email俾佢. Use Qwen3-ASR for speech
+way Hongkongers type messages: 我哋聽日開會，你記得send個email俾佢. Use Qwen3-ASR-1.7B-HK-Cantonese for speech
 recognition, an uncensored Qwen3.5 4B for polish, and the Cantonese (Hong Kong) language
 preset.
 
@@ -22,7 +22,7 @@ preset.
 
 | Step | Model | Why |
 |---|---|---|
-| Speech recognition | [Qwen3-ASR-1.7B](../speech/openai-compatible.md#qwen3-asr) (Apache-2.0) | Writes what you said in Cantonese (我哋, 聽日, 咗, 緊, 咯) and keeps the English words you mix in. |
+| Speech recognition | [Qwen3-ASR-1.7B-HK-Cantonese](https://huggingface.co/joe2643/Qwen3-ASR-1.7B-Cantonese-HK-GGUF) (Apache-2.0), the OraType team's fine-tune of [Qwen3-ASR-1.7B](../speech/openai-compatible.md#qwen3-asr) | Writes what you said in Cantonese (我哋, 聽日, 咗, 緊, 咯), in Hong Kong characters, and keeps the English words you mix in. |
 | AI polish | [Huihui-Qwen3.5-4B-abliterated](https://huggingface.co/huihui-ai/Huihui-Qwen3.5-4B-abliterated) (tested) | Given a Cantonese transcript, it only has to clean up: fillers, self-corrections, punctuation. Use an uncensored model: stock instruct models soften or drop Cantonese slang and swear words, so the text stops sounding native. |
 | Language preset | [Cantonese (Hong Kong)](../../../presets/languages/cantonese-hong-kong/preset.md) | Tells polish how Hongkongers write, and lets OraType recognise that you spoke Cantonese. |
 
@@ -40,10 +40,10 @@ was said.
 
 ## Set it up
 
-1. **Easiest: Built-in.** OraType runs Qwen3-ASR itself. Add Cantonese (Hong Kong) under **Your
-   languages** (onboarding, or **Settings → General**); the Built-in card then has **Qwen3-ASR**
-   chosen.
-   Press **Set up** (or **Download**, 1.6 GB) and go on to step 3. Its suggested AI model is
+1. **Easiest: Built-in.** OraType runs Qwen3-ASR-1.7B-HK-Cantonese itself. Add Cantonese (Hong
+   Kong) under **Your languages** (onboarding, or **Settings → General**); the Built-in card then
+   has **Qwen3-ASR-1.7B-HK-Cantonese** chosen.
+   Press **Set up** (or **Download**, 1.8 GB) and go on to step 3. Its suggested AI model is
    the stock Qwen 3.5 4B; for slang and swear words use the uncensored one of step 5.
 
    **Or run it yourself** on your Mac or on a computer with an NVIDIA GPU, with llama.cpp's
@@ -51,10 +51,10 @@ was said.
    [Qwen3-ASR](../speech/openai-compatible.md#qwen3-asr) for vLLM and other options):
 
    ```sh
-   llama-server -hf ggml-org/Qwen3-ASR-1.7B-GGUF:Q8_0 --host 127.0.0.1 --port 8180 -c 4096 -np 1
+   llama-server -hf joe2643/Qwen3-ASR-1.7B-Cantonese-HK-GGUF:Q6_K --host 127.0.0.1 --port 8180 -c 4096 -np 1
    ```
 
-   The first start downloads the model and its audio encoder (about 2.5 GB). To serve other
+   The first start downloads the model and its audio encoder (about 1.8 GB). To serve other
    computers, use `--host 0.0.0.0` and allow the port through that computer's firewall for your
    network only.
 
@@ -71,9 +71,10 @@ was said.
    translate into Cantonese. If the row shows another preset or your own text, press **Edit**,
    then **Change** to pick **Cantonese (Hong Kong)**.
 
-4. **Characters:** Qwen3-ASR writes Cantonese in Simplified characters. When a dictation is
-   recognised as Cantonese (Hong Kong), OraType writes it in Hong Kong Traditional characters,
-   with Cantonese 係 and 覆 where a plain conversion would write 系 or 復. Nothing to set.
+4. **Characters:** Qwen3-ASR-1.7B-HK-Cantonese writes Hong Kong Traditional characters itself.
+   With the stock Qwen3-ASR, which writes Simplified, OraType converts a dictation recognised as
+   Cantonese (Hong Kong) to Hong Kong Traditional characters, with Cantonese 係 and 覆 where a
+   plain conversion would write 系 or 復. Nothing to set.
 
 5. **AI polish:** [Huihui-Qwen3.5-4B-abliterated](https://huggingface.co/huihui-ai/Huihui-Qwen3.5-4B-abliterated), an
    ["uncensored" variant](../models/ai-polish.md#uncensored-or-abliterated-models) of Qwen3.5 4B.
@@ -113,6 +114,11 @@ after a warm-up. Speed on other hardware: [Benchmarks](../benchmarks/README.md).
 With the Qwen3-ASR transcript, polish with the Cantonese preset kept the text 96% the same as what
 was said, with no formal written Chinese left; with whisper's transcript, 62%.
 
+The tables above were measured with the stock Qwen3-ASR-1.7B. Qwen3-ASR-1.7B-HK-Cantonese, which
+replaced it in OraType 1.2.2, passed as many of OraType's 41 speech clips (34) with more
+Cantonese clips right; it takes about 25% longer on a Mac
+([report](../../benchmarks/reports/2026-11-10-hk-cantonese-asr/README.md)).
+
 ## Known issues
 
 - A self-correction said without a pause ("下個禮拜三唔係禮拜四") is sometimes resolved to the
@@ -121,3 +127,6 @@ was said, with no formal written Chinese left; with whisper's transcript, 62%.
   model; tell us how it does with yours.
 - Qwen3-ASR-1.7B needs about 3.4 GB of VRAM with llama.cpp (Q8_0), about 7 GB with vLLM. On a
   smaller GPU, use Qwen3-ASR-0.6B.
+- Qwen3-ASR-1.7B-HK-Cantonese was trained on Cantonese and Cantonese–English speech. It sometimes
+  writes Mandarin speech in Cantonese words (請喺呢度簽名 for 请在这里签名), and it usually leaves
+  out the final 。, which polish adds back.

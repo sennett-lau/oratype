@@ -12,6 +12,8 @@ export type Screen =
   | 'copy-pill'
   // Promo-video stills (.claude/skills/promo-video): real screens set up for one feature.
   | 'promo-hands-free'
+  | 'promo-fast-switching'
+  | 'promo-your-languages'
   | 'pill'
 
 export const SCREENS: Record<Screen, { hash: string }> = {
@@ -21,6 +23,10 @@ export const SCREENS: Record<Screen, { hash: string }> = {
   'copy-pill': { hash: '#capsule' },
   // Settings → General with Hands-free on (plan `hands-free-mode`).
   'promo-hands-free': { hash: '#/settings?pane=general' },
+  // Settings → AI with Built-in AI in use: Fast language switching (plan `warm-builtin-ai`).
+  'promo-fast-switching': { hash: '#/settings?pane=llm' },
+  // Settings → General → Your languages with their presets (plan `languages-in-general`).
+  'promo-your-languages': { hash: '#/settings?pane=general' },
   // The pill alone, in the state given by `&state=` (recording, transcribing, polishing, …).
   pill: { hash: '#capsule' },
 }
@@ -104,6 +110,7 @@ function capturedConfig(screen: Screen, dark: boolean): AppConfig {
     ai_presets: ai,
     active_ai_preset_id: ai[0].id,
     target_lang: firstTarget,
+    your_languages: ['zh-Hant-HK', 'en', 'ja'],
     translation: {
       targets,
       active_target: firstTarget,
