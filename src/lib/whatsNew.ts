@@ -11,6 +11,17 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    version: '1.2.2',
+    changeKeys: [
+      'hkCantoneseModel',
+      'dictionaryToSpeech',
+      'textBeforeCursor',
+      'polishWritesDown',
+      'polishLighterCommas',
+      'pillMemory',
+    ],
+  },
+  {
     version: '1.2.1',
     changeKeys: [
       'fasterCantoneseModels',
