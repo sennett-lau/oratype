@@ -180,7 +180,7 @@ describe('LlmPane', () => {
       await waitFor(() => expect(tauri.deleteAiModel).toHaveBeenCalledWith('qwen3-4b'))
     })
 
-    it('an earlier version in use offers the faster one as an update (plan `faster-cantonese-models`)', async () => {
+    it('an earlier version in use offers the current one as an update (plan `faster-cantonese-models`)', async () => {
       mockAppStore.config.ai_presets = [
         { ...installedAiBuiltin('qwen3.5-4b', 7), model_file: 'Qwen3.5-4B-Q4_K_M.gguf' },
       ]
@@ -201,7 +201,7 @@ describe('LlmPane', () => {
       const status = await screen.findByTestId('builtin-status')
       await waitFor(() => expect(within(status).getByText('In use')).toBeInTheDocument())
       expect(
-        within(status).getByText(/2\.7 GB · faster version available \(2\.6 GB\)/),
+        within(status).getByText(/2\.7 GB · new version available \(2\.6 GB\)/),
       ).toBeInTheDocument()
       fireEvent.click(within(status).getByRole('button', { name: 'Update' }))
       expect(tauri.startAiSetup).toHaveBeenCalledWith('qwen3.5-4b')

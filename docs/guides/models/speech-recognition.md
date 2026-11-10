@@ -24,7 +24,7 @@ Which speech model to run, by hardware and by language. How to connect each one 
 | Hardware | Suggested model | Rough size | Notes |
 |---|---|---|---|
 | Apple Silicon, 8 GB or more | whisper large-v3-turbo, q5_0 | 574 MB | OraType's Built-in **Best accuracy** model; about 2 s for a short clip on an M1 Pro. |
-| Apple Silicon, 16 GB or more | Qwen3-ASR-1.7B, Q4_K_M, with `llama-server` | about 1.6 GB | OraType's Built-in **Qwen3-ASR** model (or your own server); about 0.4 s for a short clip on an M1 Pro, faster than Built-in whisper. |
+| Apple Silicon, 16 GB or more | Qwen3-ASR-1.7B-HK-Cantonese (a Qwen3-ASR-1.7B fine-tune), Q6_K, with `llama-server` | about 1.8 GB | OraType's Built-in **Qwen3-ASR-1.7B-HK-Cantonese** model (or your own server); about 25% slower than the stock Qwen3-ASR Q4_K_M on an M1 Pro, which takes about 0.4 s for a short clip. |
 | Apple Silicon under 8 GB, or Intel Mac | whisper small, q5_1 | 190 MB | OraType's Built-in **Faster** model. Less accurate, especially for mixed languages. |
 | NVIDIA GPU | whisper large-v3-turbo (whisper.cpp with CUDA, or Speaches), or Qwen3-ASR-1.7B (`llama-server` with CUDA, or vLLM) | about 1.2 GB (whisper), 3.4 GB (Qwen3-ASR with llama.cpp) | About ten times faster than a laptop: 0.1–0.3 s per clip on an RTX 3080 Ti. On a small GPU, Qwen3-ASR-0.6B. |
 | CPU only | whisper small or base, or a cloud service | 60–190 MB | Large models are slow on a CPU. |
@@ -35,7 +35,7 @@ Which speech model to run, by hardware and by language. How to connect each one 
 |---|---|---|
 | English | whisper large-v3-turbo | Qwen3-ASR is as good on clean English and better with accents. |
 | Mandarin | whisper large-v3-turbo, or Qwen3-ASR for higher accuracy | Pick the characters with your Chinese language and its [preset](../languages/README.md#language-presets). |
-| Cantonese | Qwen3-ASR-1.7B | whisper turns Cantonese into formal written Chinese. See the [Cantonese guide](../languages/cantonese.md). |
+| Cantonese | Qwen3-ASR-1.7B-HK-Cantonese (a fine-tune of Qwen3-ASR-1.7B) | whisper turns Cantonese into formal written Chinese. See the [Cantonese guide](../languages/cantonese.md). |
 | Other languages | whisper large-v3-turbo | Check [whether you need a language guide](../languages/README.md#language-guides). |
 
 ## Spoken language

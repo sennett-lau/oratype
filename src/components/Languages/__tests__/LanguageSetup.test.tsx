@@ -58,9 +58,9 @@ describe('Onboarding → Your languages (plan `language-model-suggestions`)', ()
     expect(
       within(box).getByText('Suggested setup for English and Cantonese (Hong Kong)'),
     ).toBeInTheDocument()
-    expect(within(box).getByText('Qwen3-ASR 1.7B')).toBeInTheDocument()
+    expect(within(box).getByText('Qwen3-ASR-1.7B-HK-Cantonese')).toBeInTheDocument()
     expect(within(box).getByText('Qwen 3.5 4B')).toBeInTheDocument()
-    expect(within(box).getByText('1.6 GB')).toBeInTheDocument()
+    expect(within(box).getByText('1.8 GB')).toBeInTheDocument()
     expect(within(box).getByText('2.6 GB')).toBeInTheDocument()
     // The list is the user's own choice, so no "from your Mac" note.
     expect(screen.queryByText(/Filled in from your Mac/)).not.toBeInTheDocument()
@@ -126,7 +126,7 @@ describe('Home → Suggested for your languages', () => {
     ).toBeInTheDocument()
     expect(
       within(card).getByText(
-        'Qwen3-ASR 1.7B for speech recognition and Qwen 3.5 4B for AI polish. They run on this Mac; 4.2 GB to download.',
+        'Qwen3-ASR-1.7B-HK-Cantonese for speech recognition and Qwen 3.5 4B for AI polish. They run on this Mac; 4.4 GB to download.',
       ),
     ).toBeInTheDocument()
     fireEvent.click(within(card).getByRole('button', { name: 'Set up' }))
@@ -188,7 +188,7 @@ describe('Home → Suggested for your languages', () => {
 // pages keep only the suggestion.
 describe('Settings → Built-in speech and AI polish', () => {
   it.each([
-    [SPEECH_SERVICE, 'Speech recognition: Qwen3-ASR 1.7B.'],
+    [SPEECH_SERVICE, 'Speech recognition: Qwen3-ASR-1.7B-HK-Cantonese.'],
     [AI_SERVICE, 'AI polish: Qwen 3.5 4B.'],
   ])('has no language picker, and its banner opens General (%#)', async (service, detail) => {
     setConfig({ your_languages: ['en', 'zh-Hant-HK'] })

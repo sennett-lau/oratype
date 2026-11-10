@@ -1075,12 +1075,12 @@
     "download": "Descargar",
     "use": "Usar",
     "update": "Actualizar",
-    "updateAvailable": "versión más rápida disponible ({{size}})",
+    "updateAvailable": "nueva versión disponible ({{size}})",
     "model": "Modelo",
     "models": {
       "large-v3-turbo": "Máxima precisión",
       "small": "Más rápido",
-      "qwen3Asr": "Qwen3-ASR"
+      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "Comprobando este ordenador…",
@@ -1110,7 +1110,7 @@
       }
     },
     "modelDetails": {
-      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
+      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese · {{size}}"
     }
   },
   "speech": {

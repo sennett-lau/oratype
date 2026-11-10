@@ -1075,12 +1075,12 @@
     "download": "下載",
     "use": "使用",
     "update": "更新",
-    "updateAvailable": "有更快的版本（{{size}}）",
+    "updateAvailable": "有新版本（{{size}}）",
     "model": "模型",
     "models": {
       "large-v3-turbo": "最準確",
       "small": "更快",
-      "qwen3Asr": "Qwen3-ASR"
+      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "正在檢查這臺電腦…",
@@ -1110,7 +1110,7 @@
       }
     },
     "modelDetails": {
-      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
+      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese · {{size}}"
     }
   },
   "speech": {

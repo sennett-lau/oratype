@@ -1075,12 +1075,12 @@
     "download": "ダウンロード",
     "use": "使う",
     "update": "更新",
-    "updateAvailable": "より速い版があります（{{size}}）",
+    "updateAvailable": "新しい版があります（{{size}}）",
     "model": "モデル",
     "models": {
       "large-v3-turbo": "最高精度",
       "small": "高速",
-      "qwen3Asr": "Qwen3-ASR"
+      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "このコンピュータを確認中…",
@@ -1110,7 +1110,7 @@
       }
     },
     "modelDetails": {
-      "qwen3Asr": "Qwen3-ASR 1.7B · {{size}}"
+      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese · {{size}}"
     }
   },
   "speech": {

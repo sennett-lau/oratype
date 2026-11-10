@@ -5,6 +5,10 @@
 //! Conversion is OpenCC's (the pure-Rust `ferrous-opencc`, with OpenCC's dictionaries built in):
 //! characters only, no vocabulary changes. For Cantonese, two fixes follow that OpenCC cannot make
 //! because it converts for written Chinese: 係 ("is") for 系/繫, and 覆 ("reply") for 復.
+//!
+//! Plan `hk-cantonese-asr`: the built-in model now writes Hong Kong Traditional itself. A
+//! transcript that is already mostly Traditional is not converted to a Traditional script again:
+//! OpenCC reads some Traditional characters as Simplified ones (涌 in 鰂魚涌 would become 湧).
 
 use std::sync::OnceLock;
 
@@ -81,7 +85,12 @@ pub fn convert(text: &str, script: ChineseScript) -> String {
     if !text.chars().any(is_han) {
         return text.to_string();
     }
-    let converted = script.converter().convert(text);
+    let converted = match script {
+        ChineseScript::HongKong | ChineseScript::Taiwan if mostly_traditional(text) => {
+            text.to_string()
+        }
+        _ => script.converter().convert(text),
+    };
     match script {
         ChineseScript::HongKong => cantonese_fixes(&converted),
         _ => converted,
@@ -120,6 +129,20 @@ fn cantonese_fixes(text: &str) -> String {
         i += 1;
     }
     out
+}
+
+/// True when more characters of `text` are Traditional-only (changed by OpenCC's Traditional to
+/// Simplified) than Simplified-only (changed by its Simplified to Hong Kong Traditional).
+fn mostly_traditional(text: &str) -> bool {
+    let changed = |converted: String| {
+        text.chars()
+            .zip(converted.chars())
+            .filter(|(a, b)| a != b)
+            .count()
+    };
+    let traditional = changed(ChineseScript::Simplified.converter().convert(text));
+    let simplified = changed(ChineseScript::HongKong.converter().convert(text));
+    traditional > simplified
 }
 
 fn is_han(c: char) -> bool {
@@ -184,6 +207,45 @@ mod tests {
         assert_eq!(
             convert("佢成日都迟到，真系好烦。", ChineseScript::HongKong),
             "佢成日都遲到，真係好煩。"
+        );
+    }
+
+    #[test]
+    fn traditional_transcripts_keep_their_characters() {
+        // Plan `hk-cantonese-asr`: Qwen3-ASR-1.7B-HK-Cantonese writes Hong Kong Traditional.
+        assert_eq!(
+            convert("我哋聽日喺鰂魚涌同葉子涌開會", ChineseScript::HongKong),
+            "我哋聽日喺鰂魚涌同葉子涌開會"
+        );
+        assert_eq!(
+            convert(
+                "他剛才說，這份報告明天才可以給我們。",
+                ChineseScript::HongKong
+            ),
+            "他剛才說，這份報告明天才可以給我們。"
+        );
+        assert_eq!(
+            convert(
+                "佢剛才說，這份報告明天才可以給我們。",
+                ChineseScript::Taiwan
+            ),
+            "佢剛才說，這份報告明天才可以給我們。"
+        );
+        // Mostly Simplified: converted as before, the Traditional part included.
+        assert_eq!(
+            convert(
+                "明天下午三点我们在会议室开会，請大家準時參加。",
+                ChineseScript::HongKong
+            ),
+            "明天下午三點我們在會議室開會，請大家準時參加。"
+        );
+        // To Simplified, Traditional text is converted as before.
+        assert_eq!(
+            convert(
+                "我們把向量數據從Pinecone搬到了Qdrant",
+                ChineseScript::Simplified
+            ),
+            "我们把向量数据从Pinecone搬到了Qdrant"
         );
     }
 
