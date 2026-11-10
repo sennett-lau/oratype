@@ -37,7 +37,7 @@ a **draft** release. Nothing is public until you publish the draft by hand.
 | `OraType_X.Y.Z_aarch64.zip` | The same app bundle, zipped with `ditto` |
 | `SHA256SUMS.txt` | SHA-256 of the DMG and the ZIP |
 
-It runs on a `macos-14` runner (Apple Silicon). It builds `llama-server`
+It runs on a `macos-15` runner (Apple Silicon; GitHub retired `macos-14` on 2026-11-02). It builds `llama-server`
 (`npm run build:llama-server`), then the app with the same bundle config as `npm run build:app`,
 then the DMG with `scripts/build-dmg.sh`: a window with large icons, the app on the left and an
 arrow to Applications on the right (`scripts/dmg-settings.py`, background

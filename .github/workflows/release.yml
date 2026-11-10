@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-14 # Apple Silicon
+    runs-on: macos-15 # Apple Silicon
     timeout-minutes: 90
     env:
       # The certificate imported below. "-" (ad hoc) would give every build a new signer.
