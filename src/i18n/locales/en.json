@@ -972,6 +972,12 @@
     "failed": "Could not start recording the shortcut: {{error}}"
   },
   "whatsNew": {
+    "hkCantoneseModel": "Built-in speech for Cantonese is now Qwen3-ASR-1.7B-HK-Cantonese, the OraType team's own fine-tune of Qwen3-ASR for Hong Kong Cantonese: it writes Hong Kong characters and keeps the English words you mix in. It is the suggested model for any language list with Cantonese. If you set up Qwen3-ASR before, Settings shows Update (1.8 GB); your files keep working until then.",
+    "dictionaryToSpeech": "Your dictionary now reaches speech recognition too (built-in and OpenAI-compatible servers), so names and terms come out spelled your way before polish sees them.",
+    "textBeforeCursor": "Use text before the cursor (Settings → AI → Advanced, off by default): Dictate sends up to about 300 characters before the cursor to the AI, so a dictation continues the sentence that is there, with the right capital letters and punctuation. Never from password fields.",
+    "polishWritesDown": "Dictated questions and requests are written down, not answered, and a sentence you leave unfinished is no longer completed with points you never said.",
+    "polishLighterCommas": "Fewer stray commas in Chinese and Japanese: the commas speech recognition writes at every pause no longer cut one thought into pieces.",
+    "pillMemory": "The pill no longer grows to over a gigabyte of memory after days of use.",
     "fasterCantoneseModels": "The built-in Cantonese setup is smaller and faster: speech is 21–28% faster on long dictations (1.6 GB instead of 2.5 GB) and polish writes about a third faster. If you set it up before, Settings shows Update; your files keep working until then.",
     "readyFirstDictation": "Built-in AI is ready for your first dictation. When it starts, it reads your languages’ instructions in the background, so the first polish takes about a second instead of 5–11 seconds. Dictating straight away stops this, so it never slows you down.",
     "fastLanguageSwitching": "Fast language switching (Settings → AI → Built-in AI, on by default): each of your languages stays ready, so switching between them takes about a second instead of up to 15. It uses about 1–2 GB more memory per extra language; turn it off on a Mac that is short of memory.",
