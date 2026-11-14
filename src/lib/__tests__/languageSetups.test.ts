@@ -3,6 +3,7 @@ import {
   FASTER_AI_MODEL,
   QWEN35_AI_MODEL,
   QWEN3_ASR_MODEL,
+  QWEN3_ASR_SMALL_MODEL,
   missingModels,
   setupFor,
   suggestionFor,
@@ -22,7 +23,7 @@ import { TARGET_LANGUAGES } from '../constants'
 import { translate } from '../../test-utils/i18nMock'
 import { hardwareCheck } from '../../test-utils/speechHardware'
 
-const speechAll = hardwareCheck(['large-v3-turbo', 'small', QWEN3_ASR_MODEL])
+const speechAll = hardwareCheck(['large-v3-turbo', 'small', QWEN3_ASR_MODEL, QWEN3_ASR_SMALL_MODEL])
 const aiAll = hardwareCheck(['qwen3-4b', 'qwen3-1.7b', QWEN35_AI_MODEL])
 const builtin = (model: string | null) => ({ builtin: true, model })
 const ownServer = { builtin: false, model: null }
@@ -115,6 +116,39 @@ describe('suggested setups (plan `language-model-suggestions`)', () => {
       speech: null,
       ai: null,
     })
+  })
+
+  it('suggests the smaller speech model under 16 GB of memory (plan `small-cantonese-asr`)', () => {
+    const models = ['large-v3-turbo', 'small', QWEN3_ASR_MODEL, QWEN3_ASR_SMALL_MODEL]
+    const eight = hardwareCheck(models, { memoryBytes: 8 * 1024 ** 3 })
+    expect(suggestionFor(['yue'], eight, aiAll)?.speech).toBe(QWEN3_ASR_SMALL_MODEL)
+    const sixteen = hardwareCheck(models, { memoryBytes: 16 * 1024 ** 3 })
+    expect(suggestionFor(['yue'], sixteen, aiAll)?.speech).toBe(QWEN3_ASR_MODEL)
+    // Unknown memory keeps the setup's own model.
+    const unknown = hardwareCheck(models, { memoryBytes: 0 })
+    expect(suggestionFor(['yue'], unknown, aiAll)?.speech).toBe(QWEN3_ASR_MODEL)
+    // Only the smaller one fits on the disk.
+    const short = hardwareCheck(['large-v3-turbo', 'small', QWEN3_ASR_SMALL_MODEL])
+    expect(suggestionFor(['yue'], short, aiAll)?.speech).toBe(QWEN3_ASR_SMALL_MODEL)
+    // Only the larger one is offered (installed, no disk left).
+    const onlyLarge = hardwareCheck([QWEN3_ASR_MODEL], { memoryBytes: 8 * 1024 ** 3 })
+    expect(suggestionFor(['yue'], onlyLarge, aiAll)?.speech).toBe(QWEN3_ASR_MODEL)
+  })
+
+  it('counts either Qwen3-ASR model as in use', () => {
+    const models = ['large-v3-turbo', 'small', QWEN3_ASR_MODEL, QWEN3_ASR_SMALL_MODEL]
+    const eight = suggestionFor(
+      ['yue'],
+      hardwareCheck(models, { memoryBytes: 8 * 1024 ** 3 }),
+      aiAll,
+    )
+    const ai = builtin(QWEN35_AI_MODEL)
+    expect(missingModels(eight, { speech: builtin(QWEN3_ASR_MODEL), ai })).toEqual([])
+    expect(missingModels(eight, { speech: builtin('large-v3-turbo'), ai })).toEqual([
+      { kind: 'speech', id: QWEN3_ASR_SMALL_MODEL },
+    ])
+    const big = suggestionFor(['yue'], speechAll, aiAll)
+    expect(missingModels(big, { speech: builtin(QWEN3_ASR_SMALL_MODEL), ai })).toEqual([])
   })
 
   it('offers on Home only the built-in models not in use yet', () => {

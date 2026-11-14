@@ -67,6 +67,10 @@ pub fn known_model_by_file(file_name: &str) -> Option<&'static KnownModel> {
 /// stays so that presets and earlier files keep working.
 pub const QWEN3_ASR_MODEL_ID: &str = "qwen3-asr-1.7b";
 
+/// Plan `small-cantonese-asr`: id of Qwen3-ASR-0.6B-HK-Cantonese, the smaller fine-tune for Macs
+/// with less memory. The suggestion picks it under 16 GB; both models are offered everywhere.
+pub const QWEN3_ASR_SMALL_MODEL_ID: &str = "qwen3-asr-0.6b";
+
 const GIB: u64 = 1024 * 1024 * 1024;
 
 /// Plan `language-model-suggestions`: a built-in speech model that runs in a second `llama-server`
@@ -102,56 +106,78 @@ pub struct AsrFiles {
 /// Qwen3-ASR model is Qwen3-ASR-1.7B-HK-Cantonese (`joe2643/Qwen3-ASR-1.7B-Cantonese-HK-GGUF`), a
 /// fine-tune for Hong Kong Cantonese with English mixed in, which writes Hong Kong Traditional
 /// characters. Version 2, Q6_K: its Q4_K_M wrote some English clips in Chinese, and its Q8_0 is
-/// slower for no gain (benchmark report `2026-11-10-hk-cantonese-asr`).
-pub const ASR_MODELS: &[AsrModel] = &[AsrModel {
-    file: KnownModel {
-        id: QWEN3_ASR_MODEL_ID,
-        file_name: "Qwen3-ASR-1.7B-Cantonese-HK.Q6_K.gguf",
-        size_bytes: 1_417_750_464,
-        sha256: "1e8cc6a8fe4970eca1eaceaac5a60eaa5383e1044057e0d11a3348ecb2cf6ea4",
-    },
-    projector: KnownModel {
-        id: QWEN3_ASR_MODEL_ID,
-        file_name: "Qwen3-ASR-1.7B-Cantonese-HK.mmproj-Q8_0.gguf",
-        size_bytes: 355_709_216,
-        sha256: "0ec38c2b7a8a81b6a011af5203197a4df3e61fd63cea780ff2004eef1ef7265e",
-    },
-    base_url: "https://huggingface.co/joe2643/Qwen3-ASR-1.7B-Cantonese-HK-GGUF/resolve/c2b90a46d61a5fc93ec07955aeaf18b8ffdc5ed9",
-    min_memory_bytes: 8 * GIB,
-    previous: &[
-        // OraType 1.2.1: Qwen3-ASR 1.7B, mradermacher's Q4_K_M (1.28 GB) and its Q8_0 projector
-        // (plan `faster-cantonese-models`).
-        AsrFiles {
-            file: KnownModel {
-                id: QWEN3_ASR_MODEL_ID,
-                file_name: "Qwen3-ASR-1.7B.Q4_K_M.gguf",
-                size_bytes: 1_282_435_552,
-                sha256: "3893b8926065bbff3da7586d21d8711a9b4fa4fa8f12cd0cefad58e31b2660b6",
-            },
-            projector: KnownModel {
-                id: QWEN3_ASR_MODEL_ID,
-                file_name: "Qwen3-ASR-1.7B.mmproj-Q8_0.gguf",
-                size_bytes: 355_709_472,
-                sha256: "780b5b48dfbc23c219cc9d3da9fdaccc7da567fa661b3724d19bda50fbcfc8c3",
-            },
+/// slower for no gain (benchmark report `2026-11-10-hk-cantonese-asr`). Plan
+/// `small-cantonese-asr` adds Qwen3-ASR-0.6B-HK-Cantonese
+/// (`joe2643/Qwen3-ASR-0.6B-Cantonese-HK-GGUF`), Q6_K: as many speech clips passed as the 1.7B at about half the time and 1 GB less memory
+/// (benchmark report `2026-11-14-hk-cantonese-0.6b`). Largest first.
+pub const ASR_MODELS: &[AsrModel] = &[
+    AsrModel {
+        file: KnownModel {
+            id: QWEN3_ASR_MODEL_ID,
+            file_name: "Qwen3-ASR-1.7B-Cantonese-HK.Q6_K.gguf",
+            size_bytes: 1_417_750_464,
+            sha256: "1e8cc6a8fe4970eca1eaceaac5a60eaa5383e1044057e0d11a3348ecb2cf6ea4",
         },
-        // OraType 1.1.3 to 1.2.0: Qwen3-ASR 1.7B, ggml-org's Q8_0 (2.17 GB) and its projector.
-        AsrFiles {
-            file: KnownModel {
-                id: QWEN3_ASR_MODEL_ID,
-                file_name: "Qwen3-ASR-1.7B-Q8_0.gguf",
-                size_bytes: 2_165_034_944,
-                sha256: "58e22d0532d4eacaf034cfac17a6fed159f37c41390c710186783be439d1fc57",
-            },
-            projector: KnownModel {
-                id: QWEN3_ASR_MODEL_ID,
-                file_name: "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf",
-                size_bytes: 355_709_344,
-                sha256: "46c1d533af3f354ceb37ce855dbceff7da7fa7cf1e6a523df3b13440bd164c0d",
-            },
+        projector: KnownModel {
+            id: QWEN3_ASR_MODEL_ID,
+            file_name: "Qwen3-ASR-1.7B-Cantonese-HK.mmproj-Q8_0.gguf",
+            size_bytes: 355_709_216,
+            sha256: "0ec38c2b7a8a81b6a011af5203197a4df3e61fd63cea780ff2004eef1ef7265e",
         },
-    ],
-}];
+        base_url: "https://huggingface.co/joe2643/Qwen3-ASR-1.7B-Cantonese-HK-GGUF/resolve/c2b90a46d61a5fc93ec07955aeaf18b8ffdc5ed9",
+        min_memory_bytes: 8 * GIB,
+        previous: &[
+            // OraType 1.2.1: Qwen3-ASR 1.7B, mradermacher's Q4_K_M (1.28 GB) and its Q8_0 projector
+            // (plan `faster-cantonese-models`).
+            AsrFiles {
+                file: KnownModel {
+                    id: QWEN3_ASR_MODEL_ID,
+                    file_name: "Qwen3-ASR-1.7B.Q4_K_M.gguf",
+                    size_bytes: 1_282_435_552,
+                    sha256: "3893b8926065bbff3da7586d21d8711a9b4fa4fa8f12cd0cefad58e31b2660b6",
+                },
+                projector: KnownModel {
+                    id: QWEN3_ASR_MODEL_ID,
+                    file_name: "Qwen3-ASR-1.7B.mmproj-Q8_0.gguf",
+                    size_bytes: 355_709_472,
+                    sha256: "780b5b48dfbc23c219cc9d3da9fdaccc7da567fa661b3724d19bda50fbcfc8c3",
+                },
+            },
+            // OraType 1.1.3 to 1.2.0: Qwen3-ASR 1.7B, ggml-org's Q8_0 (2.17 GB) and its projector.
+            AsrFiles {
+                file: KnownModel {
+                    id: QWEN3_ASR_MODEL_ID,
+                    file_name: "Qwen3-ASR-1.7B-Q8_0.gguf",
+                    size_bytes: 2_165_034_944,
+                    sha256: "58e22d0532d4eacaf034cfac17a6fed159f37c41390c710186783be439d1fc57",
+                },
+                projector: KnownModel {
+                    id: QWEN3_ASR_MODEL_ID,
+                    file_name: "mmproj-Qwen3-ASR-1.7B-Q8_0.gguf",
+                    size_bytes: 355_709_344,
+                    sha256: "46c1d533af3f354ceb37ce855dbceff7da7fa7cf1e6a523df3b13440bd164c0d",
+                },
+            },
+        ],
+    },
+    AsrModel {
+        file: KnownModel {
+            id: QWEN3_ASR_SMALL_MODEL_ID,
+            file_name: "Qwen3-ASR-0.6B-Cantonese-HK.Q6_K.gguf",
+            size_bytes: 495_102_976,
+            sha256: "3ba4ebb8f93713c98bb3043ee937807e7b45b329b32908f61a74d331ad1ff41d",
+        },
+        projector: KnownModel {
+            id: QWEN3_ASR_SMALL_MODEL_ID,
+            file_name: "Qwen3-ASR-0.6B-Cantonese-HK.mmproj-Q8_0.gguf",
+            size_bytes: 214_392_416,
+            sha256: "e9140ebcb5b9f5c666e01884da51914bc9e204c1c268c142868ebd859eb6448f",
+        },
+        base_url: "https://huggingface.co/joe2643/Qwen3-ASR-0.6B-Cantonese-HK-GGUF/resolve/9b67dd08958900879ef34939485bb977a308a2f5",
+        min_memory_bytes: 8 * GIB,
+        previous: &[],
+    },
+];
 
 impl AsrModel {
     /// Both files together.
@@ -748,8 +774,42 @@ mod tests {
                 .iter()
                 .map(|entry| entry.id)
                 .collect::<Vec<_>>(),
-            ["large-v3-turbo", "small", QWEN3_ASR_MODEL_ID]
+            [
+                "large-v3-turbo",
+                "small",
+                QWEN3_ASR_MODEL_ID,
+                QWEN3_ASR_SMALL_MODEL_ID
+            ]
         );
+    }
+
+    #[test]
+    fn the_small_cantonese_model_is_its_own_model() {
+        // Plan `small-cantonese-asr`: Qwen3-ASR-0.6B-HK-Cantonese, Q6_K with its Q8_0 projector.
+        let small = asr_model(QWEN3_ASR_SMALL_MODEL_ID).unwrap();
+        for file in [small.file, small.projector] {
+            assert_eq!(file.id, QWEN3_ASR_SMALL_MODEL_ID);
+            assert_eq!(file.sha256.len(), 64);
+            assert!(known_model_by_file(file.file_name).is_none());
+        }
+        assert_eq!(small.size_bytes(), 709_495_392);
+        assert!(small.previous.is_empty());
+        assert_eq!(small.all_files().len(), 2);
+        let [(_, model_url), (_, projector_url)] = small.downloads();
+        assert!(model_url.starts_with(
+            "https://huggingface.co/joe2643/Qwen3-ASR-0.6B-Cantonese-HK-GGUF/resolve/"
+        ));
+        assert!(model_url.ends_with("/Qwen3-ASR-0.6B-Cantonese-HK.Q6_K.gguf"));
+        assert!(projector_url.ends_with("/Qwen3-ASR-0.6B-Cantonese-HK.mmproj-Q8_0.gguf"));
+        assert!(runs_in_llama_server(QWEN3_ASR_SMALL_MODEL_ID));
+        // No file is shared with the 1.7B model, so deleting one never touches the other.
+        let large = asr_model(QWEN3_ASR_MODEL_ID).unwrap();
+        for file in small.all_files() {
+            assert!(large
+                .all_files()
+                .iter()
+                .all(|other| other.file_name != file.file_name));
+        }
     }
 
     #[test]

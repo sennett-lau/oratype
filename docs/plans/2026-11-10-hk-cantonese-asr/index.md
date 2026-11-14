@@ -8,6 +8,9 @@ speech model suggested for any language list with Cantonese, under the name
 
 Status: building - 2026-11-10.
 
+Partly superseded by [`small-cantonese-asr`](../2026-11-14-small-cantonese-asr/index.md): Macs with
+less than 16 GB are suggested Qwen3-ASR-0.6B-HK-Cantonese.
+
 ## Goals and non-goals
 
 - Cantonese written as Hongkongers write it, in Hong Kong characters, straight from the speech

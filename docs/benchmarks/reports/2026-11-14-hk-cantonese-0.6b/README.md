@@ -7,7 +7,7 @@ since published a fine-tune of the smaller Qwen3-ASR 0.6B for the same speech,
 (Apache-2.0). This report measures its three files against the shipped 1.7B fine-tune and the
 stock Qwen3-ASR 0.6B, to decide whether it can be a built-in model.
 
-No code changes here; the decision is below.
+No code changes in this report; the decision is below.
 
 ## Provenance
 
@@ -93,7 +93,9 @@ Where it fits is the small-Mac case: the 1.7B needs 8 GB of memory and shares it
 polish model, while the 0.6B leaves another gigabyte free and halves the wait. Adding it means a
 second Qwen3-ASR model in the built-in list (a new model id, its own download and update path,
 and a suggestion rule by memory), which plan `hk-cantonese-asr` rejected for the stock model.
-That needs its own plan before any code.
+That needs its own plan before any code: plan
+[`small-cantonese-asr`](../../../plans/2026-11-14-small-cantonese-asr/index.md) adds it as a
+second model, suggested under 16 GB.
 
 ## Not measured
 

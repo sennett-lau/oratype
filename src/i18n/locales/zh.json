@@ -1088,7 +1088,8 @@
     "models": {
       "large-v3-turbo": "最准确",
       "small": "更快",
-      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese"
+      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese",
+      "qwen3AsrSmall": "Qwen3-ASR-0.6B-HK-Cantonese"
     },
     "modelDetail": "Whisper {{id}} · {{size}}",
     "checkingMac": "正在检查这台电脑…",
@@ -1118,7 +1119,8 @@
       }
     },
     "modelDetails": {
-      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese · {{size}}"
+      "qwen3Asr": "Qwen3-ASR-1.7B-HK-Cantonese · {{size}}",
+      "qwen3AsrSmall": "Qwen3-ASR-0.6B-HK-Cantonese · {{size}}"
     }
   },
   "speech": {
