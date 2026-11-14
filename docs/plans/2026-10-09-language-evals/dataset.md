@@ -35,6 +35,14 @@ Daniel, Sinji, Tingting) and taken from PR #82's sentences: good enough to show 
 Cantonese as standard Chinese, too clean to measure real accuracy. Real recordings replace them
 over time.
 
+Real speech from public sets comes in two ways. A few small clips are committed, like the 20
+Common Voice zh-HK clips (CC0), which need no download. A larger set is **fetched**: its clips
+keep their text in the manifest with a `fetch` entry (a URL pinned to a version, the member of
+an archive, the sha256 of the converted WAV), and `npm run eval -- fetch` downloads them into the
+git-ignored `audio/external/`; 40 FLEURS Cantonese clips (CC-BY-4.0) are the first. Pinning and
+the hash keep a score from changing when the set publishes a new release. Only CC0 or CC-BY sets
+qualify, since the manifest republishes their transcripts.
+
 ## Contribution rules
 
 CC0-1.0 or CC-BY-4.0; consent for every voice; no private data. Holdout cases are not edited to

@@ -1,4 +1,5 @@
 // Plan `language-evals`: loads and validates the evaluation dataset in evals/.
+import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -54,8 +55,13 @@ const SPEECH_KEYS = {
     'dictionary',
     'terms',
     'must_not_contain',
+    'fetch',
   ],
 }
+// A clip downloaded by `npm run eval -- fetch` instead of committed: where it comes from.
+const FETCH_KEYS = ['url', 'member', 'sha256']
+const SHA256 = /^[0-9a-f]{64}$/
+export const EXTERNAL_AUDIO = 'audio/external/'
 
 export function loadLanguages(root = EVALS) {
   return JSON.parse(readFileSync(join(root, 'languages.json'), 'utf8'))
@@ -138,6 +144,38 @@ export function wavProblem(path) {
 
 const isStringList = (value) =>
   Array.isArray(value) && value.every((v) => typeof v === 'string' && v)
+
+export const sha256 = (path) => createHash('sha256').update(readFileSync(path)).digest('hex')
+
+/**
+ * A fetched clip (`fetch`): an external set too large for git, downloaded at a pinned URL. Its
+ * audio lives in audio/external/ (git-ignored) and must match `sha256` once downloaded.
+ */
+function checkFetch(row, where, errors) {
+  const f = row.fetch
+  if (!row.audio.startsWith(EXTERNAL_AUDIO))
+    errors.push(`${where}: a clip with "fetch" lives in ${EXTERNAL_AUDIO}`)
+  if (row.source !== 'external') errors.push(`${where}: a fetched clip needs source "external"`)
+  if (!f || typeof f !== 'object' || Array.isArray(f)) {
+    errors.push(`${where}: a clip in ${EXTERNAL_AUDIO} needs "fetch" (url, sha256)`)
+    return
+  }
+  for (const key of Object.keys(f)) {
+    if (!FETCH_KEYS.includes(key)) errors.push(`${where}: unknown fetch key "${key}"`)
+  }
+  if (typeof f.url !== 'string' || !/^https:\/\/\S+$/.test(f.url))
+    errors.push(`${where}: fetch.url must be an https URL`)
+  if (
+    f.member !== undefined &&
+    (typeof f.member !== 'string' ||
+      !f.member ||
+      f.member.startsWith('/') ||
+      f.member.includes('..'))
+  )
+    errors.push(`${where}: fetch.member must be a relative path inside the archive`)
+  if (!SHA256.test(f.sha256 ?? ''))
+    errors.push(`${where}: fetch.sha256 must be 64 lowercase hex digits`)
+}
 
 function checkKeys(row, keys, where, errors) {
   for (const key of keys.required) {
@@ -285,11 +323,21 @@ export function validate(root = EVALS) {
         if (!row.audio.startsWith('audio/synthetic/'))
           errors.push(`${where}: synthetic clips live in audio/synthetic/`)
       }
+      const fetched = row.fetch !== undefined || row.audio.startsWith(EXTERNAL_AUDIO)
+      if (fetched) checkFetch(row, where, errors)
       const audio = join(root, 'speech', lang, row.audio)
       if (existsSync(audio)) {
         const problem = wavProblem(audio)
         if (problem) errors.push(`${where}: ${row.audio}: ${problem}`)
-      } else if (!synthetic) {
+        else if (
+          fetched &&
+          SHA256.test(row.fetch?.sha256 ?? '') &&
+          sha256(audio) !== row.fetch.sha256
+        )
+          errors.push(
+            `${where}: ${row.audio} differs from fetch.sha256 (npm run eval -- fetch --force)`,
+          )
+      } else if (!synthetic && !fetched) {
         errors.push(`${where}: ${row.audio} does not exist`)
       }
     }

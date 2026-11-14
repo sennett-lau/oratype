@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-import { validate } from './dataset.mjs'
+import { validate, wavProblem } from './dataset.mjs'
+import { toWav16 } from './fetch.mjs'
 import { compare, summarise } from './report.mjs'
 import {
   chineseScript,
@@ -263,5 +264,97 @@ describe('dataset check', () => {
     }
     writeFileSync(join(dir, 'speech', 'en', 'manifest.jsonl'), JSON.stringify(clip) + '\n')
     expect(validate(dir).join('\n')).toMatch(/audio\/a.wav does not exist/)
+  })
+  const fetched = (c = {}) => ({
+    id: 'sp-2',
+    audio: 'audio/external/set/b.wav',
+    text: 'Hi',
+    tags: ['clean'],
+    source: 'external',
+    licence: 'CC-BY-4.0',
+    speaker: 'volunteer',
+    split: 'dev',
+    fetch: {
+      url: 'https://example.org/set/rev/test.tar.gz',
+      member: 'test/b.wav',
+      sha256: 'a'.repeat(64),
+    },
+    ...c,
+  })
+  it('lets a fetched clip be missing until it is downloaded, then checks its sha256', () => {
+    const dir = root()
+    mkdirSync(join(dir, 'speech', 'en', 'audio', 'external', 'set'), { recursive: true })
+    writeFileSync(join(dir, 'speech', 'en', 'manifest.jsonl'), JSON.stringify(fetched()) + '\n')
+    expect(validate(dir)).toEqual([])
+    writeFileSync(join(dir, 'speech', 'en', 'audio', 'external', 'set', 'b.wav'), wav16(4))
+    expect(validate(dir).join('\n')).toMatch(/differs from fetch.sha256/)
+  })
+  it('rejects a fetched clip outside audio/external/, without a source, or with a bad fetch', () => {
+    const dir = root()
+    mkdirSync(join(dir, 'speech', 'en'), { recursive: true })
+    const rows = [
+      fetched({ id: 'sp-3', audio: 'audio/b.wav' }),
+      fetched({ id: 'sp-4', source: 'recording' }),
+      fetched({ id: 'sp-5', fetch: { url: 'http://x/y.wav', sha256: 'nope', extra: 1 } }),
+      fetched({ id: 'sp-6', fetch: undefined }),
+      fetched({
+        id: 'sp-7',
+        fetch: { url: 'https://x/y.tgz', member: '../y.wav', sha256: 'a'.repeat(64) },
+      }),
+    ]
+    writeFileSync(
+      join(dir, 'speech', 'en', 'manifest.jsonl'),
+      rows.map((r) => JSON.stringify(r)).join('\n') + '\n',
+    )
+    const errors = validate(dir).join('\n')
+    expect(errors).toMatch(/:1: a clip with "fetch" lives in audio\/external\//)
+    expect(errors).toMatch(/:2: a fetched clip needs source "external"/)
+    expect(errors).toMatch(/:3: unknown fetch key "extra"/)
+    expect(errors).toMatch(/:3: fetch.url must be an https URL/)
+    expect(errors).toMatch(/:3: fetch.sha256 must be 64 lowercase hex digits/)
+    expect(errors).toMatch(/:4: a clip in audio\/external\/ needs "fetch"/)
+    expect(errors).toMatch(/:5: fetch.member must be a relative path/)
+  })
+})
+
+/** A 16 kHz WAV of `frames` frames: 16-bit PCM, or 32-bit float with `float`. */
+function wav16(frames, { channels = 1, float = false, samples = [] } = {}) {
+  const width = float ? 4 : 2
+  const buf = Buffer.alloc(44 + frames * channels * width)
+  buf.write('RIFF', 0, 'ascii')
+  buf.writeUInt32LE(36 + frames * channels * width, 4)
+  buf.write('WAVEfmt ', 8, 'ascii')
+  buf.writeUInt32LE(16, 16)
+  buf.writeUInt16LE(float ? 3 : 1, 20)
+  buf.writeUInt16LE(channels, 22)
+  buf.writeUInt32LE(16000, 24)
+  buf.writeUInt32LE(16000 * channels * width, 28)
+  buf.writeUInt16LE(channels * width, 32)
+  buf.writeUInt16LE(width * 8, 34)
+  buf.write('data', 36, 'ascii')
+  buf.writeUInt32LE(frames * channels * width, 40)
+  samples.forEach((s, i) =>
+    float ? buf.writeFloatLE(s, 44 + i * 4) : buf.writeInt16LE(s, 44 + i * 2),
+  )
+  return buf
+}
+
+describe('fetched clip conversion', () => {
+  it('turns 32-bit float stereo into 16 kHz mono 16-bit PCM', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'oratype-evals-'))
+    const source = wav16(3, { channels: 2, float: true, samples: [0.5, 0.5, -1, 0, 2, 2] })
+    const out = toWav16(source)
+    const path = join(dir, 'out.wav')
+    writeFileSync(path, out)
+    expect(wavProblem(path)).toBeNull()
+    expect(out.length).toBe(44 + 3 * 2)
+    expect([0, 1, 2].map((f) => out.readInt16LE(44 + f * 2))).toEqual([16384, -16383, 32767])
+  })
+  it('keeps 16-bit mono samples and refuses other rates', () => {
+    const same = wav16(2, { samples: [1000, -1000] })
+    expect(toWav16(same).equals(same)).toBe(true)
+    const odd = wav16(1)
+    odd.writeUInt32LE(44100, 24)
+    expect(() => toWav16(odd)).toThrow(/44100 Hz/)
   })
 })

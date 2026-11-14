@@ -15,6 +15,7 @@ npm run eval -- polish --ai-url http://127.0.0.1:8080/v1 --ai-model <name>   # a
 npm run eval -- speech --whisper-model <ggml-file.bin>  # built-in speech (whisper.cpp)
 npm run eval -- speech --speech-url http://127.0.0.1:8178/v1 --speech-model <name>
 npm run eval -- synth                                   # make the synthetic clips (macOS `say`)
+npm run eval -- fetch                                   # download the external clips (see Speech clips)
 ```
 
 Options for `polish` and `speech`:
@@ -39,7 +40,8 @@ downloads into its `models` folder. The built-in speech test needs a ggml Whispe
 `ggml-large-v3-turbo-q5_0.bin` from the same folder.
 
 Each run writes `summary.md` (per language, per tag, failed checks, every failing case with its
-answer) and `results.json` (every sample). Nothing is sent anywhere except the server you name.
+answer) and `results.json` (every sample). Nothing is sent anywhere except the server you name;
+the only download is `fetch` (also run by `speech` when a clip it needs is missing).
 
 ### How it reuses the app
 
@@ -56,7 +58,8 @@ evals/
   polish/<lang>/dev.jsonl   cases used for tuning
   polish/<lang>/holdout.jsonl  cases never used for tuning
   speech/<lang>/manifest.jsonl
-  speech/<lang>/audio/      recordings (16 kHz mono 16-bit WAV); audio/synthetic/ is generated
+  speech/<lang>/audio/      recordings (16 kHz mono 16-bit WAV); audio/synthetic/ is generated,
+                            audio/external/ is downloaded by `fetch` (both git-ignored)
   baselines/<kind>-<model>.json
 ```
 
@@ -108,7 +111,8 @@ a case cannot demand something its own answer fails.
 `manifest.jsonl`, one clip per line: `id`, `audio` (path under `audio/`), `text` (the exact
 words), optional `accept`, `tags` (`clean`, `numbers`, `names`, `dialect`, `mixed-language`,
 `noisy`, `accent`, `dictionary`), `source` (`recording`, `synthetic-say` or `external`), `licence`, `speaker`,
-`split`, and for synthetic clips `say_voice` (and `say_text` when the spoken text differs).
+`split`, for synthetic clips `say_voice` (and `say_text` when the spoken text differs), and for
+downloaded clips `fetch` (see [External clips](#external-clips)).
 
 Dictionary clips (plan
 [`dictionary-to-speech`](../docs/plans/2026-11-08-dictionary-to-speech/index.md), tag
@@ -129,6 +133,38 @@ Synthetic clips are made with macOS `say` and are not committed; they are a smok
 cleaner than real speech. **Real recordings are preferred**: short (under 15 s), 16 kHz mono
 16-bit WAV, committed under `audio/`. A large external set belongs in a fetch script, not in git.
 
+### External clips
+
+Clips from a public set (`source: external`) are either committed, when they are few and small,
+or **fetched**: the manifest keeps the text and a `fetch` object, and `npm run eval -- fetch`
+downloads the audio into `audio/external/` (git-ignored):
+
+| `fetch` key | Meaning |
+|---|---|
+| `url` | An https URL **pinned to a version** (for Hugging Face, `resolve/<commit sha>/…`, never `main`), so a new release of the set cannot change the score. |
+| `member` | When `url` is a `.tar.gz`: the clip's path inside it. All members of one archive come out in one pass. |
+| `sha256` | Of the clip **after** conversion to 16 kHz mono 16-bit WAV. `fetch` refuses a clip that does not match, and `check` reports a downloaded one that has changed. |
+
+Archives are cached in `output/evals/cache/`; `--force` rewrites the clips from the cache. The
+source must already be 16 kHz (16-bit PCM or 32-bit float, channels are averaged); `fetch` does
+not resample.
+
+Only sets licensed **CC0-1.0 or CC-BY-4.0** qualify, because the manifest republishes their
+transcripts. Sets released for research only or under a signed agreement (for example MDCC and
+MCE for Cantonese), and audio from video platforms, cannot be added, even as fetch entries.
+
+The Cantonese clips so far:
+
+| Clips | Set | Licence | How |
+|---|---|---|---|
+| `sp-yue-cv-*` (20) | [Common Voice](https://commonvoice.mozilla.org/) zh-HK 23.0, test split | CC0-1.0 | Committed in `audio/common-voice/`: Common Voice now needs an account to download, so CI and new contributors could not fetch it. |
+| `sp-yue-fleurs-*` (40) | [FLEURS](https://huggingface.co/datasets/google/fleurs) `yue_hant_hk`, test split (Conneau et al., 2022, [arXiv:2205.12446](https://arxiv.org/abs/2205.12446)) | CC-BY-4.0 | Fetched (one 480 MB archive, once). Formal written Chinese read aloud. |
+
+Both were picked at random, one clip per speaker for Common Voice, from the clips whose text an
+independent Cantonese recognizer matched (at most 10% character error), so that a failure here
+means the recognizer under test, not a wrong transcript. Clips with digits were left out (the
+sets write `120` for a spoken 一百二十).
+
 ## Adding a language
 
 1. Add an entry to `languages.json` (`unit: "char"` for languages written without spaces; list
@@ -140,7 +176,8 @@ cleaner than real speech. **Real recordings are preferred**: short (under 15 s),
 
 ## Contributing data
 
-- Text and audio are licensed **CC0-1.0** or **CC-BY-4.0** (name the licence on each clip).
+- Text and audio are licensed **CC0-1.0** or **CC-BY-4.0** (name the licence on each clip). A
+  public download is not enough: the set's own licence must be one of these.
 - Recordings only with the speaker's consent; say who spoke in `speaker` (a name or "volunteer").
 - No private data: no real names of private people, addresses, numbers, company secrets or
   anything dictated in real work. Write invented sentences that sound like real dictation.

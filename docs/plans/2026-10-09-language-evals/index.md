@@ -62,5 +62,6 @@ those harnesses can be retired and new checks added here instead.
 - Should runs also apply a language preset from `presets/languages/` (through a temporary
   library store), to measure presets themselves?
 - A round-trip mode (speech answer → polish) for whole dictations.
-- Real recordings: who records, and a fetch script for an external CC0 set.
+- Real recordings: who records. (External CC0/CC-BY sets: committed when small, otherwise
+  `npm run eval -- fetch`; see [dataset.md](dataset.md).)
 - An opt-in LLM judge for meaning preservation on long dictations.
