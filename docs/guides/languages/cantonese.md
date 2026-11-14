@@ -42,7 +42,8 @@ was said.
 
 1. **Easiest: Built-in.** OraType runs Qwen3-ASR-1.7B-HK-Cantonese itself. Add Cantonese (Hong
    Kong) under **Your languages** (onboarding, or **Settings → General**); the Built-in card then
-   has **Qwen3-ASR-1.7B-HK-Cantonese** chosen.
+   has **Qwen3-ASR-1.7B-HK-Cantonese** chosen, or **Qwen3-ASR-0.6B-HK-Cantonese** (709 MB,
+   about twice as fast) on a Mac with less than 16 GB of memory.
    Press **Set up** (or **Download**, 1.8 GB) and go on to step 3. Its suggested AI model is
    the stock Qwen 3.5 4B; for slang and swear words use the uncensored one of step 5.
 
@@ -118,6 +119,9 @@ The tables above were measured with the stock Qwen3-ASR-1.7B. Qwen3-ASR-1.7B-HK-
 replaced it in OraType 1.2.2, passed as many of OraType's 41 speech clips (34) with more
 Cantonese clips right; it takes about 25% longer on a Mac
 ([report](../../benchmarks/reports/2026-11-10-hk-cantonese-asr/README.md)).
+Qwen3-ASR-0.6B-HK-Cantonese, added for Macs with less memory, passed as many clips as the 1.7B
+with one Cantonese clip fewer, in about half the time
+([report](../../benchmarks/reports/2026-11-14-hk-cantonese-0.6b/README.md)).
 
 ## Known issues
 
@@ -126,7 +130,8 @@ Cantonese clips right; it takes about 25% longer on a Mac
 - The clips are synthetic. Real speech, with its speed and accents, will score lower for every
   model; tell us how it does with yours.
 - Qwen3-ASR-1.7B needs about 3.4 GB of VRAM with llama.cpp (Q8_0), about 7 GB with vLLM. On a
-  smaller GPU, use Qwen3-ASR-0.6B.
+  smaller GPU, use Qwen3-ASR-0.6B-HK-Cantonese
+  (`joe2643/Qwen3-ASR-0.6B-Cantonese-HK-GGUF:Q6_K`).
 - Qwen3-ASR-1.7B-HK-Cantonese was trained on Cantonese and Cantonese–English speech. It sometimes
   writes Mandarin speech in Cantonese words (請喺呢度簽名 for 请在这里签名), and it usually leaves
   out the final 。, which polish adds back.

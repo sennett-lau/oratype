@@ -45,7 +45,9 @@ and are released by OpenAI under the MIT License.
 The Qwen3-ASR model and audio projector files downloaded by Built-in speech are
 Qwen3-ASR-1.7B-HK-Cantonese, the OraType team's fine-tune of the Qwen team's Qwen3-ASR-1.7B (a
 Q6_K model and Q8_0 projector GGUF from the joe2643/Qwen3-ASR-1.7B-Cantonese-HK-GGUF Hugging Face
-repository). Earlier versions downloaded the stock Qwen3-ASR-1.7B: OraType 1.2.1 a Q4_K_M model
+repository), and Qwen3-ASR-0.6B-HK-Cantonese, the OraType team's fine-tune of the Qwen team's
+Qwen3-ASR-0.6B (a Q6_K model and Q8_0 projector GGUF from the
+joe2643/Qwen3-ASR-0.6B-Cantonese-HK-GGUF Hugging Face repository). Earlier versions downloaded the stock Qwen3-ASR-1.7B: OraType 1.2.1 a Q4_K_M model
 and Q8_0 projector from mradermacher's repository, OraType 1.1.3 to 1.2.0 Q8_0 files from
 ggml-org's. All of them are released under the Apache License 2.0
 (https://www.apache.org/licenses/LICENSE-2.0). They are downloaded, not shipped with OraType.

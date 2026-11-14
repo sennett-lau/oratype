@@ -88,7 +88,10 @@ const AI_MODEL_KEYS: Record<string, string> = {
   'qwen3.5-4b': 'qwen35',
 }
 /** Plan `language-model-suggestions`: speech ids with a dot need their own i18n key. */
-const SPEECH_MODEL_KEYS: Record<string, string> = { 'qwen3-asr-1.7b': 'qwen3Asr' }
+const SPEECH_MODEL_KEYS: Record<string, string> = {
+  'qwen3-asr-1.7b': 'qwen3Asr',
+  'qwen3-asr-0.6b': 'qwen3AsrSmall',
+}
 
 export const SPEECH_SERVICE: EngineService = {
   id: 'speech',

@@ -333,15 +333,32 @@ mod tests {
     #[test]
     fn apple_silicon_with_memory_and_disk_gets_both_best_first() {
         let offer = offer_models(&mac(ChipKind::AppleSilicon, 32, 55_000 * MB), &[]);
-        assert_eq!(ids(&offer), ["large-v3-turbo", "small", "qwen3-asr-1.7b"]);
+        assert_eq!(
+            ids(&offer),
+            [
+                "large-v3-turbo",
+                "small",
+                "qwen3-asr-1.7b",
+                "qwen3-asr-0.6b"
+            ]
+        );
         assert!(offer.models[0].recommended);
         assert!(!offer.models[1].recommended);
         assert!(!offer.models[2].recommended);
+        assert!(!offer.models[3].recommended);
         assert_eq!(offer.left_out, None);
         assert_eq!(offer.needed_bytes, None);
         // Exactly 8 GB is enough.
         let offer = offer_models(&mac(ChipKind::AppleSilicon, 8, 20_000 * MB), &[]);
-        assert_eq!(ids(&offer), ["large-v3-turbo", "small", "qwen3-asr-1.7b"]);
+        assert_eq!(
+            ids(&offer),
+            [
+                "large-v3-turbo",
+                "small",
+                "qwen3-asr-1.7b",
+                "qwen3-asr-0.6b"
+            ]
+        );
     }
 
     #[test]
@@ -351,7 +368,8 @@ mod tests {
         assert!(!ids(&offer).contains(&"qwen3-asr-1.7b"));
         let short = models::needed_free_bytes(qwen.size_bytes(), 0) - 1;
         let offer = offer_models(&mac(ChipKind::AppleSilicon, 32, short), &[]);
-        assert_eq!(ids(&offer), ["large-v3-turbo", "small"]);
+        // Plan `small-cantonese-asr`: the 0.6B model still fits where the 1.7B does not.
+        assert_eq!(ids(&offer), ["large-v3-turbo", "small", "qwen3-asr-0.6b"]);
         let offer = offer_models(
             &mac(ChipKind::AppleSilicon, 32, 0),
             &["qwen3-asr-1.7b".to_string()],
