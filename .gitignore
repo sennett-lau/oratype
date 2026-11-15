@@ -64,6 +64,8 @@ models/
 
 # Evaluation clips made by `npm run eval -- synth` (plan `language-evals`)
 evals/speech/*/audio/synthetic/
+# External evaluation clips downloaded by `npm run eval -- fetch`
+evals/speech/*/audio/external/
 
 # Scratch
 /output/

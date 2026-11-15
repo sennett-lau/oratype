@@ -58,3 +58,12 @@ The Qwen3 and Qwen 3.5 model files downloaded by Built-in AI (Qwen3-4B-Instruct-
 as Q4_K_M, and Qwen3.5-4B as Q4_0, GGUF files from Unsloth's Hugging Face repositories) are released by the Qwen team under
 the Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0). They are downloaded, not
 shipped with OraType.
+
+## Evaluation data
+
+The Cantonese speech evaluation (`evals/speech/yue/`) uses clips from two public sets. The
+FLEURS clips (Conneau et al., 2022, https://huggingface.co/datasets/google/fleurs) are released
+by Google under the Creative Commons Attribution 4.0 licence
+(https://creativecommons.org/licenses/by/4.0/); their transcripts are copied into the manifest
+and the audio is downloaded by `npm run eval -- fetch`, not shipped with OraType. The Common Voice
+zh-HK clips (Mozilla, https://commonvoice.mozilla.org/) are released under CC0 1.0.

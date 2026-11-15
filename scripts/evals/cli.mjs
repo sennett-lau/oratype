@@ -5,6 +5,7 @@
 //   npm run eval -- polish [options]             run polish cases through the app's polish code
 //   npm run eval -- speech [options]             run speech clips through the app's recognition
 //   npm run eval -- synth  [--lang yue]          make the synthetic (macOS `say`) clips
+//   npm run eval -- fetch  [--lang yue] [--force]  download the external clips (`fetch`)
 //
 // Options: --lang en,yue  --split dev|holdout|all  --tag numbers  --id en-011  --n 3
 //   --llama-model <gguf>  (built-in AI)    --ai-url <url> --ai-model <name>  (any OpenAI-compatible)
@@ -30,6 +31,7 @@ import {
   readJsonl,
   validate,
 } from './dataset.mjs'
+import { fetchClips } from './fetch.mjs'
 import { compare, markdown, summarise, toBaseline } from './report.mjs'
 import { scorePolish, scoreSpeech } from './score.mjs'
 
@@ -98,6 +100,15 @@ function synth(options) {
     made += 1
   }
   console.log(`evals: ${made} synthetic clip(s) made, ${clips.length - made} already there`)
+}
+
+async function fetchCommand(options) {
+  const clips = loadSpeech({ langs: list(options.lang), split: 'all' }).filter((c) => c.fetch)
+  const made = await fetchClips(clips, {
+    cacheDir: join(REPO, 'output', 'evals', 'cache'),
+    force: options.force,
+  })
+  console.log(`evals: ${made} external clip(s) written, ${clips.length - made} already there`)
 }
 
 /** Runs the Rust driver (the app's real code) on `rows`; returns its answers. */
@@ -267,13 +278,15 @@ function polish(options) {
   finish('polish', model, scored, settings, options, outDir)
 }
 
-function speech(options) {
+async function speech(options) {
   const languages = loadLanguages()
   const split = options.split ?? 'dev'
   const clips = filterCases(loadSpeech({ langs: list(options.lang), split }), options)
   if (!clips.length) throw new Error('no clips match')
   if (clips.some((c) => c.source === 'synthetic-say' && !existsSync(c.audio_path)))
     synth({ lang: options.lang })
+  if (clips.some((c) => c.fetch && !existsSync(c.audio_path)))
+    await fetchCommand({ lang: options.lang })
   const env = {}
   const whisper = options['whisper-model'] ?? process.env.ORATYPE_EVAL_WHISPER_MODEL
   if (whisper) env.ORATYPE_EVAL_WHISPER_MODEL = resolve(whisper)
@@ -329,15 +342,16 @@ try {
   const { command, options } = parseArgs(process.argv.slice(2))
   if (command === 'check') check()
   else if (command === 'synth') synth(options)
+  else if (command === 'fetch') await fetchCommand(options)
   else if (command === 'polish') {
     check()
     polish(options)
   } else if (command === 'speech') {
     check()
-    speech(options)
+    await speech(options)
   } else {
     console.error(
-      'usage: npm run eval -- check | polish | speech | synth [options] (see evals/README.md)',
+      'usage: npm run eval -- check | polish | speech | synth | fetch [options] (see evals/README.md)',
     )
     process.exit(2)
   }
