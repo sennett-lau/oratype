@@ -50,6 +50,7 @@ build/
 *.ipa
 *.zip
 *.tar.gz
+/dist-win/
 
 # Local models and data (downloaded, never committed)
 models/

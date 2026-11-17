@@ -184,6 +184,56 @@ html.dark {
   color-scheme: dark;
 }
 
+/* Windows main window backdrop surface tokens (Mac keeps macOS NSVisualEffectView glass,
+   while `capsule` and `ask` overlays never set data-windows-backdrop). */
+html[data-windows-backdrop='solid'] {
+  --color-glass: #eef1f6;
+  --color-content: #f6f8fc;
+  --color-bg-primary: #ffffff;
+  --color-bg-elevated: #ffffff;
+  --color-bg-secondary: #e5e9f0;
+  --color-bg-tertiary: #dce1ea;
+}
+
+html.dark[data-windows-backdrop='solid'] {
+  --color-glass: #101622;
+  --color-content: #141a26;
+  --color-bg-primary: #182030;
+  --color-bg-elevated: #20283a;
+  --color-bg-secondary: #242e42;
+  --color-bg-tertiary: #2d384f;
+}
+
+html[data-windows-backdrop='mica'] {
+  --color-glass: rgba(243, 245, 249, 0.72);
+  --color-content: rgba(255, 255, 255, 0.84);
+}
+
+html.dark[data-windows-backdrop='mica'] {
+  --color-glass: rgba(16, 22, 34, 0.72);
+  --color-content: rgba(20, 26, 38, 0.82);
+  --color-bg-elevated: rgba(36, 44, 60, 0.82);
+}
+
+@layer base {
+  select {
+    color-scheme: light;
+  }
+  .dark select {
+    color-scheme: dark;
+  }
+  select option,
+  select optgroup {
+    background-color: #ffffff;
+    color: #1d1d1f;
+  }
+  .dark select option,
+  .dark select optgroup {
+    background-color: #1c2434;
+    color: #f1f6ff;
+  }
+}
+
 /*
  * Every window is transparent: the capsule and Ask windows draw their own glass, and the main
  * window lets the macOS window effect show through (see `.app-window`).
@@ -533,6 +583,7 @@ body,
     box-shadow:
       0 0 0 0.5px var(--color-border),
       0 1px 2px rgba(0, 0, 0, 0.08);
+    color-scheme: light;
     color: var(--color-text-primary);
     font: inherit;
     font-size: 12.5px;
@@ -541,8 +592,20 @@ body,
     -webkit-appearance: none;
     cursor: pointer;
   }
+  .dark .popup,
+  .dark select.field {
+    color-scheme: dark;
+  }
   .dark .popup {
     background-color: var(--color-bg-tertiary);
+  }
+  /* Windows only (the main window there has data-windows-backdrop): WebView2 draws the open list
+     itself in the <select>'s own colours, so the translucent fill above gave light text on a
+     white list. macOS shows a native menu and keeps the translucent fill. */
+  html.dark[data-windows-backdrop] .popup,
+  html.dark[data-windows-backdrop] select.field {
+    background-color: #242e42;
+    color: #f1f6ff;
   }
   .popup:focus-visible {
     box-shadow: 0 0 0 2px var(--color-border-focus);

@@ -23,6 +23,16 @@ pub const EDGE_IGNORE_MS: u32 = 80;
 pub const ABSOLUTE_FLOOR_DB: f64 = -45.0;
 /// A voiced window must be this much louder than the noise floor.
 pub const ABOVE_NOISE_DB: f64 = 12.0;
+/// Windows microphones with OS noise suppression / low gain can keep quiet speech windows
+/// between `-58` and `-45 dBFS` over a `-100 dBFS` noise floor.
+pub const WINDOWS_ABSOLUTE_FLOOR_DB: f64 = -58.0;
+/// Minimum voiced duration on Windows when strong SNR indicates real quiet speech rather
+/// than momentary key clicks (`~20-40 ms`) or a mic bump (`~100 ms`).
+pub const WINDOWS_SNR_MIN_VOICED_MS: u32 = 120;
+/// Minimum peak-over-noise-floor separation required to accept sub-200 ms voiced audio on Windows.
+pub const WINDOWS_MIN_SNR_DB: f64 = 20.0;
+/// Ignore ultra-faint spikes even with `-100 dBFS` digital floor.
+pub const WINDOWS_SNR_PEAK_FLOOR_DB: f64 = -55.0;
 /// The noise floor is the level that this share of the windows stays below.
 pub const NOISE_PERCENTILE: f64 = 0.10;
 /// A recording needs this much voiced audio to count as speech. Measured: a key click gives
@@ -30,6 +40,29 @@ pub const NOISE_PERCENTILE: f64 = 0.10;
 pub const MIN_VOICED_MS: u32 = 200;
 /// Level given to a window of digital silence, so the maths stays finite.
 const SILENT_WINDOW_DB: f64 = -100.0;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SpeechProfile {
+    MacOs,
+    Windows,
+}
+
+impl SpeechProfile {
+    pub const fn current() -> Self {
+        if cfg!(target_os = "windows") {
+            Self::Windows
+        } else {
+            Self::MacOs
+        }
+    }
+
+    const fn absolute_floor_db(self) -> f64 {
+        match self {
+            Self::MacOs => ABSOLUTE_FLOOR_DB,
+            Self::Windows => WINDOWS_ABSOLUTE_FLOOR_DB,
+        }
+    }
+}
 
 /// The numbers the voice check measured. Safe to log: it holds levels, not audio or text.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -45,8 +78,13 @@ pub struct VoiceActivity {
 }
 
 impl VoiceActivity {
-    /// Measures 16-bit little-endian mono PCM.
+    /// Measures 16-bit little-endian mono PCM using the active platform's speech profile.
     pub fn measure(pcm: &[u8], sample_rate: u32) -> Self {
+        Self::measure_with_profile(pcm, sample_rate, SpeechProfile::current())
+    }
+
+    /// Measures 16-bit little-endian mono PCM with an explicit platform profile.
+    pub fn measure_with_profile(pcm: &[u8], sample_rate: u32, profile: SpeechProfile) -> Self {
         let rate = sample_rate.max(1) as usize;
         // Decode each window directly: expanding a long recording into f64 samples would
         // temporarily require four times the PCM buffer's memory before transcription.
@@ -72,8 +110,9 @@ impl VoiceActivity {
             };
         }
         let peak_db = levels.iter().copied().fold(SILENT_WINDOW_DB, f64::max);
+        let floor_db = profile.absolute_floor_db();
         let voiced_windows = |noise_floor_db: f64, levels: &[f64]| {
-            let threshold = ABSOLUTE_FLOOR_DB.max(noise_floor_db + ABOVE_NOISE_DB);
+            let threshold = floor_db.max(noise_floor_db + ABOVE_NOISE_DB);
             levels.iter().filter(|&&db| db >= threshold).count()
         };
         let index = ((levels.len() as f64 * NOISE_PERCENTILE) as usize).min(levels.len() - 1);
@@ -90,7 +129,20 @@ impl VoiceActivity {
 
     /// True when the recording holds enough voice to be worth transcribing.
     pub fn has_speech(&self) -> bool {
-        self.voiced_ms >= MIN_VOICED_MS
+        self.has_speech_with_profile(SpeechProfile::current())
+    }
+
+    /// True when the recording holds enough voice under the requested profile.
+    pub fn has_speech_with_profile(&self, profile: SpeechProfile) -> bool {
+        match profile {
+            SpeechProfile::MacOs => self.voiced_ms >= MIN_VOICED_MS,
+            SpeechProfile::Windows => {
+                self.voiced_ms >= MIN_VOICED_MS
+                    || (self.voiced_ms >= WINDOWS_SNR_MIN_VOICED_MS
+                        && (self.peak_db - self.noise_floor_db) >= WINDOWS_MIN_SNR_DB
+                        && self.peak_db >= WINDOWS_SNR_PEAK_FLOOR_DB)
+            }
+        }
     }
 }
 
@@ -484,5 +536,95 @@ mod tests {
         };
         // No room noise around it: the whole recording is speech.
         assert!(check("speech only", &speech).has_speech());
+    }
+
+    #[test]
+    fn windows_profile_accepts_razer_seiren_mini_quiet_speech_logs_and_keeps_macos_unchanged() {
+        let log_160ms = VoiceActivity {
+            duration_ms: 6_400,
+            peak_db: -37.0,
+            noise_floor_db: -100.0,
+            voiced_ms: 160,
+        };
+        assert!(!log_160ms.has_speech_with_profile(SpeechProfile::MacOs));
+        assert!(log_160ms.has_speech_with_profile(SpeechProfile::Windows));
+
+        let log_180ms = VoiceActivity {
+            duration_ms: 6_400,
+            peak_db: -42.0,
+            noise_floor_db: -100.0,
+            voiced_ms: 180,
+        };
+        assert!(!log_180ms.has_speech_with_profile(SpeechProfile::MacOs));
+        assert!(log_180ms.has_speech_with_profile(SpeechProfile::Windows));
+
+        let log_200ms = VoiceActivity {
+            duration_ms: 1_500,
+            peak_db: -37.0,
+            noise_floor_db: -69.0,
+            voiced_ms: 200,
+        };
+        assert!(log_200ms.has_speech_with_profile(SpeechProfile::MacOs));
+        assert!(log_200ms.has_speech_with_profile(SpeechProfile::Windows));
+    }
+
+    #[test]
+    fn windows_profile_detects_quiet_speech_pcm_between_minus_58_and_minus_45_dbfs() {
+        // Digital silence with a -50 dBFS speech burst (0.0045 peak ~ -47 dBFS peak, ~-50 dBFS RMS)
+        let mut pcm = vec![0u8; 16_000 * 2 * 2]; // 2.0 s @ 16kHz
+        let tone_pcm = pcm_tone(0.0045, 0.36, RATE);
+        let start = 8_000 * 2;
+        pcm[start..start + tone_pcm.len()].copy_from_slice(&tone_pcm);
+
+        let mac = VoiceActivity::measure_with_profile(&pcm, RATE, SpeechProfile::MacOs);
+        let win = VoiceActivity::measure_with_profile(&pcm, RATE, SpeechProfile::Windows);
+        assert_eq!(mac.voiced_ms, 0);
+        assert!(!mac.has_speech_with_profile(SpeechProfile::MacOs));
+        assert!(win.voiced_ms >= 300, "win voiced_ms = {}", win.voiced_ms);
+        assert!(win.has_speech_with_profile(SpeechProfile::Windows));
+    }
+
+    #[test]
+    fn windows_profile_rejects_silence_hiss_clicks_and_mic_bump() {
+        let silence =
+            VoiceActivity::measure_with_profile(&vec![0u8; 32_000], RATE, SpeechProfile::Windows);
+        assert!(!silence.has_speech_with_profile(SpeechProfile::Windows));
+
+        for db in [-60.0, -35.0] {
+            let hiss_pcm = to_pcm(&hiss(db, 2.0));
+            let a = VoiceActivity::measure_with_profile(&hiss_pcm, RATE, SpeechProfile::Windows);
+            assert!(
+                !a.has_speech_with_profile(SpeechProfile::Windows),
+                "hiss {db}"
+            );
+        }
+
+        let mut clicks = hiss(-60.0, 1.5);
+        add_click(&mut clicks, 300);
+        add_click(&mut clicks, 1000);
+        let clicks_act =
+            VoiceActivity::measure_with_profile(&to_pcm(&clicks), RATE, SpeechProfile::Windows);
+        assert!(
+            !clicks_act.has_speech_with_profile(SpeechProfile::Windows),
+            "clicks: {clicks_act:?}"
+        );
+
+        let mut bump = hiss(-60.0, 1.0);
+        add_bump(&mut bump, 400);
+        let bump_act =
+            VoiceActivity::measure_with_profile(&to_pcm(&bump), RATE, SpeechProfile::Windows);
+        assert!(
+            !bump_act.has_speech_with_profile(SpeechProfile::Windows),
+            "bump: {bump_act:?}"
+        );
+
+        // Even with -100 floor and -40 peak, 80 ms (below 120 ms) must not pass.
+        let brief_spike = VoiceActivity {
+            duration_ms: 1_000,
+            peak_db: -40.0,
+            noise_floor_db: -100.0,
+            voiced_ms: 80,
+        };
+        assert!(!brief_spike.has_speech_with_profile(SpeechProfile::Windows));
     }
 }

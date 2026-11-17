@@ -13,6 +13,7 @@ import {
 import { formatTestTime } from '../../lib/speechTypes'
 import { useAppStore } from '../../stores/appStore'
 import { recordSearchTest } from '../../lib/connectionStatus'
+import { tp } from '../../lib/platformText'
 
 /** The web search guide on GitHub, opened by "How to run SearXNG". */
 export const WEB_SEARCH_GUIDE_URL =
@@ -190,7 +191,7 @@ export function WebSearchForm({
             setApiKey(event.target.value)
             setTest({ status: 'idle' })
           }}
-          placeholder={hasKey ? t('webSearch.keySaved') : t('webSearch.keyPlaceholder')}
+          placeholder={hasKey ? tp(t, 'webSearch.keySaved') : t('webSearch.keyPlaceholder')}
           // The placeholder is a sentence, so it is in the text font; a typed key is not.
           className={`${fieldClass} placeholder:font-sans placeholder:text-[12.5px]`}
         />

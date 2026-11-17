@@ -146,6 +146,62 @@ describe('speech engines (plan `two-tab-speech`)', () => {
       'Not enough free space for a model: 0.2 GB needed, 0.3 GB free.',
     )
     expect(hardwareNote(null, translate, 'long')).toBe('')
+
+    const winGpuCheck: SpeechHardwareCheck = {
+      hardware: {
+        chipKind: 'windows_gpu',
+        chipName: 'NVIDIA GeForce RTX 4060',
+        gpuName: 'NVIDIA GeForce RTX 4060',
+        vramBytes: 7900 * 1024 ** 2,
+        memoryBytes: 16 * GB,
+        freeBytes: 50_000_000_000,
+      },
+      offer: {
+        models: [{ id: 'qwen3-4b', sizeBytes: 1, recommended: true }],
+        leftOut: null,
+        neededBytes: null,
+      },
+    }
+    expect(hardwareNote(winGpuCheck, translate, 'long', 'aiSetup')).toBe(
+      'This computer: NVIDIA GeForce RTX 4060 (8 GB VRAM), 16 GB memory.',
+    )
+    expect(hardwareNote(winGpuCheck, translate, 'short', 'aiSetup')).toBe(
+      'NVIDIA GeForce RTX 4060 (8 GB VRAM) · 16 GB',
+    )
+
+    const winIgpuAiCheck: SpeechHardwareCheck = {
+      hardware: {
+        chipKind: 'windows_cpu',
+        chipName: '13th Gen Intel(R) Core(TM) i7-1360P',
+        gpuName: 'Intel(R) Iris(R) Xe Graphics',
+        vramBytes: 128 * 1024 ** 2,
+        memoryBytes: 16 * GB,
+        freeBytes: 50_000_000_000,
+      },
+      offer: { models: [], leftOut: 'needs_gpu', neededBytes: null },
+    }
+    expect(hardwareNote(winIgpuAiCheck, translate, 'long', 'aiSetup')).toBe(
+      'This computer: Intel(R) Iris(R) Xe Graphics (0.1 GB VRAM), 16 GB memory. Built-in AI needs a Vulkan-compatible discrete GPU with at least 4 GB of VRAM. Use your own server or API key instead.',
+    )
+
+    const winLowVramSpeechCheck: SpeechHardwareCheck = {
+      hardware: {
+        chipKind: 'windows_gpu',
+        chipName: 'NVIDIA GeForce MX450',
+        gpuName: 'NVIDIA GeForce MX450',
+        vramBytes: 2 * GB,
+        memoryBytes: 16 * GB,
+        freeBytes: 50_000_000_000,
+      },
+      offer: {
+        models: [{ id: 'small', sizeBytes: 1, recommended: false }],
+        leftOut: 'needs_vram',
+        neededBytes: null,
+      },
+    }
+    expect(hardwareNote(winLowVramSpeechCheck, translate, 'long', 'speechSetup')).toBe(
+      'This computer: NVIDIA GeForce MX450 (2 GB VRAM), 16 GB memory. The larger model needs a GPU with at least 4 GB of VRAM.',
+    )
   })
 })
 

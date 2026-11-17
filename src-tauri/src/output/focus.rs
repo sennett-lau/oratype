@@ -533,19 +533,22 @@ mod platform {
 mod platform {
     use super::FocusedElementInfo;
 
-    /// Not implemented outside macOS: always "could not tell", so output pastes as before.
+    // TODO(windows): query focused UI element role/editable state via COM `IUIAutomation::GetFocusedElement` (`UIA_ValuePatternId` / `UIA_IsReadOnlyPropertyId`).
     pub(super) fn focused_element_info() -> Option<FocusedElementInfo> {
         None
     }
 
+    // TODO(windows): read total character count via `IUIAutomationTextPattern` / `ValuePattern` on Windows for `typed_text_landed` verification.
     pub(super) fn focused_text_length() -> Option<i64> {
         None
     }
 
+    // TODO(windows): read highlight directly via `IUIAutomationTextPattern::GetSelection` before falling back to Ctrl+C clipboard capture.
     pub(super) fn focused_selected_text() -> super::SelectedText {
         super::SelectedText::Unknown
     }
 
+    // TODO(windows): extract text before the caret via `IUIAutomationTextPattern2::GetCaretRange` on Windows.
     pub(super) fn focused_text_before_cursor(_max_units: usize) -> Option<String> {
         None
     }

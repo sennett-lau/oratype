@@ -168,6 +168,51 @@ describe('LlmSetupStep', () => {
       expect(cardButtons()).toEqual([])
     })
 
+    it('a Windows PC with an 8 GB Vulkan GPU shows GPU name, VRAM and offers Built-in AI', async () => {
+      vi.mocked(tauri.getAiHardware).mockResolvedValue(
+        hardwareCheck(['qwen3-4b', 'qwen3-1.7b'], {
+          chipKind: 'windows_gpu',
+          chipName: 'NVIDIA GeForce RTX 4060',
+          gpuName: 'NVIDIA GeForce RTX 4060',
+          vramBytes: 7900 * 1024 ** 2,
+          memoryBytes: 16 * GB,
+          serverAvailable: true,
+        }),
+      )
+      await renderStep()
+
+      expect(
+        within(card()).getByText(
+          'This computer: NVIDIA GeForce RTX 4060 (8 GB VRAM), 16 GB memory.',
+        ),
+      ).toBeInTheDocument()
+      expect(within(card()).getByRole('radiogroup', { name: 'Model' })).toBeInTheDocument()
+      expect(cardButtons()).toEqual(['Set up'])
+    })
+
+    it('a Windows PC without a discrete GPU shows iGPU + VRAM and explains why Built-in AI is unavailable', async () => {
+      vi.mocked(tauri.getAiHardware).mockResolvedValue(
+        hardwareCheck([], {
+          chipKind: 'windows_cpu',
+          chipName: '13th Gen Intel Core i7',
+          gpuName: 'Intel(R) Iris(R) Xe Graphics',
+          vramBytes: 128 * 1024 ** 2,
+          memoryBytes: 16 * GB,
+          leftOut: 'needs_gpu',
+          serverAvailable: true,
+        }),
+      )
+      await renderStep()
+
+      expect(
+        within(card()).getByText(
+          'This computer: Intel(R) Iris(R) Xe Graphics (0.1 GB VRAM), 16 GB memory. Built-in AI needs a Vulkan-compatible discrete GPU with at least 4 GB of VRAM. Use your own server or API key instead.',
+        ),
+      ).toBeInTheDocument()
+      expect(within(card()).queryByRole('radiogroup')).not.toBeInTheDocument()
+      expect(cardButtons()).toEqual([])
+    })
+
     it('downloading: sizes in GB, bar, speed and Cancel', async () => {
       await renderStep()
       setStatus({

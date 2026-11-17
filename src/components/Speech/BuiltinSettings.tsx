@@ -10,6 +10,7 @@ import { modelLabel } from '../../lib/languageSetups'
 import { yourLanguageList } from '../../lib/yourLanguages'
 import { openSettingsPane } from '../../lib/router'
 import { ModelOptions, ProgressTrack } from './BuiltinParts'
+import { BuiltinBackendCard } from './BuiltinBackendCard'
 import {
   failedBadge,
   failedReason,
@@ -297,6 +298,7 @@ export function BuiltinSettings({ service = SPEECH_SERVICE }: { service?: Engine
           )}
         </>
       )}
+      <BuiltinBackendCard kind={service.id} />
     </div>
   )
 }

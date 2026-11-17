@@ -24,12 +24,14 @@ pub const QWEN35_MODEL_ID: &str = "qwen3.5-4b";
 const GB: u64 = 1024 * 1024 * 1024;
 
 /// One downloadable AI model: the file (id, name, size, SHA-256), where it comes from, and what
-/// it needs from the Mac.
+/// it needs from the hardware.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AiModel {
     pub file: KnownModel,
     pub url: &'static str,
     pub min_memory_bytes: u64,
+    /// Dedicated GPU VRAM it needs on Windows (`ChipKind::WindowsGpu`).
+    pub min_vram_bytes: u64,
     /// Plan `faster-cantonese-models`: files an earlier OraType downloaded for this model. They
     /// still count as installed and run; Settings offers the current file as an update.
     pub previous: &'static [KnownModel],
@@ -47,6 +49,7 @@ pub const AI_MODELS: &[AiModel] = &[
         },
         url: "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/a06e946bb6b655725eafa393f4a9745d460374c9/Qwen3-4B-Instruct-2507-Q4_K_M.gguf",
         min_memory_bytes: 16 * GB,
+        min_vram_bytes: hardware::MIN_VRAM_8GB,
         previous: &[],
     },
     AiModel {
@@ -58,6 +61,7 @@ pub const AI_MODELS: &[AiModel] = &[
         },
         url: "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/d7f544eead698dbd1f15126ef60b45a1e1933222/Qwen3-1.7B-Q4_K_M.gguf",
         min_memory_bytes: 8 * GB,
+        min_vram_bytes: hardware::MIN_VRAM_4GB,
         previous: &[],
     },
     // Last, so the recommendation and `left_out` still describe the two models above. Q4_0:
@@ -72,6 +76,7 @@ pub const AI_MODELS: &[AiModel] = &[
         },
         url: "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/e87f176479d0855a907a41277aca2f8ee7a09523/Qwen3.5-4B-Q4_0.gguf",
         min_memory_bytes: 16 * GB,
+        min_vram_bytes: hardware::MIN_VRAM_8GB,
         // OraType 1.1.3 to 1.2.0.
         previous: &[KnownModel {
             id: QWEN35_MODEL_ID,
@@ -141,6 +146,7 @@ pub fn offer_models(hardware: &Hardware, installed_ids: &[String]) -> ModelOffer
             model: model.file,
             needs_apple_silicon: true,
             min_memory_bytes: model.min_memory_bytes,
+            min_vram_bytes: model.min_vram_bytes,
         })
         .collect();
     hardware::offer_by_rules(hardware, &rules, installed_ids)
@@ -152,6 +158,7 @@ mod tests {
     use crate::stt::hardware::{ChipKind, LeftOutReason};
 
     const MB: u64 = 1_000_000;
+    const MIB: u64 = 1024 * 1024;
 
     fn mac(chip_kind: ChipKind, memory_gb: u64, free_bytes: u64) -> Hardware {
         Hardware {
@@ -159,6 +166,21 @@ mod tests {
             chip_name: String::new(),
             memory_bytes: memory_gb * GB,
             free_bytes,
+            gpu_name: None,
+            vram_bytes: None,
+            shared_gpu_memory_bytes: None,
+        }
+    }
+
+    fn windows_gpu(vram_mib: u64, ram_gb: u64, free_bytes: u64) -> Hardware {
+        Hardware {
+            chip_kind: ChipKind::WindowsGpu,
+            chip_name: "NVIDIA GeForce RTX 4060".to_string(),
+            memory_bytes: ram_gb * GB,
+            free_bytes,
+            gpu_name: Some("NVIDIA GeForce RTX 4060".to_string()),
+            vram_bytes: Some(vram_mib * MIB),
+            shared_gpu_memory_bytes: Some(8 * GB),
         }
     }
 
@@ -319,5 +341,29 @@ mod tests {
         assert_eq!(listed[0].file_name, model.file.file_name);
         assert!(!listed[0].update_available);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn windows_gpu_offers_match_vram_tiers() {
+        // 8 GB nominal GPU (7900 MiB DXGI dedicated VRAM): gets all 3 Built-in AI models.
+        let offer = offer_models(&windows_gpu(7900, 15, 50_000 * MB), &[]);
+        assert_eq!(ids(&offer), ["qwen3-4b", "qwen3-1.7b", "qwen3.5-4b"]);
+        assert!(offer.models[0].recommended);
+        assert_eq!(offer.left_out, None);
+
+        // 4 GB / 6 GB nominal GPU (5850 MiB DXGI VRAM): gets faster 1.7B, 4B left out due to VRAM.
+        let offer = offer_models(&windows_gpu(5850, 16, 50_000 * MB), &[]);
+        assert_eq!(ids(&offer), ["qwen3-1.7b"]);
+        assert_eq!(offer.left_out, Some(LeftOutReason::NeedsVram));
+
+        // 2 GB discrete GPU: gets no AI models and reports NeedsVram.
+        let offer = offer_models(&windows_gpu(2000, 16, 50_000 * MB), &[]);
+        assert!(offer.models.is_empty());
+        assert_eq!(offer.left_out, Some(LeftOutReason::NeedsVram));
+
+        // Integrated/CPU-only Windows PC: gets no AI models and reports NeedsGpu.
+        let offer = offer_models(&mac(ChipKind::WindowsCpu, 32, 50_000 * MB), &[]);
+        assert!(offer.models.is_empty());
+        assert_eq!(offer.left_out, Some(LeftOutReason::NeedsGpu));
     }
 }

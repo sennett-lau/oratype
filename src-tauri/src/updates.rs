@@ -39,9 +39,21 @@ pub fn self_updatable() -> bool {
     if cfg!(feature = "dev-build") || cfg!(debug_assertions) {
         return false;
     }
-    std::env::current_exe()
-        .map(|exe| exe.to_string_lossy().contains("/Contents/MacOS/"))
-        .unwrap_or(false)
+    #[cfg(target_os = "macos")]
+    {
+        std::env::current_exe()
+            .map(|exe| exe.to_string_lossy().contains("/Contents/MacOS/"))
+            .unwrap_or(false)
+    }
+    #[cfg(target_os = "windows")]
+    {
+        // TODO(windows): enable Windows self-updater (`latest.json` `windows-x86_64` NSIS/MSI target + Authenticode signing + `uninstall`/install-dir writeability check) instead of unconditionally disabling updater off macOS.
+        false
+    }
+    #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
+    {
+        false
+    }
 }
 
 /// Whether the app bundle can be replaced without an administrator password: its folder

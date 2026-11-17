@@ -1,5 +1,11 @@
 [build]
 jobs = 2
 
+[env]
+CMAKE_PROJECT_ggml_INCLUDE = { value = "cmake/mingw-ggml-prefix.cmake", relative = true }
+
 [target.x86_64-pc-windows-msvc]
 rustflags = ["-C", "link-args=/STACK:16777216"]
+
+[target.x86_64-pc-windows-gnu]
+rustflags = ["-C", "link-arg=-Wl,--stack,16777216"]

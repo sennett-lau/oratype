@@ -19,6 +19,7 @@ import { KeyCap } from '../ui/KeyCap'
 import { ShortcutBindingList } from './ShortcutBindingList'
 import { SwitchLanguageShortcut } from './SwitchLanguageShortcut'
 import { switchLanguageVariants } from '../../lib/switchLanguage'
+import { tp } from '../../lib/platformText'
 import { MicrophonePicker } from './MicrophonePicker'
 import { HandsFreeSettings } from './HandsFreeSettings'
 import { YourLanguagesGroup } from './YourLanguagesGroup'
@@ -312,7 +313,7 @@ export function GeneralPane() {
           value={config.input_device}
           onChange={(v) => updateConfig({ input_device: v })}
         />
-        <Row label={t('settings.muteOutputWhileRecording')} help={t('settings.muteOutputHint')}>
+        <Row label={t('settings.muteOutputWhileRecording')} help={tp(t, 'settings.muteOutputHint')}>
           <Toggle
             checked={config.mute_output_while_recording}
             onChange={(checked) => updateConfig({ mute_output_while_recording: checked })}

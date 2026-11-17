@@ -10,7 +10,14 @@ use super::InsertStatus;
 use super::{InsertResult, InsertionStrategy, OutputMode, TextOutput};
 
 /// Delay after writing to clipboard before simulating paste.
-const CLIPBOARD_SETTLE_MS: u64 = 20;
+const fn clipboard_settle_ms(is_windows: bool) -> u64 {
+    if is_windows {
+        40
+    } else {
+        20
+    }
+}
+const CLIPBOARD_SETTLE_MS: u64 = clipboard_settle_ms(cfg!(target_os = "windows"));
 const CLIPBOARD_RESTORE_DELAY_MS: u64 = 750;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -158,15 +165,32 @@ fn restore_clipboard_if_safe(original: Option<Snapshot>, written: i64, restore_i
     if !is_latest_clipboard_restore(restore_id) {
         return;
     }
-    let still_ours = pasteboard::change_count() == Some(written);
+    let current_change = pasteboard::change_count();
+    let seq_now = pasteboard::clipboard_sequence_number();
+    let still_ours = current_change == Some(written);
     if should_restore_clipboard(true, true, original.is_some(), still_ours) {
         if let Some(original) = &original {
-            if !pasteboard::restore(original) {
+            let restore_started = std::time::Instant::now();
+            let restored = pasteboard::restore(original);
+            let restore_elapsed_ms = restore_started.elapsed().as_millis();
+            tracing::info!(
+                "Clipboard restore finished: delay_ms={}, restore_elapsed={}ms, written_seq={}, current_seq={:?}, restored={}",
+                CLIPBOARD_RESTORE_DELAY_MS,
+                restore_elapsed_ms,
+                written,
+                seq_now.map(i64::from).or(current_change),
+                restored
+            );
+            if !restored {
                 tracing::warn!("Failed to restore the previous clipboard");
             }
         }
     } else if !still_ours {
-        tracing::debug!("Clipboard changed after the paste; not restoring it");
+        tracing::info!(
+            "Clipboard changed after paste (written_seq={}, current_seq={:?}); keeping new clipboard",
+            written,
+            seq_now.map(i64::from).or(current_change)
+        );
     }
     clear_pending_clipboard_restore(restore_id);
 }
@@ -192,7 +216,45 @@ fn simulate_paste(_shortcut: PasteShortcut) -> Result<(), AppError> {
     Ok(())
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "windows")]
+fn simulate_paste(shortcut: PasteShortcut) -> Result<(), AppError> {
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{VK_INSERT, VK_LCONTROL, VK_LSHIFT};
+
+    // Wait until hotkeys' physical modifiers go up so the target app sees plain Ctrl+V / Shift+Insert.
+    let guard_started = std::time::Instant::now();
+    super::windows_modifier_guard::wait_for_modifier_release()?;
+    let guard_elapsed_ms = guard_started.elapsed().as_millis();
+
+    let (modifiers, key): (&[u16], u16) = match shortcut {
+        PasteShortcut::CtrlV => (&[VK_LCONTROL], b'V' as u16),
+        PasteShortcut::CtrlShiftV => (&[VK_LCONTROL, VK_LSHIFT], b'V' as u16),
+        PasteShortcut::ShiftInsert => (&[VK_LSHIFT], VK_INSERT),
+    };
+    let expected_events = modifiers.len() * 2 + 2;
+    let result = super::windows_sendinput::send_vk_chord(modifiers, key);
+    match &result {
+        Ok(sent) => tracing::info!(
+            "Windows SendInput paste: shortcut={:?}, sent={}/{}, modifier_guard_elapsed={}ms",
+            shortcut,
+            sent,
+            expected_events,
+            guard_elapsed_ms
+        ),
+        Err(error) => tracing::warn!(
+            "Windows SendInput paste failed: shortcut={:?}, expected_events={}, modifier_guard_elapsed={}ms, error={}",
+            shortcut,
+            expected_events,
+            guard_elapsed_ms,
+            error
+        ),
+    }
+    // TODO(windows): Windows UIPI blocks `SendInput` into elevated (Admin) windows; surface a fallback toast ("text copied — paste manually") when `SendInput` hits a UIPI boundary.
+    result
+        .map(|_| ())
+        .map_err(|error| AppError::Output(error.to_string()))
+}
+
+#[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
 fn paste_keys(shortcut: PasteShortcut) -> (Vec<enigo::Key>, enigo::Key) {
     use enigo::Key;
     match shortcut {
@@ -202,7 +264,7 @@ fn paste_keys(shortcut: PasteShortcut) -> (Vec<enigo::Key>, enigo::Key) {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
 fn simulate_paste(shortcut: PasteShortcut) -> Result<(), AppError> {
     super::windows_modifier_guard::wait_for_modifier_release()?;
 
@@ -266,6 +328,8 @@ impl TextOutput for ClipboardOutput {
                 .restore_after_paste
                 .then(pasteboard::snapshot)
                 .flatten();
+            let seq_before = pasteboard::clipboard_sequence_number();
+            let write_started = std::time::Instant::now();
             let written = if options.restore_after_paste {
                 pasteboard::write_transient_text(&text)
             } else {
@@ -274,6 +338,19 @@ impl TextOutput for ClipboardOutput {
                     .flatten()
             }
             .ok_or_else(|| AppError::Output("Failed to set clipboard".to_string()))?;
+            let write_elapsed_ms = write_started.elapsed().as_millis();
+            let seq_after = pasteboard::clipboard_sequence_number();
+            tracing::info!(
+                "Clipboard write ok: chars={}, write_elapsed={}ms, seq_before={:?}, seq_after={:?}, written_change={}, settle_ms={}, restore_delay_ms={}, restore_after_paste={}",
+                text.chars().count(),
+                write_elapsed_ms,
+                seq_before,
+                seq_after,
+                written,
+                CLIPBOARD_SETTLE_MS,
+                CLIPBOARD_RESTORE_DELAY_MS,
+                options.restore_after_paste
+            );
 
             std::thread::sleep(std::time::Duration::from_millis(CLIPBOARD_SETTLE_MS));
 
@@ -378,6 +455,13 @@ mod tests {
             PasteShortcut::from_config_value("shiftInsert"),
             PasteShortcut::ShiftInsert
         );
+    }
+
+    #[test]
+    fn clipboard_settle_ms_uses_wider_window_on_windows() {
+        assert_eq!(clipboard_settle_ms(true), 40);
+        assert_eq!(clipboard_settle_ms(false), 20);
+        assert!(CLIPBOARD_RESTORE_DELAY_MS >= 400);
     }
 
     #[test]

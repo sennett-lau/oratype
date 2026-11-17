@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import type { AiPreset, AppConfig, SpeechPreset } from '../stores/appStore'
 import { useAppStore } from '../stores/appStore'
+import { tp } from './platformText'
 
 /**
  * Plan `preset-sharing`: export and import presets as a `*.oratype-presets.json` file. The backend shows
@@ -136,7 +137,7 @@ export function shareErrorMessage(
   if (error && typeof error === 'object' && 'code' in error) {
     const shareError = error as ShareError
     if (KNOWN_ERROR_CODES.has(shareError.code)) {
-      return t(`presetShare.errors.${shareError.code}`, {
+      return tp(t, `presetShare.errors.${shareError.code}`, {
         version: shareError.version ?? '',
         name: shareError.name ?? '',
         address: shareError.address ?? '',

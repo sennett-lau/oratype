@@ -62,9 +62,22 @@ impl ContextSignalSource for WindowsContextSource {
 }
 
 unsafe fn collect_foreground_context() -> Option<ContextSignals> {
-    let hwnd = windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow();
+    let mut hwnd = windows_sys::Win32::UI::WindowsAndMessaging::GetForegroundWindow();
+    if !hwnd.is_null() && crate::overlay_window::is_own_overlay_hwnd(hwnd as isize) {
+        if let Some(fallback) = crate::output::windows_focus::last_non_overlay_hwnd() {
+            let fallback_hwnd = fallback as windows_sys::Win32::Foundation::HWND;
+            if !fallback_hwnd.is_null()
+                && windows_sys::Win32::UI::WindowsAndMessaging::IsWindow(fallback_hwnd) != 0
+            {
+                hwnd = fallback_hwnd;
+            }
+        }
+    }
     if hwnd.is_null() {
         return None;
+    }
+    if !crate::overlay_window::is_own_overlay_hwnd(hwnd as isize) {
+        crate::output::windows_focus::remember_non_overlay_hwnd(hwnd as isize);
     }
 
     let mut title_buf = [0u16; 512];
@@ -83,6 +96,7 @@ unsafe fn collect_foreground_context() -> Option<ContextSignals> {
     windows_sys::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId(hwnd, &mut process_id);
     let process_alias = process_name(process_id);
     let supported_browser = process_alias.as_deref().is_some_and(is_supported_browser);
+    // TODO(windows): extract `browser_host` from supported browsers via COM UI Automation address-bar lookup (`IUIAutomation`) and unwrap UWP `ApplicationFrameHost.exe` child `HWND`s (`EnumChildWindows`).
 
     Some(ContextSignals {
         process_id: (process_id != 0).then_some(process_id),

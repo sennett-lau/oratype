@@ -66,6 +66,19 @@ pub fn read_text() -> Option<String> {
     platform::read_text(&platform::general()?)
 }
 
+/// Returns Win32 `GetClipboardSequenceNumber()` on Windows, or `None` on other platforms.
+pub fn clipboard_sequence_number() -> Option<u32> {
+    #[cfg(target_os = "windows")]
+    {
+        // SAFETY: Win32 query with no pointer parameters.
+        Some(unsafe { windows_sys::Win32::System::DataExchange::GetClipboardSequenceNumber() })
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        None
+    }
+}
+
 #[cfg(target_os = "macos")]
 mod platform {
     //! Raw calls into AppKit's `NSPasteboard` through the Objective-C runtime (`objc2`). Every
@@ -270,10 +283,44 @@ mod platform {
     }
 }
 
+#[cfg(any(target_os = "windows", test))]
+fn retry_clipboard_op<T, E: std::fmt::Display>(
+    attempts: usize,
+    delay: std::time::Duration,
+    mut op: impl FnMut() -> Result<T, E>,
+) -> Option<T> {
+    let total = attempts.max(1);
+    for attempt in 0..total {
+        match op() {
+            Ok(value) => return Some(value),
+            Err(error) => {
+                if attempt + 1 < total {
+                    std::thread::sleep(delay);
+                } else {
+                    tracing::warn!(
+                        "Clipboard operation failed after {} attempt(s): {}",
+                        total,
+                        error
+                    );
+                }
+            }
+        }
+    }
+    None
+}
+
 #[cfg(not(target_os = "macos"))]
 mod platform {
-    //! Outside macOS only the plain text is kept, through `arboard` (as before plan
-    //! `clipboard-safety`); the change count is emulated from the text.
+    //! Outside macOS only plain text is kept through `arboard`; on Windows `change_count`
+    //! queries Win32 `GetClipboardSequenceNumber()` directly, and clipboard access retries briefly
+    //! to handle `OpenClipboard` contention from external clipboard viewers.
+
+    // TODO(windows): capture and restore non-text clipboard formats (`CF_UNICODETEXT`, `HTML Format`, `CF_HDROP`, `CF_DIB`) via Win32 `OpenClipboard`/`EnumClipboardFormats`.
+    // TODO(windows): mark transient dictated clipboard writes with `ExcludeClipboardContentFromMonitorProcessing` and `CanIncludeInClipboardHistory = 0` so Win+V history is not polluted.
+    #[cfg(target_os = "windows")]
+    const WINDOWS_CLIPBOARD_RETRIES: usize = 12;
+    #[cfg(target_os = "windows")]
+    const WINDOWS_CLIPBOARD_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(15);
 
     #[derive(Debug, Clone, PartialEq, Eq)]
     pub struct Snapshot {
@@ -293,37 +340,110 @@ mod platform {
     }
 
     pub fn change_count(_board: &Board) -> i64 {
-        use std::hash::{Hash, Hasher};
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
-        read_text(&Board).hash(&mut hasher);
-        hasher.finish() as i64
+        #[cfg(target_os = "windows")]
+        {
+            // SAFETY: Win32 query with no pointer parameters; returns 0 only if window station denies access.
+            let seq =
+                unsafe { windows_sys::Win32::System::DataExchange::GetClipboardSequenceNumber() };
+            seq as i64
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            use std::hash::{Hash, Hasher};
+            let mut hasher = std::collections::hash_map::DefaultHasher::new();
+            read_text(&Board).hash(&mut hasher);
+            hasher.finish() as i64
+        }
     }
 
     pub fn snapshot(_board: &Board) -> Option<Snapshot> {
-        let mut clipboard = arboard::Clipboard::new().ok()?;
-        Some(Snapshot {
-            text: clipboard.get_text().ok(),
-        })
+        #[cfg(target_os = "windows")]
+        {
+            super::retry_clipboard_op(
+                WINDOWS_CLIPBOARD_RETRIES,
+                WINDOWS_CLIPBOARD_RETRY_DELAY,
+                || {
+                    let mut clipboard = arboard::Clipboard::new()?;
+                    Ok::<Snapshot, arboard::Error>(Snapshot {
+                        text: clipboard.get_text().ok(),
+                    })
+                },
+            )
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            let mut clipboard = arboard::Clipboard::new().ok()?;
+            Some(Snapshot {
+                text: clipboard.get_text().ok(),
+            })
+        }
     }
 
     pub fn restore(_board: &Board, snapshot: &Snapshot) -> bool {
-        let Ok(mut clipboard) = arboard::Clipboard::new() else {
-            return false;
-        };
-        match &snapshot.text {
-            Some(text) => clipboard.set_text(text.clone()).is_ok(),
-            None => clipboard.clear().is_ok(),
+        #[cfg(target_os = "windows")]
+        {
+            super::retry_clipboard_op(
+                WINDOWS_CLIPBOARD_RETRIES,
+                WINDOWS_CLIPBOARD_RETRY_DELAY,
+                || {
+                    let mut clipboard = arboard::Clipboard::new()?;
+                    match &snapshot.text {
+                        Some(text) => clipboard.set_text(text.clone()),
+                        None => clipboard.clear(),
+                    }
+                },
+            )
+            .is_some()
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            let Ok(mut clipboard) = arboard::Clipboard::new() else {
+                return false;
+            };
+            match &snapshot.text {
+                Some(text) => clipboard.set_text(text.clone()).is_ok(),
+                None => clipboard.clear().is_ok(),
+            }
         }
     }
 
     pub fn write_text(_board: &Board, text: &str, _transient: bool) -> bool {
-        arboard::Clipboard::new()
-            .and_then(|mut clipboard| clipboard.set_text(text.to_string()))
-            .is_ok()
+        #[cfg(target_os = "windows")]
+        {
+            super::retry_clipboard_op(
+                WINDOWS_CLIPBOARD_RETRIES,
+                WINDOWS_CLIPBOARD_RETRY_DELAY,
+                || {
+                    let mut clipboard = arboard::Clipboard::new()?;
+                    clipboard.set_text(text.to_string())
+                },
+            )
+            .is_some()
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            arboard::Clipboard::new()
+                .and_then(|mut clipboard| clipboard.set_text(text.to_string()))
+                .is_ok()
+        }
     }
 
     pub fn read_text(_board: &Board) -> Option<String> {
-        arboard::Clipboard::new().ok()?.get_text().ok()
+        #[cfg(target_os = "windows")]
+        {
+            super::retry_clipboard_op(
+                WINDOWS_CLIPBOARD_RETRIES,
+                WINDOWS_CLIPBOARD_RETRY_DELAY,
+                || {
+                    let mut clipboard = arboard::Clipboard::new()?;
+                    clipboard.get_text()
+                },
+            )
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            arboard::Clipboard::new().ok()?.get_text().ok()
+        }
     }
 
     #[cfg(test)]
@@ -331,6 +451,39 @@ mod platform {
         Snapshot {
             text: Some(text.to_string()),
         }
+    }
+}
+
+#[cfg(test)]
+mod non_macos_unit_tests {
+    use super::*;
+    use std::cell::Cell;
+
+    #[test]
+    fn retry_clipboard_op_recovers_after_transient_failures() {
+        let attempts = Cell::new(0);
+        let res = retry_clipboard_op(4, std::time::Duration::ZERO, || {
+            let n = attempts.get() + 1;
+            attempts.set(n);
+            if n < 3 {
+                Err("OpenClipboard busy")
+            } else {
+                Ok("ok")
+            }
+        });
+        assert_eq!(res, Some("ok"));
+        assert_eq!(attempts.get(), 3);
+    }
+
+    #[test]
+    fn retry_clipboard_op_returns_none_after_exhausting_attempts() {
+        let attempts = Cell::new(0);
+        let res: Option<()> = retry_clipboard_op(3, std::time::Duration::ZERO, || {
+            attempts.set(attempts.get() + 1);
+            Err("still locked")
+        });
+        assert_eq!(res, None);
+        assert_eq!(attempts.get(), 3);
     }
 }
 

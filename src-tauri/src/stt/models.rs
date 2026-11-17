@@ -85,8 +85,10 @@ pub struct AsrModel {
     pub projector: KnownModel,
     /// Where both files come from: `{base_url}/{file_name}`.
     pub base_url: &'static str,
-    /// Installed memory it needs. It shares the Mac with the AI polish model.
+    /// Installed unified memory it needs on macOS. It shares the Mac with the AI polish model.
     pub min_memory_bytes: u64,
+    /// Dedicated GPU VRAM it needs on Windows (`ChipKind::WindowsGpu`).
+    pub min_vram_bytes: u64,
     /// Files an earlier OraType downloaded for this model (see [`AsrFiles`]).
     pub previous: &'static [AsrFiles],
 }
@@ -126,6 +128,7 @@ pub const ASR_MODELS: &[AsrModel] = &[
         },
         base_url: "https://huggingface.co/joe2643/Qwen3-ASR-1.7B-Cantonese-HK-GGUF/resolve/c2b90a46d61a5fc93ec07955aeaf18b8ffdc5ed9",
         min_memory_bytes: 8 * GIB,
+        min_vram_bytes: crate::stt::hardware::MIN_VRAM_6GB,
         previous: &[
             // OraType 1.2.1: Qwen3-ASR 1.7B, mradermacher's Q4_K_M (1.28 GB) and its Q8_0 projector
             // (plan `faster-cantonese-models`).
@@ -175,6 +178,7 @@ pub const ASR_MODELS: &[AsrModel] = &[
         },
         base_url: "https://huggingface.co/joe2643/Qwen3-ASR-0.6B-Cantonese-HK-GGUF/resolve/9b67dd08958900879ef34939485bb977a308a2f5",
         min_memory_bytes: 8 * GIB,
+        min_vram_bytes: crate::stt::hardware::MIN_VRAM_4GB,
         previous: &[],
     },
 ];

@@ -1148,6 +1148,10 @@ pub struct AppConfig {
     pub restore_clipboard_after_paste: bool,
     pub paste_shortcut: String,
     pub windows_sendinput_newline_mode: String,
+    /// One-time migration flag so Windows defaults to `clipboard` + `clipboardPaste` even for
+    /// configs created before v3 (without overriding explicit user changes made afterwards).
+    #[serde(default)]
+    pub windows_paste_default_migrated: bool,
     pub streaming_insert_enabled: bool,
     pub selected_text_enabled: bool,
     /// Plan `cursor-context`: Dictate sends the text before the cursor to polish as context.
@@ -1205,6 +1209,37 @@ pub struct AppConfig {
     /// language, so a dictation in another language does not make it read its instructions
     /// again. On by default; each extra slot costs about 1–2 GB of memory.
     pub builtin_ai_language_slots: bool,
+    /// Backend preference for Built-in AI (`llama-server`): `"auto"`, `"cpu"`, or a specific
+    /// device id like `"Vulkan0"`.
+    #[serde(default = "default_builtin_backend")]
+    pub builtin_ai_backend: String,
+    /// Backend preference for Built-in Speech (`whisper.cpp` and `llama-server` Qwen3-ASR):
+    /// `"auto"`, `"cpu"`, or a specific device id like `"Vulkan0"`.
+    #[serde(default = "default_builtin_backend")]
+    pub builtin_speech_backend: String,
+}
+
+fn default_builtin_backend() -> String {
+    "auto".to_string()
+}
+
+pub fn normalize_builtin_backend(raw: &str) -> String {
+    let trimmed = raw.trim();
+    if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("auto") {
+        return "auto".to_string();
+    }
+    if trimmed.eq_ignore_ascii_case("cpu") {
+        return "cpu".to_string();
+    }
+    if trimmed.len() <= 32
+        && trimmed
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | ':'))
+    {
+        trimmed.to_string()
+    } else {
+        "auto".to_string()
+    }
 }
 
 impl Default for AppConfig {
@@ -1231,11 +1266,20 @@ impl Default for AppConfig {
             ask_hotkey: default_ask_hotkey().to_string(),
             hotkey_mode: default_dictation_hotkey_mode().to_string(),
             hotkeys: HotkeyConfig::default(),
-            output_mode: "keyboard".to_string(),
-            insertion_strategy: "auto".to_string(),
+            output_mode: if cfg!(target_os = "windows") {
+                "clipboard".to_string()
+            } else {
+                "keyboard".to_string()
+            },
+            insertion_strategy: if cfg!(target_os = "windows") {
+                "clipboardPaste".to_string()
+            } else {
+                "auto".to_string()
+            },
             restore_clipboard_after_paste: true,
             paste_shortcut: "ctrlV".to_string(),
             windows_sendinput_newline_mode: "enter".to_string(),
+            windows_paste_default_migrated: cfg!(target_os = "windows"),
             streaming_insert_enabled: false,
             selected_text_enabled: false,
             cursor_context_enabled: false,
@@ -1262,6 +1306,8 @@ impl Default for AppConfig {
             dismissed_language_setup: None,
             hands_free: crate::hands_free::HandsFreeConfig::default(),
             builtin_ai_language_slots: true,
+            builtin_ai_backend: default_builtin_backend(),
+            builtin_speech_backend: default_builtin_backend(),
         }
     }
 }
@@ -1793,6 +1839,8 @@ impl AppConfig {
         self.normalize_hotkey_settings();
         self.recompute_recording_limit_mirror();
         self.input_device = self.input_device.trim().to_string();
+        self.builtin_ai_backend = normalize_builtin_backend(&self.builtin_ai_backend);
+        self.builtin_speech_backend = normalize_builtin_backend(&self.builtin_speech_backend);
         self.web_search.normalize();
         self.normalize_your_languages();
     }
@@ -1907,6 +1955,13 @@ impl AppConfig {
         ) {
             self.insertion_strategy = "auto".to_string();
         }
+
+        #[cfg(target_os = "windows")]
+        apply_windows_paste_default_migration(
+            &mut self.output_mode,
+            &mut self.insertion_strategy,
+            &mut self.windows_paste_default_migrated,
+        );
 
         self.output_mode =
             legacy_output_mode_for_insertion_strategy(&self.insertion_strategy).to_string();
@@ -2279,6 +2334,20 @@ fn normalize_hotkey_primary(value: &str) -> Option<String> {
     };
 
     Some(normalized)
+}
+
+pub fn apply_windows_paste_default_migration(
+    output_mode: &mut String,
+    insertion_strategy: &mut String,
+    migrated: &mut bool,
+) {
+    if !*migrated {
+        *migrated = true;
+        if output_mode == "keyboard" && insertion_strategy == "auto" {
+            *output_mode = "clipboard".to_string();
+            *insertion_strategy = "clipboardPaste".to_string();
+        }
+    }
 }
 
 fn insertion_strategy_from_legacy_output_mode(output_mode: &str) -> &'static str {
@@ -4940,6 +5009,25 @@ mod tests {
     }
 
     #[test]
+    fn windows_paste_default_migration_runs_once_and_respects_user_choice() {
+        let mut mode = "keyboard".to_string();
+        let mut strategy = "auto".to_string();
+        let mut migrated = false;
+
+        apply_windows_paste_default_migration(&mut mode, &mut strategy, &mut migrated);
+        assert_eq!(mode, "clipboard");
+        assert_eq!(strategy, "clipboardPaste");
+        assert!(migrated);
+
+        // Once migrated, user switching back to Typing ("keyboard" / "auto") must be respected.
+        let mut user_mode = "keyboard".to_string();
+        let mut user_strategy = "auto".to_string();
+        apply_windows_paste_default_migration(&mut user_mode, &mut user_strategy, &mut migrated);
+        assert_eq!(user_mode, "keyboard");
+        assert_eq!(user_strategy, "auto");
+    }
+
+    #[test]
     fn app_config_defaults_missing_custom_scenes() {
         let value = serde_json::json!({});
 
@@ -5541,5 +5629,28 @@ mod tests {
             .unwrap();
         assert_eq!(leftovers, 0);
         let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn app_config_defaults_and_normalizes_builtin_backends() {
+        let default_cfg = AppConfig::default();
+        assert_eq!(default_cfg.builtin_ai_backend, "auto");
+        assert_eq!(default_cfg.builtin_speech_backend, "auto");
+
+        let restored = AppConfig::from_stored_value(serde_json::json!({
+            "builtin_ai_backend": " CPU ",
+            "builtin_speech_backend": "Vulkan1"
+        }))
+        .unwrap();
+        assert_eq!(restored.builtin_ai_backend, "cpu");
+        assert_eq!(restored.builtin_speech_backend, "Vulkan1");
+
+        let invalid = AppConfig::from_stored_value(serde_json::json!({
+            "builtin_ai_backend": "bad value with spaces",
+            "builtin_speech_backend": ""
+        }))
+        .unwrap();
+        assert_eq!(invalid.builtin_ai_backend, "auto");
+        assert_eq!(invalid.builtin_speech_backend, "auto");
     }
 }

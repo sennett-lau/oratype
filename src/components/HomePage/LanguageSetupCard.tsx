@@ -8,6 +8,7 @@ import { currentEngine, hideLanguageSetup, useLanguageSetup } from '../../hooks/
 import { AI_SERVICE, SPEECH_SERVICE } from '../Speech/services'
 import { yourLanguageList } from '../../lib/yourLanguages'
 import { Group, Row } from '../ui/Group'
+import { tp } from '../../lib/platformText'
 
 /**
  * Plan `language-model-suggestions`: "Suggested for your languages" on Home, styled like Finish
@@ -52,7 +53,7 @@ export function LanguageSetupCard() {
       <Group label={t('languageSetup.homeGroup')}>
         <Row
           label={t('languageSetup.homeTitle', { languages: yourLanguageList(languages, t) })}
-          help={t(bodyKey, {
+          help={tp(t, bodyKey, {
             speech: speech ? modelLabel(speech.id) : '',
             ai: ai ? modelLabel(ai.id) : '',
             size: formatSize(total),

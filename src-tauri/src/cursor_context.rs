@@ -14,6 +14,7 @@ pub const MAX_UNITS: usize = 300;
 /// Accessibility messages, each capped at 150 ms.
 pub fn capture() -> Option<String> {
     let started = std::time::Instant::now();
+    // TODO(windows): `cursor_context::capture` relies on `output::focus::focused_text_before_cursor`, which currently returns `None` off macOS until COM `IUIAutomationTextPattern` is implemented.
     let raw = crate::output::focus::focused_text_before_cursor(MAX_UNITS);
     let text = raw.as_deref().and_then(tidy);
     tracing::info!(

@@ -510,10 +510,15 @@ export async function deleteSpeechModel(modelId: string): Promise<void> {
 
 // ─── Plan `two-tab-speech`: which built-in models this Mac runs well ───
 
-export type ChipKind = 'apple_silicon' | 'intel' | 'unknown'
+export type ChipKind = 'apple_silicon' | 'intel' | 'windows_gpu' | 'windows_cpu' | 'unknown'
 
 /** Why the larger model is not offered. Mirrors `LeftOutReason` in `stt/hardware.rs`. */
-export type ModelLeftOutReason = 'needs_apple_silicon' | 'needs_memory' | 'needs_disk_space'
+export type ModelLeftOutReason =
+  | 'needs_apple_silicon'
+  | 'needs_gpu'
+  | 'needs_vram'
+  | 'needs_memory'
+  | 'needs_disk_space'
 
 export interface OfferedModel {
   id: string
@@ -529,6 +534,12 @@ export interface SpeechHardwareCheck {
     chipName: string
     memoryBytes: number
     freeBytes: number
+    /** Windows only: DXGI adapter description. */
+    gpuName?: string
+    /** Windows only: DXGI DedicatedVideoMemory in bytes. */
+    vramBytes?: number
+    /** Windows only: DXGI SharedSystemMemory in bytes. */
+    sharedGpuMemoryBytes?: number
   }
   offer: {
     models: OfferedModel[]
@@ -1213,4 +1224,34 @@ export async function setCapsuleFrame(
   height: number,
 ): Promise<void> {
   return invoke('set_capsule_frame', { x, y, width, height })
+}
+
+export async function setOverlayVisible(label: 'capsule' | 'ask', visible: boolean): Promise<void> {
+  return invoke('set_overlay_visible', { label, visible })
+}
+
+export interface LlamaDeviceInfo {
+  id: string
+  description: string
+  totalMib: number
+  freeMib: number
+}
+
+export interface BuiltinBackendInfo {
+  platform: string
+  llamaEngine: string
+  whisperEngine: string
+  devices: LlamaDeviceInfo[]
+  autoDeviceId: string | null
+  activeAiDevice: string
+  activeSpeechLlamaDevice: string
+  activeWhisperDevice: string
+}
+
+export async function getBuiltinBackendInfo(): Promise<BuiltinBackendInfo> {
+  return invoke('get_builtin_backend_info')
+}
+
+export async function syncMainWindowBackdrop(dark: boolean): Promise<string> {
+  return invoke('sync_main_window_backdrop', { dark })
 }

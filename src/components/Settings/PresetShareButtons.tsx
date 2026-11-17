@@ -16,6 +16,7 @@ import {
 import { useAppStore } from '../../stores/appStore'
 import { PresetShareExportDialog } from './PresetShareExportDialog'
 import { PresetShareImportDialog } from './PresetShareImportDialog'
+import { tp } from '../../lib/platformText'
 
 type Open =
   | { kind: 'none' }
@@ -104,7 +105,7 @@ export function PresetShareButtons({ service }: { service: ShareService }) {
       const text = t('presetShare.imported', { count })
       setStatus({
         text: result.keysFailed
-          ? `${text} ${t('presetShare.keysFailed', { count: result.keysFailed })}`
+          ? `${text} ${tp(t, 'presetShare.keysFailed', { count: result.keysFailed })}`
           : text,
         error: false,
       })

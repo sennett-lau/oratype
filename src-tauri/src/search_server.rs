@@ -12,6 +12,7 @@
 //! Built-in is chosen) and stopped at quit, like the built-in AI server (`llm/builtin.rs`).
 //! SearXNG does not log queries; its output goes to `search/searxng.log`.
 
+#[cfg(not(target_os = "windows"))]
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -45,7 +46,14 @@ impl SearchPaths {
         Self { root }
     }
     pub fn uv(&self) -> PathBuf {
-        self.root.join("bin").join("uv")
+        #[cfg(target_os = "windows")]
+        {
+            self.root.join("bin").join("uv.exe")
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            self.root.join("bin").join("uv")
+        }
     }
     pub fn python_dir(&self) -> PathBuf {
         self.root.join("python")
@@ -57,7 +65,17 @@ impl SearchPaths {
         self.root.join(format!("searxng-{}", short_commit(commit)))
     }
     pub fn venv_python(&self, commit: &str) -> PathBuf {
-        self.install_dir(commit).join(".venv/bin/python")
+        #[cfg(target_os = "windows")]
+        {
+            self.install_dir(commit)
+                .join(".venv")
+                .join("Scripts")
+                .join("python.exe")
+        }
+        #[cfg(not(target_os = "windows"))]
+        {
+            self.install_dir(commit).join(".venv/bin/python")
+        }
     }
     pub fn settings(&self) -> PathBuf {
         self.root.join("settings.yml")
@@ -182,9 +200,15 @@ pub fn settings_yaml(port: u16, secret_key: &str) -> String {
     )
 }
 
-/// The uv release file for this Mac.
+/// The uv release file for this host platform.
 pub fn uv_asset() -> &'static str {
-    if cfg!(target_arch = "x86_64") {
+    if cfg!(target_os = "windows") {
+        if cfg!(target_arch = "aarch64") {
+            "uv-aarch64-pc-windows-msvc.zip"
+        } else {
+            "uv-x86_64-pc-windows-msvc.zip"
+        }
+    } else if cfg!(target_arch = "x86_64") {
         "uv-x86_64-apple-darwin.tar.gz"
     } else {
         "uv-aarch64-apple-darwin.tar.gz"
@@ -215,24 +239,101 @@ pub fn free_port(preferred: u16) -> u16 {
         .unwrap_or(preferred)
 }
 
-/// Stops a SearXNG a crashed OraType left behind (its id is in `pid_file`). Only a process
-/// that really runs `searx.webapp` is stopped.
-fn stop_stale_server(pid_file: &Path) {
-    let Ok(text) = std::fs::read_to_string(pid_file) else {
+/// Normalizes a Windows/POSIX path and checks whether it names a Python interpreter inside
+/// OraType's own `search_root` (preventing accidental termination of unrelated Python processes).
+#[cfg(any(target_os = "windows", test))]
+fn is_searxng_python_process_path(image_path: &str, search_root: &Path) -> bool {
+    let normalize = |raw: &str| -> String {
+        let slashed = raw.trim().replace('\\', "/");
+        let without_verbatim = slashed.strip_prefix("//?/").unwrap_or(&slashed);
+        without_verbatim.trim_end_matches('/').to_ascii_lowercase()
+    };
+    let norm_path = normalize(image_path);
+    let norm_root = normalize(&search_root.to_string_lossy());
+    if norm_path.is_empty() || norm_root.is_empty() {
+        return false;
+    }
+    let Some(file_name) = norm_path.rsplit('/').next() else {
+        return false;
+    };
+    let is_python = matches!(file_name, "python.exe" | "python3.exe");
+    is_python && norm_path.starts_with(&format!("{norm_root}/"))
+}
+
+/// Stops a SearXNG a crashed OraType left behind (its id is in `paths.pid()`). Only a process
+/// that really runs SearXNG from `paths` is stopped.
+fn stop_stale_server(paths: &SearchPaths) {
+    let pid_file = paths.pid();
+    let Ok(text) = std::fs::read_to_string(&pid_file) else {
         return;
     };
-    let _ = std::fs::remove_file(pid_file);
+    let _ = std::fs::remove_file(&pid_file);
     let Ok(pid) = text.trim().parse::<u32>() else {
         return;
     };
-    let args = Command::new("ps")
-        .args(["-p", &pid.to_string(), "-o", "args="])
-        .output()
-        .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
-        .unwrap_or_default();
-    if args.contains("searx.webapp") {
-        tracing::info!("Built-in search: stopping a SearXNG left from an earlier run (pid {pid})");
-        let _ = Command::new("kill").arg(pid.to_string()).status();
+    if pid == 0 {
+        return;
+    }
+    #[cfg(unix)]
+    {
+        let args = Command::new("ps")
+            .args(["-p", &pid.to_string(), "-o", "args="])
+            .output()
+            .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_string())
+            .unwrap_or_default();
+        if args.contains("searx.webapp") {
+            tracing::info!(
+                "Built-in search: stopping a SearXNG left from an earlier run (pid {pid})"
+            );
+            let _ = Command::new("kill").arg(pid.to_string()).status();
+        }
+    }
+    #[cfg(windows)]
+    {
+        use std::ffi::OsString;
+        use std::os::windows::ffi::OsStringExt;
+        use windows_sys::Win32::Foundation::CloseHandle;
+        use windows_sys::Win32::System::Threading::{
+            OpenProcess, QueryFullProcessImageNameW, TerminateProcess,
+            PROCESS_QUERY_LIMITED_INFORMATION, PROCESS_TERMINATE,
+        };
+
+        // SAFETY: `pid` was parsed as a non-zero Win32 PID; we open only with query + terminate
+        // rights, check its full image path against OraType's private search folder, kill the
+        // process tree if it matches, and unconditionally close the handle.
+        unsafe {
+            let handle = OpenProcess(
+                PROCESS_QUERY_LIMITED_INFORMATION | PROCESS_TERMINATE,
+                0,
+                pid,
+            );
+            if handle.is_null() {
+                return;
+            }
+            let mut buffer = [0u16; 1024];
+            let mut size = buffer.len() as u32;
+            let ok = QueryFullProcessImageNameW(handle, 0, buffer.as_mut_ptr(), &mut size);
+            if ok != 0 && size > 0 {
+                let image_path = OsString::from_wide(&buffer[..size as usize])
+                    .to_string_lossy()
+                    .to_string();
+                if is_searxng_python_process_path(&image_path, &paths.root) {
+                    tracing::info!(
+                        "Built-in search: stopping a SearXNG left from an earlier run (pid {pid})"
+                    );
+                    let mut taskkill = Command::new("taskkill");
+                    crate::platform::configure_background_command(&mut taskkill);
+                    let _ = taskkill
+                        .args(["/PID", &pid.to_string(), "/T", "/F"])
+                        .stdin(Stdio::null())
+                        .stdout(Stdio::null())
+                        .stderr(Stdio::null())
+                        .status();
+                    let _ = TerminateProcess(handle, 1);
+                }
+            }
+            let _ = CloseHandle(handle);
+        }
     }
 }
 
@@ -268,6 +369,7 @@ fn write_installed(paths: &SearchPaths, installed: &Installed) -> Result<(), Str
 
 /// Runs a setup command (uv, tar) and returns its error output when it fails.
 fn run(command: &mut Command, what: &str) -> Result<(), String> {
+    crate::platform::configure_background_command(command);
     let output = command
         .stdin(Stdio::null())
         .output()
@@ -283,6 +385,139 @@ fn run(command: &mut Command, what: &str) -> Result<(), String> {
     ))
 }
 
+#[cfg(any(target_os = "windows", test))]
+fn is_windows_safe_component(name: &str) -> bool {
+    if name.is_empty() || name.ends_with('.') || name.ends_with(' ') {
+        return false;
+    }
+    if name.chars().any(|c| {
+        matches!(c, '<' | '>' | ':' | '"' | '/' | '\\' | '|' | '?' | '*') || (c as u32) < 0x20
+    }) {
+        return false;
+    }
+    let stem = name.split('.').next().unwrap_or(name).to_ascii_uppercase();
+    !matches!(
+        stem.as_str(),
+        "CON"
+            | "PRN"
+            | "AUX"
+            | "NUL"
+            | "COM1"
+            | "COM2"
+            | "COM3"
+            | "COM4"
+            | "COM5"
+            | "COM6"
+            | "COM7"
+            | "COM8"
+            | "COM9"
+            | "LPT1"
+            | "LPT2"
+            | "LPT3"
+            | "LPT4"
+            | "LPT5"
+            | "LPT6"
+            | "LPT7"
+            | "LPT8"
+            | "LPT9"
+    )
+}
+
+#[cfg(any(target_os = "windows", test))]
+pub(crate) fn unpack_searxng_tar_gz(archive_bytes: &[u8], dest: &Path) -> Result<(), String> {
+    use std::path::Component;
+
+    let gz = flate2::read::GzDecoder::new(archive_bytes);
+    let mut archive = tar::Archive::new(gz);
+    let entries = archive
+        .entries()
+        .map_err(|e| format!("unpack SearXNG: read archive: {e}"))?;
+
+    for entry_res in entries {
+        let mut entry = entry_res.map_err(|e| format!("unpack SearXNG: entry: {e}"))?;
+        let entry_type = entry.header().entry_type();
+        if matches!(
+            entry_type,
+            tar::EntryType::XGlobalHeader
+                | tar::EntryType::XHeader
+                | tar::EntryType::GNULongName
+                | tar::EntryType::GNULongLink
+        ) {
+            continue;
+        }
+
+        let raw_path = entry
+            .path()
+            .map_err(|e| format!("unpack SearXNG: invalid entry path: {e}"))?
+            .into_owned();
+
+        let mut normal_parts = Vec::new();
+        for comp in raw_path.components() {
+            match comp {
+                Component::ParentDir | Component::RootDir | Component::Prefix(_) => {
+                    return Err(format!(
+                        "unpack SearXNG: unsafe path in archive: {}",
+                        raw_path.display()
+                    ));
+                }
+                Component::CurDir => {}
+                Component::Normal(part) => normal_parts.push(part.to_os_string()),
+            }
+        }
+
+        // Mirror `--strip-components 1` from GitHub's `<repo>-<commit>/...` tarball layout.
+        if normal_parts.len() <= 1 {
+            continue;
+        }
+        let stripped = &normal_parts[1..];
+
+        // Skip symlinks/hardlinks (unprivileged Windows lacks symlink privileges) and
+        // `utils/templates/...` server templates (Apache/nginx sample configs with colons/symlinks).
+        if entry_type.is_symlink() || entry_type.is_hard_link() {
+            continue;
+        }
+        if stripped.len() >= 2 && stripped[0] == "utils" && stripped[1] == "templates" {
+            continue;
+        }
+
+        if !stripped
+            .iter()
+            .all(|part| part.to_str().is_some_and(is_windows_safe_component))
+        {
+            tracing::debug!(
+                "Skipping SearXNG archive entry with Windows-incompatible name: {}",
+                raw_path.display()
+            );
+            continue;
+        }
+
+        let mut out_path = dest.to_path_buf();
+        for part in stripped {
+            out_path.push(part);
+        }
+
+        match entry_type {
+            tar::EntryType::Directory => {
+                std::fs::create_dir_all(&out_path)
+                    .map_err(|e| format!("unpack SearXNG: mkdir {}: {e}", out_path.display()))?;
+            }
+            tar::EntryType::Regular | tar::EntryType::Continuous => {
+                if let Some(parent) = out_path.parent() {
+                    std::fs::create_dir_all(parent)
+                        .map_err(|e| format!("unpack SearXNG: mkdir {}: {e}", parent.display()))?;
+                }
+                let mut out_file = std::fs::File::create(&out_path)
+                    .map_err(|e| format!("unpack SearXNG: create {}: {e}", out_path.display()))?;
+                std::io::copy(&mut entry, &mut out_file)
+                    .map_err(|e| format!("unpack SearXNG: write {}: {e}", out_path.display()))?;
+            }
+            _ => {}
+        }
+    }
+
+    Ok(())
+}
+
 fn uv_command(paths: &SearchPaths) -> Command {
     let mut command = Command::new(paths.uv());
     command
@@ -291,6 +526,10 @@ fn uv_command(paths: &SearchPaths) -> Command {
         .env("UV_NO_CONFIG", "1")
         // Only uv's own standalone Python, never one found on the Mac.
         .env("UV_PYTHON_PREFERENCE", "only-managed");
+    #[cfg(target_os = "windows")]
+    command
+        .env("PYTHONUTF8", "1")
+        .env("PYTHONIOENCODING", "utf-8");
     command
 }
 
@@ -418,7 +657,7 @@ impl SearchServer {
     /// Called at startup with `<app data>/search`.
     pub fn set_root(&self, root: PathBuf) {
         let paths = SearchPaths::new(root);
-        stop_stale_server(&paths.pid());
+        stop_stale_server(&paths);
         *self.paths.lock().unwrap_or_else(|e| e.into_inner()) = Some(paths);
     }
 
@@ -523,7 +762,14 @@ impl SearchServer {
             .append(true)
             .open(paths.log())
             .map_err(|e| format!("open searxng.log: {e}"))?;
-        let child = Command::new(paths.venv_python(&installed.commit))
+        let mut command = Command::new(paths.venv_python(&installed.commit));
+        crate::platform::configure_background_command(&mut command);
+        #[cfg(target_os = "windows")]
+        command
+            .env("PYTHONUTF8", "1")
+            .env("PYTHONIOENCODING", "utf-8");
+        // TODO(windows): verify `127.0.0.1:{port}` does not trigger Windows Defender Firewall prompts on fresh machines.
+        let child = command
             .args(["-m", "searx.webapp"])
             .current_dir(paths.install_dir(&installed.commit))
             .env("SEARXNG_SETTINGS_PATH", paths.settings())
@@ -555,6 +801,19 @@ impl SearchServer {
             .unwrap_or_else(|e| e.into_inner())
             .take()
         {
+            #[cfg(windows)]
+            {
+                // Kill the full child process tree so uv's venv trampoline and its managed
+                // python.exe worker both release the bound loopback port immediately.
+                let mut taskkill = Command::new("taskkill");
+                crate::platform::configure_background_command(&mut taskkill);
+                let _ = taskkill
+                    .args(["/PID", &server.child.id().to_string(), "/T", "/F"])
+                    .stdin(Stdio::null())
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .status();
+            }
             let _ = server.child.kill();
             let _ = server.child.wait();
             if let Ok(paths) = self.paths() {
@@ -739,6 +998,58 @@ async fn wait_until_ready(
     ))
 }
 
+/// True if a zip entry path stays strictly inside the extraction folder (blocks zip-slip `..`,
+/// leading `/` or `\`, drive prefixes like `C:\...`, and NUL bytes).
+pub fn is_safe_archive_entry_path(raw_name: &str) -> bool {
+    if raw_name.is_empty()
+        || raw_name.contains('\0')
+        || raw_name.contains(':')
+        || raw_name.starts_with(['/', '\\'])
+    {
+        return false;
+    }
+    raw_name.split(['/', '\\']).all(|segment| segment != "..")
+}
+
+/// Safely extracts `uv.exe` from a Windows `uv-*.zip` release archive into `bin_dir`.
+/// Validates every entry in the archive before writing any byte to disk.
+pub fn extract_uv_zip(archive: &[u8], bin_dir: &Path) -> Result<PathBuf, String> {
+    let cursor = std::io::Cursor::new(archive);
+    let mut zip = zip::ZipArchive::new(cursor).map_err(|e| format!("open uv zip: {e}"))?;
+    let mut uv_index = None;
+    for index in 0..zip.len() {
+        let entry = zip
+            .by_index(index)
+            .map_err(|e| format!("read uv zip entry {index}: {e}"))?;
+        let raw_name = entry.name();
+        if !is_safe_archive_entry_path(raw_name)
+            || entry.enclosed_name().is_none()
+            || entry.is_symlink()
+        {
+            return Err(format!("unsafe path in uv archive: {raw_name}"));
+        }
+        if !entry.is_dir()
+            && raw_name
+                .rsplit(['/', '\\'])
+                .next()
+                .is_some_and(|leaf| leaf.eq_ignore_ascii_case("uv.exe"))
+        {
+            uv_index.get_or_insert(index);
+        }
+    }
+    let Some(uv_index) = uv_index else {
+        return Err("uv's archive had no uv.exe".to_string());
+    };
+    std::fs::create_dir_all(bin_dir).map_err(|e| format!("create bin folder: {e}"))?;
+    let mut entry = zip
+        .by_index(uv_index)
+        .map_err(|e| format!("read uv.exe entry: {e}"))?;
+    let dest = bin_dir.join("uv.exe");
+    let mut out = std::fs::File::create(&dest).map_err(|e| format!("save uv.exe: {e}"))?;
+    std::io::copy(&mut entry, &mut out).map_err(|e| format!("write uv.exe: {e}"))?;
+    Ok(dest)
+}
+
 /// Downloads uv once, checked against the release's SHA-256.
 async fn ensure_uv(
     client: &reqwest::Client,
@@ -789,27 +1100,38 @@ async fn ensure_uv(
             .map(Path::to_path_buf)
             .unwrap_or_default();
         std::fs::create_dir_all(&bin).map_err(|e| e.to_string())?;
-        let tarball = paths.root.join("uv.tar.gz");
-        std::fs::File::create(&tarball)
-            .and_then(|mut f| f.write_all(&archive))
-            .map_err(|e| format!("save uv: {e}"))?;
-        // The archive holds `uv-<target>/uv` and `uvx`; keep only uv.
-        let result = run(
-            Command::new("tar")
-                .arg("-xzf")
-                .arg(&tarball)
-                .arg("-C")
-                .arg(&bin)
-                .args(["--strip-components", "1"]),
-            "unpack uv",
-        );
-        let _ = std::fs::remove_file(&tarball);
-        let _ = std::fs::remove_file(bin.join("uvx"));
-        result?;
-        if !paths.uv().exists() {
-            return Err("uv's archive had no uv".to_string());
+        #[cfg(target_os = "windows")]
+        {
+            extract_uv_zip(&archive, &bin)?;
+            if !paths.uv().exists() {
+                return Err("uv's archive had no uv.exe".to_string());
+            }
+            Ok(())
         }
-        Ok(())
+        #[cfg(not(target_os = "windows"))]
+        {
+            let tarball = paths.root.join("uv.tar.gz");
+            std::fs::File::create(&tarball)
+                .and_then(|mut f| f.write_all(&archive))
+                .map_err(|e| format!("save uv: {e}"))?;
+            // The archive holds `uv-<target>/uv` and `uvx`; keep only uv.
+            let result = run(
+                Command::new("tar")
+                    .arg("-xzf")
+                    .arg(&tarball)
+                    .arg("-C")
+                    .arg(&bin)
+                    .args(["--strip-components", "1"]),
+                "unpack uv",
+            );
+            let _ = std::fs::remove_file(&tarball);
+            let _ = std::fs::remove_file(bin.join("uvx"));
+            result?;
+            if !paths.uv().exists() {
+                return Err("uv's archive had no uv".to_string());
+            }
+            Ok(())
+        }
     })
     .await
 }
@@ -839,20 +1161,26 @@ async fn install_searxng(
         let dir = paths.install_dir(&commit);
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-        let tarball = paths.root.join("searxng.tar.gz");
-        std::fs::File::create(&tarball)
-            .and_then(|mut f| f.write_all(&archive))
-            .map_err(|e| format!("save SearXNG: {e}"))?;
-        let unpacked = run(
-            Command::new("tar")
-                .arg("-xzf")
-                .arg(&tarball)
-                .arg("-C")
-                .arg(&dir)
-                .args(["--strip-components", "1"]),
-            "unpack SearXNG",
-        );
-        let _ = std::fs::remove_file(&tarball);
+        #[cfg(target_os = "windows")]
+        let unpacked = unpack_searxng_tar_gz(&archive, &dir);
+        #[cfg(not(target_os = "windows"))]
+        let unpacked = {
+            let tarball = paths.root.join("searxng.tar.gz");
+            std::fs::File::create(&tarball)
+                .and_then(|mut f| f.write_all(&archive))
+                .map_err(|e| format!("save SearXNG: {e}"))?;
+            let unpacked = run(
+                Command::new("tar")
+                    .arg("-xzf")
+                    .arg(&tarball)
+                    .arg("-C")
+                    .arg(&dir)
+                    .args(["--strip-components", "1"]),
+                "unpack SearXNG",
+            );
+            let _ = std::fs::remove_file(&tarball);
+            unpacked
+        };
         let installed = unpacked
             .and_then(|()| {
                 run(
@@ -1039,17 +1367,141 @@ mod tests {
 
     #[test]
     fn install_folders_are_named_by_the_short_commit() {
-        let paths = SearchPaths::new(PathBuf::from("/tmp/search"));
+        let root = if cfg!(target_os = "windows") {
+            r"C:\Temp\search"
+        } else {
+            "/tmp/search"
+        };
+        let paths = SearchPaths::new(PathBuf::from(root));
         let commit = "0123456789abcdef0123456789abcdef01234567";
         assert_eq!(
             paths.install_dir(commit),
-            PathBuf::from("/tmp/search/searxng-0123456789ab")
+            PathBuf::from(root).join("searxng-0123456789ab")
         );
-        assert_eq!(
-            paths.venv_python(commit),
-            PathBuf::from("/tmp/search/searxng-0123456789ab/.venv/bin/python")
+        if cfg!(target_os = "windows") {
+            assert_eq!(
+                paths.venv_python(commit),
+                PathBuf::from(root)
+                    .join("searxng-0123456789ab")
+                    .join(".venv")
+                    .join("Scripts")
+                    .join("python.exe")
+            );
+            assert_eq!(paths.uv(), PathBuf::from(root).join("bin").join("uv.exe"));
+        } else {
+            assert_eq!(
+                paths.venv_python(commit),
+                PathBuf::from("/tmp/search/searxng-0123456789ab/.venv/bin/python")
+            );
+            assert_eq!(paths.uv(), PathBuf::from("/tmp/search/bin/uv"));
+        }
+    }
+
+    fn write_test_zip(zip_path: &Path, entries: &[(&str, &[u8])]) {
+        let file = std::fs::File::create(zip_path).unwrap();
+        let mut writer = zip::ZipWriter::new(file);
+        let options = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
+        for (name, body) in entries {
+            writer.start_file(*name, options).unwrap();
+            writer.write_all(body).unwrap();
+        }
+        writer.finish().unwrap();
+    }
+
+    #[test]
+    fn uv_zip_extraction_unpacks_uv_exe_and_skips_other_files() {
+        let root = std::env::temp_dir().join(format!("oratype-uv-zip-{}", uuid::Uuid::new_v4()));
+        let bin = root.join("bin");
+        let root_zip = root.join("uv-root.zip");
+        std::fs::create_dir_all(&root).unwrap();
+
+        write_test_zip(
+            &root_zip,
+            &[("uv.exe", b"MZ-uv-root"), ("uvx.exe", b"MZ-uvx-ignored")],
         );
-        assert_eq!(paths.uv(), PathBuf::from("/tmp/search/bin/uv"));
+        let archive = std::fs::read(&root_zip).unwrap();
+        let out = extract_uv_zip(&archive, &bin).unwrap();
+        assert_eq!(out, bin.join("uv.exe"));
+        assert_eq!(std::fs::read(&out).unwrap(), b"MZ-uv-root");
+        assert!(!bin.join("uvx.exe").exists());
+
+        // Also handle archives that nest binaries under a release directory.
+        let nested_zip = root.join("uv-nested.zip");
+        let nested_bin = root.join("bin-nested");
+        write_test_zip(
+            &nested_zip,
+            &[
+                ("uv-x86_64-pc-windows-msvc/uvx.exe", b"ignore"),
+                ("uv-x86_64-pc-windows-msvc/UV.EXE", b"MZ-uv-nested"),
+            ],
+        );
+        let nested_archive = std::fs::read(&nested_zip).unwrap();
+        let nested_out = extract_uv_zip(&nested_archive, &nested_bin).unwrap();
+        assert_eq!(std::fs::read(nested_out).unwrap(), b"MZ-uv-nested");
+
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn uv_zip_extraction_rejects_zip_slip_traversal_entries() {
+        let root =
+            std::env::temp_dir().join(format!("oratype-uv-zipslip-{}", uuid::Uuid::new_v4()));
+        let bin = root.join("bin");
+        std::fs::create_dir_all(&root).unwrap();
+
+        for (label, evil_name) in [
+            ("dotdot", "../evil.exe"),
+            ("backslash_dotdot", r"sub\..\..\evil.dll"),
+            ("drive_prefix", r"C:\evil.exe"),
+            ("leading_slash", "/evil.exe"),
+        ] {
+            assert!(!is_safe_archive_entry_path(evil_name), "{label}");
+            let zip_path = root.join(format!("{label}.zip"));
+            write_test_zip(
+                &zip_path,
+                &[("uv.exe", b"MZ-valid"), (evil_name, b"MZ-evil")],
+            );
+            let archive = std::fs::read(&zip_path).unwrap();
+            let err = extract_uv_zip(&archive, &bin).unwrap_err();
+            assert!(
+                err.contains("unsafe path"),
+                "{label}: expected unsafe path error, got: {err}"
+            );
+            assert!(
+                !bin.join("uv.exe").exists(),
+                "{label}: uv.exe must not be written when archive fails validation"
+            );
+            assert!(!root.join("evil.exe").exists(), "{label}: escaped file");
+            assert!(!root.join("evil.dll").exists(), "{label}: escaped file");
+        }
+
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn searxng_python_process_path_matches_only_private_search_root() {
+        let root = Path::new(r"C:\Users\Joe\AppData\Roaming\com.oratype.app\search");
+        assert!(is_searxng_python_process_path(
+            r"\\?\C:\Users\Joe\AppData\Roaming\com.oratype.app\search\searxng-0123456789ab\.venv\Scripts\python.exe",
+            root
+        ));
+        assert!(is_searxng_python_process_path(
+            r"C:\Users\Joe\AppData\Roaming\com.oratype.app\search\python\cpython-3.12.1\python.exe",
+            root
+        ));
+        assert!(!is_searxng_python_process_path(
+            r"C:\Users\Joe\AppData\Roaming\com.oratype.app\search2\python.exe",
+            root
+        ));
+        assert!(!is_searxng_python_process_path(
+            r"C:\Python312\python.exe",
+            root
+        ));
+        assert!(!is_searxng_python_process_path(
+            r"C:\Users\Joe\AppData\Roaming\com.oratype.app\search\bin\uv.exe",
+            root
+        ));
     }
 
     #[test]
@@ -1143,5 +1595,89 @@ mod tests {
         server.remove().await.unwrap();
         assert!(!root.exists());
         assert!(!server.status().running);
+    }
+
+    #[test]
+    fn unpack_searxng_tar_gz_extracts_files_and_skips_templates_symlinks_and_colons() {
+        let mut gz_bytes = Vec::new();
+        {
+            let encoder =
+                flate2::write::GzEncoder::new(&mut gz_bytes, flate2::Compression::default());
+            let mut tar = tar::Builder::new(encoder);
+
+            let add_file = |tar: &mut tar::Builder<_>, path: &str, contents: &[u8]| {
+                let mut header = tar::Header::new_gnu();
+                header.set_size(contents.len() as u64);
+                header.set_mode(0o644);
+                header.set_entry_type(tar::EntryType::Regular);
+                tar.append_data(&mut header, path, contents).unwrap();
+            };
+
+            add_file(&mut tar, "searxng-abc123/searx/webapp.py", b"app = 'ok'");
+            add_file(
+                &mut tar,
+                "searxng-abc123/utils/templates/etc/apache2/sites-available/searxng.conf",
+                b"apache",
+            );
+            add_file(
+                &mut tar,
+                "searxng-abc123/docs/windows:bad.txt",
+                b"should-skip",
+            );
+
+            let mut symlink = tar::Header::new_gnu();
+            symlink.set_size(0);
+            symlink.set_mode(0o777);
+            symlink.set_entry_type(tar::EntryType::Symlink);
+            tar.append_link(&mut symlink, "searxng-abc123/searx/link.py", "webapp.py")
+                .unwrap();
+
+            tar.into_inner().unwrap().finish().unwrap();
+        }
+
+        let dest = std::env::temp_dir().join(format!("oratype-searxng-{}", uuid::Uuid::new_v4()));
+        unpack_searxng_tar_gz(&gz_bytes, &dest).expect("unpack cleanly");
+
+        assert_eq!(
+            std::fs::read_to_string(dest.join("searx").join("webapp.py")).unwrap(),
+            "app = 'ok'"
+        );
+        assert!(!dest.join("utils").join("templates").exists());
+        assert!(!dest.join("docs").join("windows:bad.txt").exists());
+        assert!(!dest.join("searx").join("link.py").exists());
+
+        std::fs::remove_dir_all(dest).unwrap();
+    }
+
+    #[test]
+    fn unpack_searxng_tar_gz_rejects_parent_dir_traversal() {
+        let mut gz_bytes = Vec::new();
+        {
+            let encoder =
+                flate2::write::GzEncoder::new(&mut gz_bytes, flate2::Compression::default());
+            let mut tar = tar::Builder::new(encoder);
+
+            let mut header = tar::Header::new_gnu();
+            let raw_name = b"searxng-abc123/../../evil.txt";
+            header.as_old_mut().name[..raw_name.len()].copy_from_slice(raw_name);
+            header.set_size(4);
+            header.set_mode(0o644);
+            header.set_entry_type(tar::EntryType::Regular);
+            header.set_cksum();
+            tar.append(&header, &b"evil"[..]).unwrap();
+
+            tar.into_inner().unwrap().finish().unwrap();
+        }
+
+        let parent =
+            std::env::temp_dir().join(format!("oratype-searxng-trap-{}", uuid::Uuid::new_v4()));
+        let dest = parent.join("install");
+        std::fs::create_dir_all(&dest).unwrap();
+
+        let err = unpack_searxng_tar_gz(&gz_bytes, &dest).unwrap_err();
+        assert!(err.contains("unsafe path"), "unexpected err: {err}");
+        assert!(!parent.join("evil.txt").exists());
+
+        std::fs::remove_dir_all(parent).unwrap();
     }
 }

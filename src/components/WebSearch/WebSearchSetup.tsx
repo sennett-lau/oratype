@@ -21,6 +21,7 @@ import { useAppStore } from '../../stores/appStore'
 import { recordSearchTest } from '../../lib/connectionStatus'
 import { WebSearchForm } from './WebSearchForm'
 import { STEPS, progressShare, versionLabel } from './builtinSearch'
+import { tp } from '../../lib/platformText'
 
 type Choice = 'builtin' | 'own'
 
@@ -271,9 +272,9 @@ function BuiltinCard({ onboarding }: { onboarding: boolean }) {
           </>
         ) : (
           <>
-            <b className="text-[13px]">{t('webSearch.setupTitle')}</b>
+            <b className="text-[13px]">{tp(t, 'webSearch.setupTitle')}</b>
             <p className="m-0 text-[12px] leading-[1.45] text-text-secondary">
-              {t('webSearch.setupBody')}
+              {tp(t, 'webSearch.setupBody')}
             </p>
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="min-w-0 flex-1 text-[11.5px] text-text-tertiary">
@@ -297,7 +298,7 @@ function BuiltinCard({ onboarding }: { onboarding: boolean }) {
   return (
     <div className="search-setup-card" data-testid="builtin-search-card" data-state="ready">
       <div className="flex items-center gap-2">
-        <b className="flex-1 text-[13px]">{t('webSearch.readyTitle')}</b>
+        <b className="flex-1 text-[13px]">{tp(t, 'webSearch.readyTitle')}</b>
         <span className={`search-setup-pill ${status?.running ? 'is-ok' : ''}`}>
           {status?.running ? `● ${t('webSearch.running')}` : t('webSearch.startsWhenNeeded')}
         </span>
@@ -307,7 +308,8 @@ function BuiltinCard({ onboarding }: { onboarding: boolean }) {
         <dd>{versionLabel(installed.commit, installed.commitDate)}</dd>
         <dt>{t('webSearch.address')}</dt>
         <dd>
-          {status?.port ? `127.0.0.1:${status.port}` : '127.0.0.1'}, {t('webSearch.thisMacOnly')}
+          {status?.port ? `127.0.0.1:${status.port}` : '127.0.0.1'},{' '}
+          {tp(t, 'webSearch.thisMacOnly')}
         </dd>
         {test.status !== 'idle' && (
           <>
@@ -439,7 +441,7 @@ export function WebSearchSetup({
     {
       id: 'builtin',
       title: t('webSearch.builtin'),
-      detail: t('webSearch.builtinDetail'),
+      detail: tp(t, 'webSearch.builtinDetail'),
       tag: t('webSearch.recommended'),
     },
     { id: 'own', title: t('webSearch.own'), detail: t('webSearch.ownDetail') },

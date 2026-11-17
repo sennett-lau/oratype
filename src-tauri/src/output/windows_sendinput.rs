@@ -113,6 +113,21 @@ pub fn expected_sendinput_typed_chars(text: &str) -> usize {
     text.chars().filter(|ch| *ch != '\r').count()
 }
 
+/// Validates that `SendInput` accepted every generated `INPUT` event.
+pub fn validate_send_input_count(
+    sent: u32,
+    expected: usize,
+    last_os_error: &str,
+) -> Result<u32, TypeError> {
+    if sent as usize == expected {
+        Ok(sent)
+    } else {
+        Err(TypeError::SendInputFailed(format!(
+            "SendInput injected {sent}/{expected} events ({last_os_error})"
+        )))
+    }
+}
+
 pub fn map_sendinput_result(text: &str, result: Result<usize, TypeError>) -> InsertResult {
     let expected = expected_sendinput_typed_chars(text);
     match result {
@@ -236,15 +251,17 @@ fn press_vk(vk: u16) -> Result<(), TypeError> {
 #[cfg(target_os = "windows")]
 fn send_vk(vk: u16, key_up: bool) -> Result<(), TypeError> {
     use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-        SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP,
+        MapVirtualKeyW, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP,
+        MAPVK_VK_TO_VSC,
     };
 
+    let scan = unsafe { MapVirtualKeyW(vk as u32, MAPVK_VK_TO_VSC) as u16 };
     let input = INPUT {
         r#type: INPUT_KEYBOARD,
         Anonymous: INPUT_0 {
             ki: KEYBDINPUT {
                 wVk: vk,
-                wScan: 0,
+                wScan: scan,
                 dwFlags: if key_up { KEYEVENTF_KEYUP } else { 0 },
                 time: 0,
                 dwExtraInfo: 0,
@@ -253,13 +270,55 @@ fn send_vk(vk: u16, key_up: bool) -> Result<(), TypeError> {
     };
 
     let sent = unsafe { SendInput(1, &input, std::mem::size_of::<INPUT>() as i32) };
-    if sent == 1 {
-        Ok(())
-    } else {
-        Err(TypeError::SendInputFailed(
-            std::io::Error::last_os_error().to_string(),
-        ))
+    validate_send_input_count(sent, 1, &std::io::Error::last_os_error().to_string()).map(|_| ())
+}
+
+/// Sends an atomic key chord (modifiers down, primary key down/up, modifiers up in reverse)
+/// via Win32 `SendInput`, shielded from the native keyboard hook by `OwnKeystroke`.
+/// Returns the number of `INPUT` events injected (`modifiers.len() * 2 + 2`).
+#[cfg(target_os = "windows")]
+pub(crate) fn send_vk_chord(modifiers: &[u16], key: u16) -> Result<u32, TypeError> {
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
+        MapVirtualKeyW, SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP,
+        MAPVK_VK_TO_VSC,
+    };
+
+    let key_input = |vk: u16, key_up: bool| INPUT {
+        r#type: INPUT_KEYBOARD,
+        Anonymous: INPUT_0 {
+            ki: KEYBDINPUT {
+                wVk: vk,
+                wScan: unsafe { MapVirtualKeyW(vk as u32, MAPVK_VK_TO_VSC) as u16 },
+                dwFlags: if key_up { KEYEVENTF_KEYUP } else { 0 },
+                time: 0,
+                dwExtraInfo: 0,
+            },
+        },
+    };
+
+    let _own = crate::native_hotkey::OwnKeystroke::begin();
+    let mut events = Vec::with_capacity(modifiers.len() * 2 + 2);
+    for &modifier in modifiers {
+        events.push(key_input(modifier, false));
     }
+    events.push(key_input(key, false));
+    events.push(key_input(key, true));
+    for &modifier in modifiers.iter().rev() {
+        events.push(key_input(modifier, true));
+    }
+
+    let sent = unsafe {
+        SendInput(
+            events.len() as u32,
+            events.as_ptr(),
+            std::mem::size_of::<INPUT>() as i32,
+        )
+    };
+    validate_send_input_count(
+        sent,
+        events.len(),
+        &std::io::Error::last_os_error().to_string(),
+    )
 }
 
 #[cfg(target_os = "windows")]
@@ -302,6 +361,13 @@ mod tests {
     #[test]
     fn expected_typed_chars_skips_carriage_returns_and_counts_unicode_scalars() {
         assert_eq!(expected_sendinput_typed_chars("A\r\n\t😀"), 4);
+    }
+
+    #[test]
+    fn validate_send_input_count_checks_exact_event_total() {
+        assert_eq!(validate_send_input_count(4, 4, ""), Ok(4));
+        let err = validate_send_input_count(0, 4, "access denied").unwrap_err();
+        assert!(err.to_string().contains("0/4"));
     }
 
     #[test]

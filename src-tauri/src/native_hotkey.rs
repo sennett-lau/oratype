@@ -530,7 +530,7 @@ pub struct ShortcutCaptureEvent {
     pub cancelled: bool,
 }
 
-/// Records the keys the user presses while a shortcut field is capturing (macOS only).
+/// Records the keys the user presses while a shortcut field is capturing.
 #[derive(Debug, Default)]
 pub struct CaptureState {
     held: Vec<u16>,
@@ -538,11 +538,19 @@ pub struct CaptureState {
     done: bool,
 }
 
-fn key_names(codes: &[u16]) -> Vec<String> {
+fn mac_key_name(code: u16) -> Option<&'static str> {
+    native_keys::key_by_code(code).map(|key| key.name)
+}
+
+fn windows_key_name(code: u16) -> Option<&'static str> {
+    native_keys::windows_key_by_code(code).map(|key| key.name)
+}
+
+fn key_names(codes: &[u16], key_name: fn(u16) -> Option<&'static str>) -> Vec<String> {
     codes
         .iter()
-        .filter_map(|code| native_keys::key_by_code(*code))
-        .map(|key| key.name.to_string())
+        .filter_map(|code| key_name(*code))
+        .map(str::to_string)
         .collect()
 }
 
@@ -551,21 +559,36 @@ impl CaptureState {
         self.held.clone()
     }
 
-    /// Feed one key edge. Returns the event to send (if any) and whether to swallow the
-    /// platform event. Every non-modifier key is swallowed while capturing, so the keys do
-    /// not also type into the settings window.
+    /// Feed one macOS key edge.
     pub fn handle(&mut self, input: KeyInput) -> (Option<ShortcutCaptureEvent>, bool) {
+        self.handle_with(input, native_keys::ESCAPE_KEYCODE, mac_key_name)
+    }
+
+    /// Feed one Windows virtual-key edge (`VK_*`, `0x1B` Escape cancels).
+    pub fn handle_windows(&mut self, input: KeyInput) -> (Option<ShortcutCaptureEvent>, bool) {
+        self.handle_with(input, native_keys::WIN_VK_ESCAPE, windows_key_name)
+    }
+
+    /// Feed one key edge using a platform key lookup table and cancel code. Returns the event
+    /// to send (if any) and whether to swallow the platform event. Every non-modifier key is
+    /// swallowed while capturing, so the keys do not also type into the settings window.
+    fn handle_with(
+        &mut self,
+        input: KeyInput,
+        cancel_code: u16,
+        key_name: fn(u16) -> Option<&'static str>,
+    ) -> (Option<ShortcutCaptureEvent>, bool) {
         let swallow = input.class != KeyClass::Modifier;
         if self.done {
             return (None, swallow);
         }
 
         if input.pressed {
-            if input.code == native_keys::ESCAPE_KEYCODE {
+            if input.code == cancel_code {
                 self.done = true;
                 return (
                     Some(ShortcutCaptureEvent {
-                        held: key_names(&self.held),
+                        held: key_names(&self.held, key_name),
                         finished: false,
                         cancelled: true,
                     }),
@@ -574,7 +597,7 @@ impl CaptureState {
             }
             if input.autorepeat
                 || self.held.contains(&input.code)
-                || native_keys::key_by_code(input.code).is_none()
+                || key_name(input.code).is_none()
                 || self.held.len() >= MAX_CHORD_KEYS
             {
                 return (None, swallow);
@@ -583,7 +606,7 @@ impl CaptureState {
             if self.held.len() >= self.peak.len() {
                 self.peak = self.held.clone();
             }
-            return (Some(self.progress_event()), swallow);
+            return (Some(self.progress_event(key_name)), swallow);
         }
 
         // Keys that went down before the capture started are not ours; ignore their release.
@@ -595,14 +618,14 @@ impl CaptureState {
             self.done = true;
             return (
                 Some(ShortcutCaptureEvent {
-                    held: key_names(&self.peak),
+                    held: key_names(&self.peak, key_name),
                     finished: true,
                     cancelled: false,
                 }),
                 swallow,
             );
         }
-        (Some(self.progress_event()), swallow)
+        (Some(self.progress_event(key_name)), swallow)
     }
 
     /// Start over after the OS disabled the tap (events may have been lost).
@@ -611,9 +634,9 @@ impl CaptureState {
         self.peak.clear();
     }
 
-    fn progress_event(&self) -> ShortcutCaptureEvent {
+    fn progress_event(&self, key_name: fn(u16) -> Option<&'static str>) -> ShortcutCaptureEvent {
         ShortcutCaptureEvent {
-            held: key_names(&self.held),
+            held: key_names(&self.held, key_name),
             finished: false,
             cancelled: false,
         }
@@ -799,10 +822,25 @@ struct NativeHotkeyRuntimeInner {
     monitor: Option<platform::PlatformNativeMonitor>,
 }
 
+fn platform_cancel_keycode() -> Option<u16> {
+    #[cfg(target_os = "macos")]
+    {
+        Some(native_keys::ESCAPE_KEYCODE)
+    }
+    #[cfg(target_os = "windows")]
+    {
+        Some(native_keys::WIN_VK_ESCAPE)
+    }
+    #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
+    {
+        None
+    }
+}
+
 impl NativeHotkeyRuntime {
     /// Replace the running listener with one that matches `bindings`. `switch_gate` says when
     /// the Switch language bindings are live. `cancel_gate` says when Escape cancels the
-    /// current run (macOS only; with a gate the listener runs even without native bindings).
+    /// current run (macOS and Windows; with a gate the listener runs even without native bindings).
     /// `role_gate` says which roles may run now (plan `onboarding-shortcut-gate`).
     /// `keystrokes` counts typed keystrokes for typing speed (plan `typing-speed-and-nudge`).
     pub fn install(
@@ -817,8 +855,8 @@ impl NativeHotkeyRuntime {
         let mut inner = self.inner.lock().unwrap_or_else(|e| e.into_inner());
         let _ = inner.monitor.take();
 
-        // Escape's keycode is a macOS one; other platforms do not get the cancel key.
-        let cancel_gate = cancel_gate.filter(|_| cfg!(target_os = "macos"));
+        let cancel_code = platform_cancel_keycode();
+        let cancel_gate = cancel_gate.filter(|_| cancel_code.is_some());
         if bindings.is_empty() && cancel_gate.is_none() {
             return Ok(());
         }
@@ -827,8 +865,8 @@ impl NativeHotkeyRuntime {
         if let Some(gate) = role_gate {
             matcher = matcher.with_role_gate(gate);
         }
-        if let Some(gate) = cancel_gate {
-            matcher = matcher.with_cancel_key(native_keys::ESCAPE_KEYCODE, gate);
+        if let (Some(code), Some(gate)) = (cancel_code, cancel_gate) {
+            matcher = matcher.with_cancel_key(code, gate);
         }
         if let Some(observer) = keystrokes {
             matcher = matcher.with_keystroke_observer(observer);
@@ -1244,15 +1282,20 @@ mod platform {
 
 #[cfg(target_os = "windows")]
 mod platform {
-    use super::{ChordMatcher, KeyClass, KeyInput, NativeHotkeyHandler, ShortcutCaptureHandler};
+    use super::{
+        CaptureState, ChordMatcher, KeyClass, KeyInput, NativeHotkeyHandler, ShortcutCaptureHandler,
+    };
+    use crate::native_keys;
+    use std::collections::BTreeSet;
     use std::ptr;
     use std::sync::atomic::{AtomicBool, AtomicPtr, AtomicU32, Ordering as AtomicOrdering};
-    use std::sync::{mpsc, Arc};
+    use std::sync::{mpsc, Arc, Mutex};
     use std::thread;
     use std::time::Duration;
     use windows_sys::Win32::Foundation::{GetLastError, LPARAM, LRESULT, WPARAM};
     use windows_sys::Win32::System::LibraryLoader::GetModuleHandleW;
     use windows_sys::Win32::System::Threading::GetCurrentThreadId;
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL, VK_MENU};
     use windows_sys::Win32::UI::WindowsAndMessaging::{
         CallNextHookEx, DispatchMessageW, GetMessageW, PeekMessageW, PostThreadMessageW,
         SetWindowsHookExW, TranslateMessage, UnhookWindowsHookEx, HC_ACTION, HHOOK,
@@ -1266,9 +1309,7 @@ mod platform {
     const WM_KEYUP: usize = 0x0101;
     const WM_SYSKEYDOWN: usize = 0x0104;
     const WM_SYSKEYUP: usize = 0x0105;
-    const VK_SPACE: u32 = 0x20;
-    const VK_LSHIFT: u32 = 0xA0;
-    const VK_RMENU: u32 = 0xA5;
+    const VK_RMENU: u16 = 0xA5;
 
     static HOOK_CONTEXT: AtomicPtr<CallbackContext> = AtomicPtr::new(ptr::null_mut());
 
@@ -1309,14 +1350,51 @@ mod platform {
         }
     }
 
+    enum HookMode {
+        Hotkeys {
+            matcher: ChordMatcher,
+            handler: NativeHotkeyHandler,
+        },
+        Capture {
+            capture: CaptureState,
+            handler: ShortcutCaptureHandler,
+        },
+    }
+
+    struct HookState {
+        mode: HookMode,
+        // `KBDLLHOOKSTRUCT` omits an autorepeat flag, so track currently depressed VK codes.
+        held_vks: BTreeSet<u16>,
+    }
+
+    struct CallbackContext {
+        state: Mutex<HookState>,
+        hook: Mutex<Option<HHOOK>>,
+    }
+
+    unsafe impl Send for CallbackContext {}
+    unsafe impl Sync for CallbackContext {}
+
     impl PlatformNativeMonitor {
         pub fn start(matcher: ChordMatcher, handler: NativeHotkeyHandler) -> Result<Self, String> {
+            Self::spawn_hook(HookMode::Hotkeys { matcher, handler })
+        }
+
+        // TODO(windows): wire Settings `NativeHotkeyRecorder` UI on Windows so users can record native keys (`End`, `RightAlt`, side modifiers) in the frontend too.
+        pub fn start_capture(handler: ShortcutCaptureHandler) -> Result<Self, String> {
+            Self::spawn_hook(HookMode::Capture {
+                capture: CaptureState::default(),
+                handler,
+            })
+        }
+
+        fn spawn_hook(mode: HookMode) -> Result<Self, String> {
             let (status_tx, status_rx) = mpsc::channel();
             let startup = Arc::new(WindowsStartupState::new());
             let thread_startup = Arc::clone(&startup);
             let thread = thread::Builder::new()
                 .name("oratype-native-hotkey-win".to_string())
-                .spawn(move || run_keyboard_hook_loop(matcher, handler, thread_startup, status_tx))
+                .spawn(move || run_keyboard_hook_loop(mode, thread_startup, status_tx))
                 .map_err(|error| {
                     format!("Failed to spawn Windows native hotkey monitor thread: {error}")
                 })?;
@@ -1346,13 +1424,6 @@ mod platform {
                 }
             }
         }
-
-        pub fn start_capture(_handler: ShortcutCaptureHandler) -> Result<Self, String> {
-            Err(
-                "Shortcut capture through the native listener is only supported on macOS"
-                    .to_string(),
-            )
-        }
     }
 
     impl Drop for PlatformNativeMonitor {
@@ -1372,18 +1443,8 @@ mod platform {
         }
     }
 
-    struct CallbackContext {
-        matcher: std::sync::Mutex<ChordMatcher>,
-        handler: NativeHotkeyHandler,
-        hook: std::sync::Mutex<Option<HHOOK>>,
-    }
-
-    unsafe impl Send for CallbackContext {}
-    unsafe impl Sync for CallbackContext {}
-
     fn run_keyboard_hook_loop(
-        matcher: ChordMatcher,
-        handler: NativeHotkeyHandler,
+        mode: HookMode,
         startup: Arc<WindowsStartupState>,
         status_tx: mpsc::Sender<Result<u32, String>>,
     ) {
@@ -1402,13 +1463,16 @@ mod platform {
             }
 
             let context = Box::into_raw(Box::new(CallbackContext {
-                matcher: std::sync::Mutex::new(matcher),
-                handler,
-                hook: std::sync::Mutex::new(None),
+                state: Mutex::new(HookState {
+                    mode,
+                    held_vks: BTreeSet::new(),
+                }),
+                hook: Mutex::new(None),
             }));
             HOOK_CONTEXT.store(context, AtomicOrdering::SeqCst);
 
             // Global low-level hooks should be installed with the current module handle.
+            // TODO(windows): Windows UIPI blocks `WH_KEYBOARD_LL` events when an elevated (Admin) window has focus unless the binary is Authenticode-signed with `uiAccess="true"`.
             let module = GetModuleHandleW(ptr::null());
             if module.is_null() {
                 let error = GetLastError();
@@ -1499,6 +1563,7 @@ mod platform {
         if code == HC_ACTION as i32 && lparam != 0 {
             let keyboard = *(lparam as *const KBDLLHOOKSTRUCT);
             let injected = (keyboard.flags & LLKHF_INJECTED) != 0;
+            // TODO(windows): European layouts emit a synthetic `VK_LCONTROL` (scan code `0x21D` / `LLKHF_ALTDOWN`) immediately before `VK_RMENU` (`AltGr`); verify filtering on real Windows ISO keyboards.
             if (!injected || accept_synthetic_events())
                 && dispatch_keyboard_event(keyboard.vkCode, wparam)
             {
@@ -1509,39 +1574,120 @@ mod platform {
         CallNextHookEx(ptr::null_mut(), code, wparam, lparam)
     }
 
+    fn key_class_for_windows_vk(key: &native_keys::WindowsKey) -> KeyClass {
+        if key.code == VK_RMENU || key.standalone {
+            KeyClass::Standalone
+        } else if key.is_modifier {
+            KeyClass::Modifier
+        } else {
+            KeyClass::Typing
+        }
+    }
+
     fn dispatch_keyboard_event(vk_code: u32, message: WPARAM) -> bool {
         let pressed = match message {
             WM_KEYDOWN | WM_SYSKEYDOWN => true,
             WM_KEYUP | WM_SYSKEYUP => false,
             _ => return false,
         };
-        let class = match vk_code {
-            VK_RMENU => KeyClass::Standalone,
-            VK_SPACE | VK_LSHIFT => KeyClass::Typing,
-            _ => return false,
+        let Ok(code) = u16::try_from(vk_code) else {
+            return false;
         };
+        let key = native_keys::windows_key_by_code(code);
+        let own_in_flight = super::own_keystroke_in_flight() && !accept_synthetic_events();
 
         let context = unsafe { callback_context() };
         let Some(context) = context else {
             return false;
         };
 
-        let mut events = Vec::new();
-        let swallow = context
-            .matcher
-            .lock()
-            .unwrap_or_else(|e| e.into_inner())
-            .handle(
-                KeyInput {
-                    code: vk_code as u16,
-                    pressed,
-                    autorepeat: false,
-                    class,
-                },
-                &mut events,
-            );
-        for event in events {
-            (context.handler.as_ref())(event);
+        let mut hotkey_events = Vec::new();
+        let mut capture_events = Vec::new();
+        let mut hotkey_handler = None;
+        let mut capture_handler = None;
+        let mut keystroke_observer = None;
+        let swallow;
+
+        {
+            let mut state = context.state.lock().unwrap_or_else(|e| e.into_inner());
+            let autorepeat = if pressed {
+                !state.held_vks.insert(code)
+            } else {
+                state.held_vks.remove(&code);
+                false
+            };
+
+            match &mut state.mode {
+                HookMode::Hotkeys { matcher, handler } => {
+                    let Some(key) = key else {
+                        return false;
+                    };
+                    if own_in_flight && pressed && !autorepeat {
+                        swallow = false;
+                    } else {
+                        let input = KeyInput {
+                            code,
+                            pressed,
+                            autorepeat,
+                            class: key_class_for_windows_vk(key),
+                        };
+                        swallow = matcher.handle(input, &mut hotkey_events);
+                    }
+                    if !hotkey_events.is_empty() {
+                        hotkey_handler = Some(Arc::clone(handler));
+                    }
+                    let ctrl_or_alt_held = unsafe {
+                        GetAsyncKeyState(VK_CONTROL as i32) < 0
+                            || GetAsyncKeyState(VK_MENU as i32) < 0
+                    };
+                    if !swallow
+                        && !own_in_flight
+                        && pressed
+                        && !autorepeat
+                        && !ctrl_or_alt_held
+                        && !key.is_modifier
+                        && !key.standalone
+                    {
+                        keystroke_observer = matcher.keystroke_observer();
+                    }
+                }
+                HookMode::Capture { capture, handler } => {
+                    if let Some(key) = key {
+                        let input = KeyInput {
+                            code,
+                            pressed,
+                            autorepeat,
+                            class: if key.is_modifier {
+                                KeyClass::Modifier
+                            } else {
+                                key_class_for_windows_vk(key)
+                            },
+                        };
+                        let (event, should_swallow) = capture.handle_windows(input);
+                        swallow = should_swallow;
+                        if let Some(event) = event {
+                            capture_events.push(event);
+                            capture_handler = Some(Arc::clone(handler));
+                        }
+                    } else {
+                        swallow = true;
+                    }
+                }
+            }
+        }
+
+        if let Some(handler) = hotkey_handler {
+            for event in hotkey_events {
+                (handler.as_ref())(event);
+            }
+        }
+        if let Some(handler) = capture_handler {
+            for event in capture_events {
+                (handler.as_ref())(event);
+            }
+        }
+        if let Some(observer) = keystroke_observer {
+            (observer.as_ref())();
         }
         swallow
     }
@@ -2386,6 +2532,57 @@ mod tests {
         assert!(own_keystroke_in_flight());
         std::thread::sleep(OWN_KEYSTROKE_TAIL + Duration::from_millis(30));
         assert!(!own_keystroke_in_flight());
+    }
+
+    #[test]
+    fn windows_capture_records_chords_and_cancels_on_escape() {
+        let mut capture = CaptureState::default();
+        let vk_end = native_keys::windows_key_by_name("End").unwrap().code;
+        let vk_rshift = native_keys::windows_key_by_name("RightShift").unwrap().code;
+
+        let (ev, swallow) = capture.handle_windows(KeyInput {
+            code: vk_end,
+            pressed: true,
+            autorepeat: false,
+            class: KeyClass::Standalone,
+        });
+        assert!(swallow);
+        assert_eq!(ev.unwrap().held, vec!["End"]);
+
+        let (ev, swallow) = capture.handle_windows(KeyInput {
+            code: vk_rshift,
+            pressed: true,
+            autorepeat: false,
+            class: KeyClass::Modifier,
+        });
+        assert!(!swallow);
+        assert_eq!(ev.unwrap().held, vec!["End", "RightShift"]);
+
+        capture.handle_windows(KeyInput {
+            code: vk_rshift,
+            pressed: false,
+            autorepeat: false,
+            class: KeyClass::Modifier,
+        });
+        let (ev, _) = capture.handle_windows(KeyInput {
+            code: vk_end,
+            pressed: false,
+            autorepeat: false,
+            class: KeyClass::Standalone,
+        });
+        let done = ev.unwrap();
+        assert!(done.finished);
+        assert_eq!(done.held, vec!["End", "RightShift"]);
+
+        let mut cancelled = CaptureState::default();
+        let (ev, swallow) = cancelled.handle_windows(KeyInput {
+            code: native_keys::WIN_VK_ESCAPE,
+            pressed: true,
+            autorepeat: false,
+            class: KeyClass::Typing,
+        });
+        assert!(swallow);
+        assert!(ev.unwrap().cancelled);
     }
 
     #[test]

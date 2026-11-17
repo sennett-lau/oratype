@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { useLanguageSetup } from '../../hooks/useLanguageSetup'
 import { AI_SERVICE, SPEECH_SERVICE } from '../Speech/services'
 import { SetupSuggestionBox, YourLanguagesPicker } from '../Languages/YourLanguages'
+import { tp } from '../../lib/platformText'
 
 /**
  * Plan `language-model-suggestions`: Onboarding → Your languages, between Voice input and Speech
@@ -22,7 +23,7 @@ export function LanguagesStep() {
         </span>
         <YourLanguagesPicker labelId="spoken-languages-label" />
         {!chosen && languages.length > 0 && (
-          <span className="hardware-note">{t('languageSetup.fromMac')}</span>
+          <span className="hardware-note">{tp(t, 'languageSetup.fromMac')}</span>
         )}
       </div>
       <SetupSuggestionBox suggestion={suggestion} languages={languages} sizes={sizes} />

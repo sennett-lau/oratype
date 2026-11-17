@@ -50,8 +50,15 @@ pub enum Next {
     Exit,
 }
 
-/// Runs the migration (macOS only). Call first thing at startup, after logging is set up.
+/// Runs the migration (macOS only; Windows has no legacy Typelite release). Call first thing
+/// at startup, after logging is set up.
 pub fn run() -> Next {
+    #[cfg(not(target_os = "macos"))]
+    {
+        // TODO(windows): no legacy Windows `Typelite` install existed before 1.2.0; if an `%APPDATA%\dev.oratype.*` migration is ever needed, move AppData/WebView2 folders before DB open.
+        Next::Continue
+    }
+
     #[cfg(target_os = "macos")]
     {
         let Some(home) = std::env::var_os("HOME").map(PathBuf::from) else {
@@ -63,8 +70,8 @@ pub fn run() -> Next {
                 return relaunch_renamed(&from, &to);
             }
         }
+        Next::Continue
     }
-    Next::Continue
 }
 
 /// Moves Typelite's folders to OraType's under `home`, and removes its login item.

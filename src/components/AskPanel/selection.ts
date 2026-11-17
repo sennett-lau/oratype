@@ -22,26 +22,39 @@ export function textToCopy(selected: string, whole: string): string {
 export const SELECTABLE_SELECTOR =
   '.ask-glass-answer, .ask-source-host, .ask-source-title, .ask-source-snippet'
 
-/** ⌘C (no other modifier). */
-export function isCopyShortcut(event: KeyboardEvent): boolean {
-  return (
-    event.metaKey &&
-    !event.ctrlKey &&
-    !event.altKey &&
-    !event.shiftKey &&
-    event.key.toLowerCase() === 'c'
-  )
+export interface ShortcutPlatformOptions {
+  /** Override platform detection (`true` uses Ctrl on Windows; `false` uses ⌘ on macOS). */
+  windows?: boolean
 }
 
-/** ⌘A (no other modifier). */
-export function isSelectAllShortcut(event: KeyboardEvent): boolean {
-  return (
-    event.metaKey &&
-    !event.ctrlKey &&
-    !event.altKey &&
-    !event.shiftKey &&
-    event.key.toLowerCase() === 'a'
-  )
+function usesCtrlPrimaryModifier(options?: ShortcutPlatformOptions): boolean {
+  if (typeof options === 'object' && options !== null && options.windows !== undefined) {
+    return options.windows
+  }
+  return typeof navigator !== 'undefined' && /^Win/i.test(navigator.platform || '')
+}
+
+function matchesPrimaryKeyShortcut(
+  event: KeyboardEvent,
+  key: string,
+  options?: ShortcutPlatformOptions,
+): boolean {
+  const useCtrl = usesCtrlPrimaryModifier(options)
+  const hasPrimary = useCtrl ? event.ctrlKey && !event.metaKey : event.metaKey && !event.ctrlKey
+  return hasPrimary && !event.altKey && !event.shiftKey && event.key.toLowerCase() === key
+}
+
+/** ⌘C on macOS or Ctrl+C on Windows (no other modifier). */
+export function isCopyShortcut(event: KeyboardEvent, options?: ShortcutPlatformOptions): boolean {
+  return matchesPrimaryKeyShortcut(event, 'c', options)
+}
+
+/** ⌘A on macOS or Ctrl+A on Windows (no other modifier). */
+export function isSelectAllShortcut(
+  event: KeyboardEvent,
+  options?: ShortcutPlatformOptions,
+): boolean {
+  return matchesPrimaryKeyShortcut(event, 'a', options)
 }
 
 /** True when a press on `target` is in highlightable text (and should make the panel key). */

@@ -62,6 +62,8 @@ pub async fn init(app: &tauri::AppHandle) {
     let Ok(mut config) = state.load().await else {
         return;
     };
+    crate::stt::hardware::set_speech_backend_choice(&config.builtin_speech_backend);
+    crate::llm::builtin::speech_server().set_backend_choice(&config.builtin_speech_backend);
     if config.reconcile_builtin_models(&installed) {
         tracing::info!("Built-in speech presets updated to match the installed models");
         if let Err(error) = state.save(&config).await {
@@ -149,9 +151,11 @@ pub async fn get_speech_hardware(
                 .retain(|model| !models::runs_in_llama_server(&model.id));
         }
         tracing::info!(
-            "Speech hardware check: {:?} '{}', {} GB memory, {} MB free, offered {:?}",
+            "Speech hardware check: {:?} '{}' (gpu={:?}, vram={:?} MB), {} GB memory, {} MB free, offered {:?}",
             hardware.chip_kind,
             hardware.chip_name,
+            hardware.gpu_name,
+            hardware.vram_bytes.map(|bytes| bytes / (1024 * 1024)),
             hardware.memory_bytes / (1024 * 1024 * 1024),
             hardware.free_bytes / 1_000_000,
             offer
@@ -386,4 +390,190 @@ async fn run_setup(
     emit_speech_presets(app, &config);
     crate::stt::llama_asr::sync_with_config(&config);
     test.map_err(|reason| DownloadError::Load { reason })
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BuiltinBackendInfo {
+    pub platform: String,
+    pub llama_engine: String,
+    pub whisper_engine: String,
+    pub devices: Vec<crate::llm::builtin::LlamaDevice>,
+    pub auto_device_id: Option<String>,
+    pub active_ai_device: String,
+    pub active_speech_llama_device: String,
+    pub active_whisper_device: String,
+}
+
+fn format_device_label(device: &crate::llm::builtin::LlamaDevice) -> String {
+    let gb = ((device.total_mib as f64) / 1024.0).round().max(1.0) as u64;
+    format!("{} · {} ({gb} GB)", device.id, device.description)
+}
+
+pub fn format_llama_backend_display(
+    choice: &str,
+    platform: &str,
+    devices: &[crate::llm::builtin::LlamaDevice],
+    auto_device_id: Option<&str>,
+) -> String {
+    let normalized = storage::normalize_builtin_backend(choice);
+    if normalized == "cpu" {
+        return "CPU".to_string();
+    }
+    if normalized == "auto" {
+        return match platform {
+            "windows" => match auto_device_id {
+                Some(id) => devices
+                    .iter()
+                    .find(|d| d.id.eq_ignore_ascii_case(id))
+                    .map(format_device_label)
+                    .unwrap_or_else(|| id.to_string()),
+                None => "CPU".to_string(),
+            },
+            "macos" => "Apple Metal GPU".to_string(),
+            _ => "CPU".to_string(),
+        };
+    }
+    devices
+        .iter()
+        .find(|d| d.id.eq_ignore_ascii_case(&normalized))
+        .map(format_device_label)
+        .unwrap_or(normalized)
+}
+
+pub fn format_whisper_backend_display(
+    platform: &str,
+    use_gpu: bool,
+    gpu_device: i32,
+    devices: &[crate::llm::builtin::LlamaDevice],
+) -> String {
+    if !use_gpu {
+        return "CPU".to_string();
+    }
+    match platform {
+        "macos" => "Apple Metal GPU".to_string(),
+        "windows" => {
+            let target = format!("Vulkan{gpu_device}");
+            devices
+                .iter()
+                .find(|d| d.id.eq_ignore_ascii_case(&target))
+                .map(format_device_label)
+                .unwrap_or(target)
+        }
+        _ => "CPU".to_string(),
+    }
+}
+
+pub fn build_builtin_backend_info(
+    platform: &str,
+    ai_choice: &str,
+    speech_choice: &str,
+    devices: Vec<crate::llm::builtin::LlamaDevice>,
+    auto_device_id: Option<String>,
+    whisper_use_gpu: bool,
+    whisper_gpu_device: i32,
+) -> BuiltinBackendInfo {
+    let (llama_engine, whisper_engine) = match platform {
+        "windows" => ("llama.cpp b11177 (Vulkan)", "whisper.cpp (Vulkan)"),
+        "macos" => ("llama.cpp b11177 (Metal)", "whisper.cpp (Metal)"),
+        _ => ("llama.cpp b11177", "whisper.cpp (CPU)"),
+    };
+    let active_ai_device =
+        format_llama_backend_display(ai_choice, platform, &devices, auto_device_id.as_deref());
+    let active_speech_llama_device =
+        format_llama_backend_display(speech_choice, platform, &devices, auto_device_id.as_deref());
+    let active_whisper_device =
+        format_whisper_backend_display(platform, whisper_use_gpu, whisper_gpu_device, &devices);
+    BuiltinBackendInfo {
+        platform: platform.to_string(),
+        llama_engine: llama_engine.to_string(),
+        whisper_engine: whisper_engine.to_string(),
+        devices,
+        auto_device_id,
+        active_ai_device,
+        active_speech_llama_device,
+        active_whisper_device,
+    }
+}
+
+#[tauri::command]
+pub async fn get_builtin_backend_info(
+    config_state: tauri::State<'_, storage::ConfigManager>,
+) -> Result<BuiltinBackendInfo, String> {
+    let config = config_state.load().await.map_err(|e| e.to_string())?;
+    let devices = crate::llm::builtin::list_windows_vulkan_devices();
+    #[cfg(target_os = "windows")]
+    let auto_device_id = crate::llm::builtin::find_server_binary()
+        .and_then(|binary| crate::llm::builtin::preferred_windows_vulkan_device(&binary));
+    #[cfg(not(target_os = "windows"))]
+    let auto_device_id: Option<String> = None;
+
+    let platform = std::env::consts::OS;
+    let normalized_speech = storage::normalize_builtin_backend(&config.builtin_speech_backend);
+    crate::stt::hardware::set_speech_backend_choice(&normalized_speech);
+    Ok(build_builtin_backend_info(
+        platform,
+        &config.builtin_ai_backend,
+        &config.builtin_speech_backend,
+        devices,
+        auto_device_id,
+        crate::stt::hardware::use_whisper_gpu(),
+        crate::stt::hardware::whisper_gpu_device(),
+    ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn build_builtin_backend_info_formats_windows_auto_explicit_and_cpu() {
+        let devices = vec![
+            crate::llm::builtin::LlamaDevice {
+                id: "Vulkan0".into(),
+                description: "AMD Radeon(TM) Graphics".into(),
+                total_mib: 512,
+                free_mib: 450,
+            },
+            crate::llm::builtin::LlamaDevice {
+                id: "Vulkan1".into(),
+                description: "NVIDIA GeForce RTX 4090".into(),
+                total_mib: 24_142,
+                free_mib: 23_400,
+            },
+        ];
+
+        let auto_info = build_builtin_backend_info(
+            "windows",
+            "auto",
+            "auto",
+            devices.clone(),
+            Some("Vulkan1".into()),
+            true,
+            1,
+        );
+        assert_eq!(auto_info.llama_engine, "llama.cpp b11177 (Vulkan)");
+        assert_eq!(auto_info.whisper_engine, "whisper.cpp (Vulkan)");
+        assert_eq!(
+            auto_info.active_ai_device,
+            "Vulkan1 · NVIDIA GeForce RTX 4090 (24 GB)"
+        );
+        assert_eq!(
+            auto_info.active_whisper_device,
+            "Vulkan1 · NVIDIA GeForce RTX 4090 (24 GB)"
+        );
+
+        let cpu_info = build_builtin_backend_info(
+            "windows",
+            "cpu",
+            "cpu",
+            devices,
+            Some("Vulkan1".into()),
+            false,
+            0,
+        );
+        assert_eq!(cpu_info.active_ai_device, "CPU");
+        assert_eq!(cpu_info.active_speech_llama_device, "CPU");
+        assert_eq!(cpu_info.active_whisper_device, "CPU");
+    }
 }

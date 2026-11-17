@@ -1,4 +1,4 @@
-import type { SpeechHardwareCheck, SpeechSetupError, SpeechSetupStatus } from './tauri'
+import type { ChipKind, SpeechHardwareCheck, SpeechSetupError, SpeechSetupStatus } from './tauri'
 
 type Translate = (key: string | string[], values?: Record<string, unknown>) => string
 
@@ -109,6 +109,18 @@ export function memoryGigabytes(bytes: number): number {
   return Math.round(bytes / 1024 ** 3)
 }
 
+/** Dedicated GPU VRAM in binary GB (rounds >= 1 GB, keeps 1 decimal for sub-GB iGPU carve-outs). */
+export function vramGigabytes(bytes: number): string {
+  const gib = bytes / 1024 ** 3
+  if (gib >= 1) return String(Math.round(gib))
+  if (gib > 0) return gib.toFixed(1)
+  return '0'
+}
+
+function isWindowsChip(chipKind: ChipKind): boolean {
+  return chipKind === 'windows_gpu' || chipKind === 'windows_cpu'
+}
+
 /**
  * Plan `two-tab-speech`: the model the option cards select when the user has not picked one: the
  * given one if it is offered, otherwise the first (recommended) offered model.
@@ -152,14 +164,36 @@ export function hardwareNote(
       available: formatGigabytes(hardware.freeBytes),
     })
   }
-  if (offer.models.length === 0 && ns === 'aiSetup') return t('aiSetup.hardware.none')
-  const chip = hardware.chipName || t('speechSetup.hardware.unknownChip')
+  const isWindows = isWindowsChip(hardware.chipKind)
+  if (offer.models.length === 0 && ns === 'aiSetup' && !isWindows) {
+    return t('aiSetup.hardware.none')
+  }
   const memory = memoryGigabytes(hardware.memoryBytes)
-  const reason = offer.leftOut ? t(setupKey(ns, `hardware.leftOut.${offer.leftOut}`)) : ''
+  const base =
+    isWindows && hardware.gpuName
+      ? t(
+          style === 'short'
+            ? 'speechSetup.hardware.windowsShort'
+            : 'speechSetup.hardware.windowsLong',
+          {
+            gpu: hardware.gpuName,
+            vram: vramGigabytes(hardware.vramBytes ?? 0),
+            memory,
+          },
+        )
+      : t(style === 'short' ? 'speechSetup.hardware.short' : 'speechSetup.hardware.long', {
+          chip:
+            hardware.chipName ||
+            t(isWindows ? 'speechSetup.hardware.unknownGpu' : 'speechSetup.hardware.unknownChip'),
+          memory,
+        })
+  const reason = offer.leftOut
+    ? t(setupKey(ns, `hardware.leftOut.${offer.leftOut}`))
+    : offer.models.length === 0 && ns === 'aiSetup'
+      ? t('aiSetup.hardware.none')
+      : ''
   if (style === 'short') {
-    const base = t('speechSetup.hardware.short', { chip, memory })
     return reason ? `${base} · ${reason}` : base
   }
-  const base = t('speechSetup.hardware.long', { chip, memory })
   return reason ? `${base} ${reason}` : base
 }

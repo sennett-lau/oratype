@@ -2,6 +2,7 @@ pub mod clipboard;
 pub mod focus;
 pub mod keyboard;
 pub mod pasteboard;
+pub mod windows_focus;
 pub mod windows_modifier_guard;
 pub mod windows_sendinput;
 
@@ -164,7 +165,19 @@ pub fn create_output_with_clipboard_options(
     clipboard_options: clipboard::ClipboardOutputOptions,
 ) -> Box<dyn TextOutput> {
     match mode {
-        OutputMode::Keyboard => Box::new(keyboard::KeyboardOutput::new(app_handle)),
+        OutputMode::Keyboard => {
+            #[cfg(target_os = "windows")]
+            {
+                let _ = app_handle;
+                Box::new(windows_sendinput::WindowsSendInputOutput::new(
+                    windows_sendinput::WindowsSendInputOptions::default(),
+                ))
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                Box::new(keyboard::KeyboardOutput::new(app_handle))
+            }
+        }
         OutputMode::Clipboard => {
             Box::new(clipboard::ClipboardOutput::with_options(clipboard_options))
         }
@@ -214,6 +227,11 @@ pub async fn output_with_strategy(
     clipboard_options: clipboard::ClipboardOutputOptions,
     windows_sendinput_options: windows_sendinput::WindowsSendInputOptions,
 ) -> Result<OutputOutcome, String> {
+    #[cfg(target_os = "windows")]
+    let _ =
+        tokio::task::spawn_blocking(windows_focus::ensure_recording_target_foreground_before_paste)
+            .await;
+
     let keyboard = create_output(OutputMode::Keyboard, app_handle);
     let windows_sendinput =
         windows_sendinput::WindowsSendInputOutput::new(windows_sendinput_options);

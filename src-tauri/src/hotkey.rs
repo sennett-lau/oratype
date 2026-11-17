@@ -516,7 +516,10 @@ fn binding_key_names(binding: &storage::ShortcutBinding) -> Option<Vec<String>> 
 /// are modifiers. Bindings with generic modifiers (`Ctrl`, `Shift`, `Option`, `Command`) are
 /// left to `tauri-plugin-global-shortcut`, which handles "either side" modifiers itself.
 ///
-/// Windows (minimal): chords of Right Alt with Space and Left Shift.
+/// Windows: native when every key is in `WINDOWS_KEYS` (`WH_KEYBOARD_LL`) and at least one
+/// key is native-only (side-specific modifier, RightAlt, End/Home/PageUp/PageDown/Insert,
+/// F13–F20) or all keys are modifiers. Generic modifiers (`Ctrl`, `Shift`, `Alt`, `Super`) stay
+/// on `tauri-plugin-global-shortcut`, and `Fn` is unsupported (`None`).
 ///
 /// Returns `None` when the binding should use the global-shortcut plugin instead.
 pub fn native_chord_from_binding(
@@ -549,18 +552,16 @@ fn macos_native_chord(names: &[String]) -> Option<NativeChord> {
 }
 
 fn windows_native_chord(names: &[String]) -> Option<NativeChord> {
-    // Windows virtual-key codes: VK_RMENU (Right Alt), VK_SPACE, VK_LSHIFT.
-    const VK_RMENU: u16 = 0xA5;
     let mut codes = Vec::with_capacity(names.len());
+    let mut any_native_only = false;
+    let mut all_modifiers = true;
     for name in names {
-        codes.push(match name.as_str() {
-            "RightAlt" => VK_RMENU,
-            "Space" => 0x20,
-            "LeftShift" => 0xA0,
-            _ => return None,
-        });
+        let key = native_keys::windows_key_by_name(name)?;
+        any_native_only |= native_keys::is_windows_native_only(key);
+        all_modifiers &= key.is_modifier;
+        codes.push(key.code);
     }
-    if codes.contains(&VK_RMENU) {
+    if any_native_only || all_modifiers {
         NativeChord::new(codes)
     } else {
         None
@@ -649,6 +650,7 @@ fn push_translate_stop_keys(
     platform: &str,
 ) {
     if platform != "macos" {
+        // TODO(windows): generate Windows VK `translate_stop` chords alongside Windows `SwitchLanguage` support.
         return;
     }
     for (index, binding) in translate_bindings.iter().enumerate() {
@@ -694,6 +696,7 @@ fn push_switch_language_hotkey(
     platform: &str,
 ) -> Result<(), HotkeyPairError> {
     if platform != "macos" {
+        // TODO(windows): map generic modifiers to Windows VK `either_side_chords` once `NativeHotkeyRecorder` UI is enabled on Windows.
         return Ok(());
     }
     let role = HotkeyRole::SwitchLanguage;
@@ -1696,14 +1699,14 @@ mod tests {
     }
 
     #[test]
-    fn bare_end_falls_back_to_global_shortcut_off_macos() {
+    fn bare_end_falls_back_to_global_shortcut_on_linux_and_is_native_on_windows() {
         let binding = storage::ShortcutBinding::from_hotkey("End").unwrap();
+        let chord = storage::ShortcutBinding::from_hotkey("End+RightShift").unwrap();
 
+        assert!(binding_is_valid_for_platform(&binding, "linux"));
+        assert!(!binding_is_valid_for_platform(&chord, "linux"));
         assert!(binding_is_valid_for_platform(&binding, "windows"));
-        assert!(!binding_is_valid_for_platform(
-            &storage::ShortcutBinding::from_hotkey("End+RightShift").unwrap(),
-            "windows"
-        ));
+        assert!(binding_is_valid_for_platform(&chord, "windows"));
     }
 
     #[test]
@@ -1915,6 +1918,19 @@ mod tests {
                 platform: "windows".to_string(),
             }
         );
+    }
+
+    #[test]
+    fn windows_native_routing_covers_native_keys_while_keeping_generic_combos_global() {
+        let binding = |value: &str| storage::ShortcutBinding::from_hotkey(value).unwrap();
+        assert!(native_chord_from_binding(&binding("End"), "windows").is_some());
+        assert!(native_chord_from_binding(&binding("End+RightShift"), "windows").is_some());
+        assert!(native_chord_from_binding(&binding("RightAlt+Space"), "windows").is_some());
+        assert!(native_chord_from_binding(&binding("F13"), "windows").is_some());
+        assert!(native_chord_from_binding(&binding("Home"), "windows").is_some());
+        assert!(native_chord_from_binding(&binding("Insert"), "windows").is_some());
+        assert!(native_chord_from_binding(&binding("Ctrl+/"), "windows").is_none());
+        assert!(native_chord_from_binding(&binding("Ctrl+Shift+/"), "windows").is_none());
     }
 
     fn mac_chord(names: &[&str]) -> NativeChord {

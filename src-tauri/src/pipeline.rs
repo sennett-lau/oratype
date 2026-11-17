@@ -1647,6 +1647,10 @@ impl PipelineHandle {
         }
         let loaded_config = crate::readiness::without_unready_ai(loaded_config);
 
+        // Record the target foreground window on Windows BEFORE `set_state(Preparing)` shows the
+        // capsule overlay, so we always know which window to restore focus to before pasting.
+        crate::output::windows_focus::capture_recording_start_foreground();
+
         self.set_state(PipelineState::Preparing);
 
         // Clear accumulated text

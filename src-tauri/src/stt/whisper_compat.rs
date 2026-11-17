@@ -18,6 +18,24 @@ pub struct WhisperCompatConfig {
     /// server known to refuse it: the built-in speech server (plan `language-model-suggestions`)
     /// answers only plain JSON, and Qwen3-ASR's own language tag gives the language anyway.
     pub verbose_json: bool,
+    /// When `true` (used for the built-in `llama-server` Qwen3-ASR backend), pass `temperature=0`
+    /// and a duration-bounded `max_tokens` so `llama-server`'s chat-completion defaults
+    /// (`temp=0.80`, `n_predict=-1`) cannot trigger stochastic looping on longer clips.
+    pub greedy_asr_limits: bool,
+}
+
+/// The `max_tokens` budget for Qwen3-ASR decoding, from the raw 16-bit mono PCM length: 16
+/// tokens for every second of audio plus 32, and at least 64. Speech writes about 4 to 5 tokens a
+/// second (a 50 s Cantonese clip gave 222), so the budget only stops a decoder that loops.
+///
+/// There is no fixed upper limit: `llama-server` cuts the transcript at `max_tokens` without an
+/// error, and a recording can be ten minutes long (some 2,700 tokens).
+pub fn greedy_asr_max_tokens(audio_pcm_bytes: usize, sample_rate: u32) -> u32 {
+    let secs = (audio_pcm_bytes as f64) / (f64::from(sample_rate.max(1)) * 2.0);
+    (secs.ceil() as u32)
+        .saturating_mul(16)
+        .saturating_add(32)
+        .max(64)
 }
 
 /// Plan `language-prompt-library`: endpoints that refused `response_format=verbose_json` in this
@@ -265,6 +283,13 @@ impl WhisperCompatProvider {
             if verbose {
                 form = form.text("response_format", "verbose_json");
             }
+            if self.provider_config.greedy_asr_limits {
+                let max_tokens =
+                    greedy_asr_max_tokens(wav_data.len().saturating_sub(44), config.sample_rate);
+                form = form
+                    .text("temperature", "0")
+                    .text("max_tokens", max_tokens.to_string());
+            }
             // Plan `dictionary-to-speech`: the words to expect, as OpenAI's `prompt` field.
             if let Some(prompt) = super::vocabulary::speech_prompt(&config.vocabulary) {
                 form = form.text("prompt", prompt);
@@ -405,6 +430,7 @@ mod tests {
             endpoint: "http://localhost:8000/v1/audio/transcriptions".to_string(),
             model: "test-model".to_string(),
             verbose_json: true,
+            greedy_asr_limits: false,
         });
 
         let result = provider
@@ -427,6 +453,7 @@ mod tests {
             endpoint: "http://127.0.0.1:9/v1/audio/transcriptions".to_string(),
             model: "test-model".to_string(),
             verbose_json: true,
+            greedy_asr_limits: false,
         });
         let probe = crate::timing::UploadProbe::default();
         provider.set_upload_probe(probe.clone());
@@ -454,6 +481,7 @@ mod tests {
             endpoint: "http://127.0.0.1:9/v1/audio/transcriptions".to_string(),
             model: "test-model".to_string(),
             verbose_json: true,
+            greedy_asr_limits: false,
         });
         let probe = crate::timing::UploadProbe::default();
         provider.set_upload_probe(probe.clone());
@@ -470,6 +498,7 @@ mod tests {
             endpoint: "http://127.0.0.1:9/v1/audio/transcriptions".to_string(),
             model: "test-model".to_string(),
             verbose_json: true,
+            greedy_asr_limits: false,
         });
         let probe = crate::timing::UploadProbe::default();
         provider.set_upload_probe(probe.clone());
@@ -607,6 +636,7 @@ mod tests {
             endpoint: endpoint.to_string(),
             model: "test-model".to_string(),
             verbose_json: false,
+            greedy_asr_limits: false,
         });
         provider
             .connect(&SttConfig {
@@ -646,6 +676,7 @@ mod tests {
             endpoint: endpoint.to_string(),
             model: "test-model".to_string(),
             verbose_json: true,
+            greedy_asr_limits: false,
         });
         provider
             .connect(&SttConfig {
@@ -730,6 +761,7 @@ mod tests {
             endpoint: "https://example.test/transcriptions".to_string(),
             model: "test-model".to_string(),
             verbose_json: true,
+            greedy_asr_limits: false,
         });
 
         let result = tokio::time::timeout(
@@ -739,5 +771,56 @@ mod tests {
         .await;
 
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn greedy_asr_max_tokens_scales_with_duration() {
+        // 1.5s @ 16kHz -> ceil(1.5) = 2 -> 2*16 + 32 = 64
+        assert_eq!(greedy_asr_max_tokens(48_000, 16_000), 64);
+        // 5.6s @ 16kHz -> ceil(5.6) = 6 -> 6*16 + 32 = 128
+        assert_eq!(greedy_asr_max_tokens(179_200, 16_000), 128);
+        // The lower bound (0.1s).
+        assert_eq!(greedy_asr_max_tokens(3_200, 16_000), 64);
+        // A ten-minute recording keeps its whole transcript: 600*16 + 32, far above the
+        // 2,700 tokens such a dictation writes.
+        assert_eq!(greedy_asr_max_tokens(16_000 * 2 * 600, 16_000), 9_632);
+    }
+
+    #[tokio::test]
+    async fn greedy_asr_limits_sends_temperature_zero_and_bounded_max_tokens() {
+        let (url, seen) = recording_server(r#"{"text":"你好"}"#).await;
+        let mut provider = WhisperCompatProvider::new(WhisperCompatConfig {
+            provider_name: "Built-in Qwen3-ASR".to_string(),
+            endpoint: url.clone(),
+            model: "qwen3-asr-1.7b".to_string(),
+            verbose_json: false,
+            greedy_asr_limits: true,
+        });
+        provider.connect(&SttConfig::default()).await.unwrap();
+        let mut audio = vec![0u8; 16_000];
+        audio.extend(pcm_tone(0.3, 1.0, 16_000));
+        audio.extend(vec![0u8; 16_000]);
+        provider.send_audio(&audio).await.unwrap();
+        let text = provider.disconnect().await.unwrap();
+        assert_eq!(text.as_deref(), Some("你好"));
+        let request = String::from_utf8_lossy(&seen.lock().unwrap()).to_string();
+        assert!(request.contains("name=\"temperature\"\r\n\r\n0\r\n"));
+        assert!(request.contains("name=\"max_tokens\"\r\n\r\n64\r\n"));
+
+        // Standard cloud preset leaves temperature & max_tokens unset.
+        let (url2, seen2) = recording_server(r#"{"text":"hello"}"#).await;
+        let mut cloud = WhisperCompatProvider::new(WhisperCompatConfig {
+            provider_name: "OpenAI".to_string(),
+            endpoint: url2,
+            model: "whisper-1".to_string(),
+            verbose_json: false,
+            greedy_asr_limits: false,
+        });
+        cloud.connect(&SttConfig::default()).await.unwrap();
+        cloud.send_audio(&audio).await.unwrap();
+        let _ = cloud.disconnect().await.unwrap();
+        let req2 = String::from_utf8_lossy(&seen2.lock().unwrap()).to_string();
+        assert!(!req2.contains("name=\"temperature\""));
+        assert!(!req2.contains("name=\"max_tokens\""));
     }
 }

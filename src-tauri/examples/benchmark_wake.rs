@@ -20,6 +20,7 @@ use oratype_lib::hands_free::segment::WakeSegmenter;
 use oratype_lib::hands_free::wake::{WakeCheckOptions, WakeChecker};
 use serde_json::json;
 
+#[cfg(unix)]
 fn cpu_time() -> Duration {
     let mut usage: libc::rusage = unsafe { std::mem::zeroed() };
     unsafe { libc::getrusage(libc::RUSAGE_SELF, &mut usage) };
@@ -27,11 +28,30 @@ fn cpu_time() -> Duration {
     tv(usage.ru_utime) + tv(usage.ru_stime)
 }
 
+#[cfg(not(unix))]
+fn cpu_time() -> Duration {
+    Duration::ZERO
+}
+
+#[cfg(unix)]
 fn max_rss_mb() -> f64 {
     let mut usage: libc::rusage = unsafe { std::mem::zeroed() };
     unsafe { libc::getrusage(libc::RUSAGE_SELF, &mut usage) };
-    // macOS reports bytes.
-    usage.ru_maxrss as f64 / 1_048_576.0
+    #[cfg(target_os = "macos")]
+    {
+        // macOS reports bytes.
+        usage.ru_maxrss as f64 / 1_048_576.0
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        // Linux reports kilobytes.
+        usage.ru_maxrss as f64 / 1_024.0
+    }
+}
+
+#[cfg(not(unix))]
+fn max_rss_mb() -> f64 {
+    0.0
 }
 
 fn read_wav(path: &Path) -> Vec<i16> {

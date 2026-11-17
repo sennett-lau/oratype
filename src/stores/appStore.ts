@@ -442,6 +442,7 @@ export interface AppConfig {
   restore_clipboard_after_paste: boolean
   paste_shortcut: PasteShortcut
   windows_sendinput_newline_mode: WindowsSendInputNewlineMode
+  windows_paste_default_migrated?: boolean
   streaming_insert_enabled: boolean
   selected_text_enabled: boolean
   /** Plan `cursor-context`: Dictate sends the text before the cursor to polish. */
@@ -472,6 +473,8 @@ export interface AppConfig {
    * about 1–2 GB more memory per extra language).
    */
   builtin_ai_language_slots: boolean
+  builtin_ai_backend?: string
+  builtin_speech_backend?: string
   /** Version of the built-in preset templates in this config (backend migration marker). */
   builtin_presets_version: number
   /** The three-shortcut tour (onboarding Dictate, Translate, Ask steps) was finished. */
@@ -1318,11 +1321,12 @@ const defaultConfig: AppConfig = {
     dictationMode: defaultDictationHotkeyMode(),
     switchLanguage: bindingFromHotkey(DEFAULT_SWITCH_LANGUAGE_HOTKEY),
   },
-  output_mode: 'keyboard',
-  insertion_strategy: 'auto',
+  output_mode: isWindowsPlatform() ? 'clipboard' : 'keyboard',
+  insertion_strategy: isWindowsPlatform() ? 'clipboardPaste' : 'auto',
   restore_clipboard_after_paste: true,
   paste_shortcut: 'ctrlV',
   windows_sendinput_newline_mode: 'enter',
+  windows_paste_default_migrated: isWindowsPlatform(),
   streaming_insert_enabled: false,
   selected_text_enabled: false,
   cursor_context_enabled: false,
@@ -1341,6 +1345,8 @@ const defaultConfig: AppConfig = {
   auto_update: true,
   hands_free: { enabled: false, wake_name: 'Sam', sensitivity: 'normal', action: 'dictate' },
   builtin_ai_language_slots: true,
+  builtin_ai_backend: 'auto',
+  builtin_speech_backend: 'auto',
   builtin_presets_version: 1,
   shortcut_tour_completed: false,
   shortcut_tour_prompt_dismissed: false,

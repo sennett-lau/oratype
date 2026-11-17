@@ -1,6 +1,7 @@
 //! Plan `quick-speech-setup`: the "Built-in (on-device)" speech provider. Runs whisper.cpp inside
-//! the app through the `whisper-rs` binding (GPU through Metal on macOS), so no speech server or
-//! Homebrew install is needed.
+//! the app through the `whisper-rs` binding (GPU through Metal on macOS and through Vulkan on
+//! Windows, see `stt::hardware::use_whisper_gpu`; CPU elsewhere), so no speech server or Homebrew
+//! install is needed.
 //!
 //! The model is loaded on first use (a recording start begins loading it while the user
 //! speaks), kept in memory, and freed after [`IDLE_UNLOAD_AFTER`] without use. Only one
@@ -59,6 +60,8 @@ const MAX_PROMPT_TOKENS: usize = 224;
 
 struct Loaded {
     path: PathBuf,
+    use_gpu: bool,
+    gpu_device: i32,
     /// Kept for its tokenizer (the dictionary prompt); the state shares its model.
     context: WhisperContext,
     state: whisper_rs::WhisperState,
@@ -151,14 +154,19 @@ impl LocalWhisper {
         slot: &mut Option<Loaded>,
         path: &Path,
     ) -> Result<Option<Duration>, String> {
-        if slot.as_ref().is_some_and(|loaded| loaded.path == path) {
+        let use_gpu = crate::stt::hardware::use_whisper_gpu();
+        let gpu_device = crate::stt::hardware::whisper_gpu_device();
+        if slot.as_ref().is_some_and(|loaded| {
+            loaded.path == path && loaded.use_gpu == use_gpu && loaded.gpu_device == gpu_device
+        }) {
             return Ok(None);
         }
         // Free the old model before loading another one.
         *slot = None;
         let started = Instant::now();
         let mut params = WhisperContextParameters::default();
-        params.use_gpu(cfg!(target_os = "macos"));
+        params.use_gpu(use_gpu);
+        params.gpu_device(gpu_device);
         params.flash_attn(true);
         let path_str = path
             .to_str()
@@ -171,7 +179,7 @@ impl LocalWhisper {
         let eot = context.token_eot();
         let took = started.elapsed();
         tracing::info!(
-            "Built-in speech: loaded {} in {} ms",
+            "Built-in speech: loaded {} (gpu={use_gpu}, device={gpu_device}) in {} ms",
             path.file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_default(),
@@ -179,6 +187,8 @@ impl LocalWhisper {
         );
         *slot = Some(Loaded {
             path: path.to_path_buf(),
+            use_gpu,
+            gpu_device,
             context,
             state,
             eot,

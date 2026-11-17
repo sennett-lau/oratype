@@ -11,6 +11,7 @@ import {
 } from '../../lib/tauri'
 import type { HandsFreeStatus, SpeechSetupStatus } from '../../lib/tauri'
 import { Group, Row } from '../ui/Group'
+import { tp } from '../../lib/platformText'
 import { SegmentedControl } from './shared/SegmentedControl'
 import { Toggle } from './shared/Toggle'
 
@@ -85,7 +86,10 @@ export function HandsFreeSettings() {
     } else if (setup?.phase === 'error' && setup.error?.code !== 'cancelled') {
       note = { text: t('settings.handsFree.downloadFailed'), tone: 'error' }
     } else if (status && !status.modelInstalled) {
-      note = { text: t('settings.handsFree.needsModel', { name, size: sizeMb }), tone: 'muted' }
+      note = {
+        text: tp(t, 'settings.handsFree.needsModel', { name, size: sizeMb }),
+        tone: 'muted',
+      }
     } else if (status?.listener === 'listening') {
       note = { text: t('settings.handsFree.listening', { name }), tone: 'muted' }
     } else if (status?.listener === 'micError') {
@@ -97,7 +101,7 @@ export function HandsFreeSettings() {
     <Group label={t('settings.handsFree.title')}>
       <Row
         label={t('settings.handsFree.enable')}
-        help={t('settings.handsFree.enableHelp', { name })}
+        help={tp(t, 'settings.handsFree.enableHelp', { name })}
       >
         <Toggle
           checked={handsFree.enabled}

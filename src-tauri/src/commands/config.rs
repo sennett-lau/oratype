@@ -56,6 +56,18 @@ fn config_patch_between(previous: &storage::AppConfig, next: &storage::AppConfig
     if previous.input_device != next.input_device {
         patch.insert("input_device".to_string(), json!(next.input_device));
     }
+    if previous.builtin_ai_backend != next.builtin_ai_backend {
+        patch.insert(
+            "builtin_ai_backend".to_string(),
+            json!(next.builtin_ai_backend),
+        );
+    }
+    if previous.builtin_speech_backend != next.builtin_speech_backend {
+        patch.insert(
+            "builtin_speech_backend".to_string(),
+            json!(next.builtin_speech_backend),
+        );
+    }
     Value::Object(patch)
 }
 
@@ -282,9 +294,18 @@ pub async fn update_config(
         crate::apply_dock_visibility(&app, config.show_in_dock);
     }
     // Plan `hands-free-mode`: start, restart or stop the wake-phrase listener.
-    if ["hands_free", "input_device", "max_recording_seconds"]
-        .iter()
-        .any(|key| patch.get(key).is_some())
+    crate::stt::hardware::set_speech_backend_choice(&config.builtin_speech_backend);
+    if patch.get("builtin_speech_backend").is_some() {
+        crate::stt::builtin::engine().unload();
+    }
+    if [
+        "hands_free",
+        "input_device",
+        "max_recording_seconds",
+        "builtin_speech_backend",
+    ]
+    .iter()
+    .any(|key| patch.get(key).is_some())
     {
         let hands_free_app = app.clone();
         let hands_free_config = config.clone();

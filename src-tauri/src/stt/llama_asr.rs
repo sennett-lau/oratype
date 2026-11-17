@@ -81,6 +81,7 @@ fn upload_config(config: &LlamaAsrConfig, endpoint: &Endpoint) -> WhisperCompatC
         endpoint: format!("{}/audio/transcriptions", endpoint.base_url),
         model: config.model_id.clone(),
         verbose_json: false,
+        greedy_asr_limits: true,
     }
 }
 
@@ -222,6 +223,8 @@ pub async fn self_test(config: &LlamaAsrConfig) -> Result<u32, String> {
         .map_err(|error| error.to_string())?;
     let form = reqwest::multipart::Form::new()
         .text("model", upload.model.clone())
+        .text("temperature", "0")
+        .text("max_tokens", "32")
         .part("file", part);
     let started = std::time::Instant::now();
     let response = local_client()
@@ -255,6 +258,7 @@ pub fn wanted_model(config: &AppConfig) -> Option<LlamaAsrConfig> {
 /// Starts or stops the speech server to match `config` (at app start and after the speech engine
 /// changed). Starting runs in the background.
 pub fn sync_with_config(config: &AppConfig) {
+    builtin::speech_server().set_backend_choice(&config.builtin_speech_backend);
     match wanted_model(config) {
         Some(wanted) => {
             tauri::async_runtime::spawn(async move {

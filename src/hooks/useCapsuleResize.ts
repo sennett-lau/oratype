@@ -1,8 +1,14 @@
 import { useEffect, useRef, type RefObject } from 'react'
-import { useAppStore, type CopyOffer, type PipelineState, type VoiceMode } from '../stores/appStore'
+import {
+  isWindowsPlatform,
+  useAppStore,
+  type CopyOffer,
+  type PipelineState,
+  type VoiceMode,
+} from '../stores/appStore'
 import { NAME_MAX_WIDTH, useTranslatePill } from '../components/Capsule/translatePill'
 import { WAVEFORM_BARS } from '../lib/waveform'
-import { setCapsuleFrame } from '../lib/tauri'
+import { setCapsuleFrame, setOverlayVisible } from '../lib/tauri'
 
 export interface CapsuleSize {
   width: number
@@ -552,7 +558,10 @@ export function useCapsuleResize(doneFlash = false, fadeTarget?: RefObject<HTMLE
         cursorPosition,
       } = await import('@tauri-apps/api/window')
       const win = getCurrentWindow()
-      await win.setFocusable(getCapsuleFocusable()).catch(() => {})
+      const onWindows = isWindowsPlatform()
+      if (!onWindows) {
+        await win.setFocusable(getCapsuleFocusable()).catch(() => {})
+      }
 
       // Re-anchor whenever the capsule appears so it follows the screen being worked on.
       const appearing = shouldShow && !visible.current
@@ -592,7 +601,13 @@ export function useCapsuleResize(doneFlash = false, fadeTarget?: RefObject<HTMLE
       // it shrinks to the idle size. Shrinking a still-visible window cut the fading pill.
       if (!shouldShow) {
         if (visible.current && !(await pause(PILL_HIDE_MS + PILL_HIDE_MARGIN_MS))) return
-        await win.hide().catch(() => {})
+        if (onWindows) {
+          await setOverlayVisible('capsule', false).catch(async () => {
+            await win.hide().catch(() => {})
+          })
+        } else {
+          await win.hide().catch(() => {})
+        }
         visible.current = false
         await applySize(windowWidth, windowHeight)
         return
@@ -615,7 +630,13 @@ export function useCapsuleResize(doneFlash = false, fadeTarget?: RefObject<HTMLE
         setContextMenuReady(true)
       }
 
-      await win.show().catch(() => {})
+      if (onWindows) {
+        await setOverlayVisible('capsule', true).catch(async () => {
+          await win.show().catch(() => {})
+        })
+      } else {
+        await win.show().catch(() => {})
+      }
       visible.current = true
     }
 

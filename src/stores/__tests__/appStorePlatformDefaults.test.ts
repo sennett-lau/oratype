@@ -42,6 +42,9 @@ describe('appStore platform default shortcuts', () => {
     expect(config.hotkeys.dictation).toEqual({ primary: '/', modifiers: ['Ctrl'] })
     expect(config.hotkeys.ask).toEqual({ primary: '.', modifiers: ['Ctrl'] })
     expect(config.hotkeys.translate).toEqual({ primary: '/', modifiers: ['Ctrl', 'Shift'] })
+    expect(config.output_mode).toBe('clipboard')
+    expect(config.insertion_strategy).toBe('clipboardPaste')
+    expect(config.windows_paste_default_migrated).toBe(true)
   })
 
   it('keeps conservative Ctrl shortcuts on Linux', async () => {
@@ -53,5 +56,8 @@ describe('appStore platform default shortcuts', () => {
     expect(config.hotkeys.dictation).toEqual({ primary: '/', modifiers: ['Ctrl'] })
     expect(config.hotkeys.ask).toEqual({ primary: '.', modifiers: ['Ctrl'] })
     expect(config.hotkeys.translate).toEqual({ primary: '/', modifiers: ['Ctrl', 'Shift'] })
+    expect(config.output_mode).toBe('keyboard')
+    expect(config.insertion_strategy).toBe('auto')
+    expect(config.windows_paste_default_migrated).toBe(false)
   })
 })

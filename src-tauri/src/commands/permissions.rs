@@ -25,6 +25,7 @@ pub enum PermissionStatus {
 
 /// Maps `AVAuthorizationStatus` (an Objective-C `NSInteger`) to our status.
 /// 0 = not determined, 1 = restricted (parental controls / MDM), 2 = denied, 3 = authorized.
+#[cfg(any(target_os = "macos", test))]
 fn microphone_status_from_av(value: isize) -> PermissionStatus {
     match value {
         3 => PermissionStatus::Granted,
@@ -36,6 +37,7 @@ fn microphone_status_from_av(value: isize) -> PermissionStatus {
 /// Maps an Apple Event permission result (`OSStatus`) to our status.
 /// 0 = allowed, -1743 (`errAEEventNotPermitted`) = the user said no,
 /// -1744 (`errAEEventWouldRequireUserConsent`) = not asked yet, -600 = System Events not running.
+#[cfg(any(target_os = "macos", test))]
 fn automation_status_from_os_status(value: i32) -> PermissionStatus {
     match value {
         0 => PermissionStatus::Granted,
@@ -47,6 +49,7 @@ fn automation_status_from_os_status(value: i32) -> PermissionStatus {
 /// Maps the result of the probe AppleScript. `osascript` prints the Apple Event error number
 /// in its error text, for example `execution error: Not authorized to send Apple events to
 /// System Events. (-1743)`.
+#[cfg(any(target_os = "macos", test))]
 fn automation_status_from_osascript(success: bool, stderr: &str) -> PermissionStatus {
     if success {
         PermissionStatus::Granted
@@ -184,6 +187,74 @@ mod mac {
     }
 }
 
+#[cfg(any(target_os = "windows", test))]
+fn microphone_status_from_consent_values(
+    machine: Option<&str>,
+    user_nonpackaged: Option<&str>,
+) -> PermissionStatus {
+    let denied = |v: Option<&str>| v.is_some_and(|s| s.eq_ignore_ascii_case("Deny"));
+    if denied(machine) || denied(user_nonpackaged) {
+        PermissionStatus::Denied
+    } else {
+        PermissionStatus::Granted
+    }
+}
+
+#[cfg(target_os = "windows")]
+mod win {
+    use super::PermissionStatus;
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+    use std::ptr;
+    use windows_sys::Win32::System::Registry::{HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE};
+    use windows_sys::Win32::UI::Shell::ShellExecuteW;
+    use windows_sys::Win32::UI::WindowsAndMessaging::SW_SHOWNORMAL;
+
+    const CONSENT_KEY: &str = r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone";
+    const NONPACKAGED_KEY: &str = r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\microphone\NonPackaged";
+
+    // TODO(windows): verify WASAPI `IMMDeviceEnumerator` capture-client open error (`E_ACCESSDENIED`) alongside ConsentStore registry checks on Windows 10/11.
+    pub(super) fn microphone_status() -> PermissionStatus {
+        let machine = crate::platform::read_reg_sz(HKEY_LOCAL_MACHINE, CONSENT_KEY, "Value");
+        let user = crate::platform::read_reg_sz(HKEY_CURRENT_USER, NONPACKAGED_KEY, "Value")
+            .or_else(|| crate::platform::read_reg_sz(HKEY_CURRENT_USER, CONSENT_KEY, "Value"));
+        super::microphone_status_from_consent_values(machine.as_deref(), user.as_deref())
+    }
+
+    pub(super) fn open_privacy_settings(pane: &str) -> Result<(), String> {
+        // TODO(windows): Windows has no global Accessibility/Automation permission pane; only microphone maps to Settings (elevated targets are constrained by UIPI).
+        if pane != "microphone" {
+            return Ok(());
+        }
+        let uri: Vec<u16> = OsStr::new("ms-settings:privacy-microphone")
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect();
+        let op: Vec<u16> = OsStr::new("open")
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect();
+        let rc = unsafe {
+            ShellExecuteW(
+                ptr::null_mut(),
+                op.as_ptr(),
+                uri.as_ptr(),
+                ptr::null(),
+                ptr::null(),
+                SW_SHOWNORMAL,
+            )
+        };
+        if (rc as isize) > 32 {
+            Ok(())
+        } else {
+            Err(format!(
+                "Failed to open Windows microphone privacy settings (ShellExecuteW={})",
+                rc as isize
+            ))
+        }
+    }
+}
+
 /// Current Microphone permission, without prompting.
 #[tauri::command]
 pub fn get_microphone_permission() -> PermissionStatus {
@@ -191,7 +262,11 @@ pub fn get_microphone_permission() -> PermissionStatus {
     {
         mac::microphone_status()
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "windows")]
+    {
+        win::microphone_status()
+    }
+    #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
     {
         PermissionStatus::Granted
     }
@@ -205,7 +280,11 @@ pub async fn request_microphone_permission() -> PermissionStatus {
     {
         mac::request_microphone().await
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "windows")]
+    {
+        win::microphone_status()
+    }
+    #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
     {
         PermissionStatus::Granted
     }
@@ -222,6 +301,7 @@ pub async fn get_automation_permission() -> PermissionStatus {
     }
     #[cfg(not(target_os = "macos"))]
     {
+        // Windows and Linux do not require macOS-style Automation approval for normal windows.
         PermissionStatus::Granted
     }
 }
@@ -276,7 +356,12 @@ pub fn open_privacy_settings(pane: String) -> Result<(), String> {
             Err(format!("open exited with {status}"))
         }
     }
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "windows")]
+    {
+        let _ = url;
+        win::open_privacy_settings(&pane)
+    }
+    #[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
     {
         let _ = url;
         Ok(())
@@ -351,6 +436,26 @@ mod tests {
         assert_eq!(
             serde_json::to_string(&PermissionStatus::NotDetermined).unwrap(),
             "\"not_determined\""
+        );
+    }
+
+    #[test]
+    fn windows_consent_store_maps_allow_and_deny() {
+        assert_eq!(
+            microphone_status_from_consent_values(Some("Allow"), Some("Allow")),
+            PermissionStatus::Granted
+        );
+        assert_eq!(
+            microphone_status_from_consent_values(Some("Deny"), Some("Allow")),
+            PermissionStatus::Denied
+        );
+        assert_eq!(
+            microphone_status_from_consent_values(None, Some("deny")),
+            PermissionStatus::Denied
+        );
+        assert_eq!(
+            microphone_status_from_consent_values(None, None),
+            PermissionStatus::Granted
         );
     }
 }

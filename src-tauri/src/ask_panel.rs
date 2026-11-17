@@ -463,7 +463,7 @@ pub fn show(app: &tauri::AppHandle) -> tauri::Result<tauri::WebviewWindow> {
     if let Some(frame) = state.open(current_anchor(app, &window, &state)) {
         apply_frame(&window, frame);
     }
-    let _ = window.show();
+    crate::overlay_window::set_visible_no_activate(&window, true);
     track_cursor(app);
     Ok(window)
 }

@@ -101,6 +101,7 @@ function emitTauriEvent(name: string, payload: unknown) {
 
 vi.mock('../../../lib/tauri', () => ({
   HANDS_FREE_SETUP_EVENT: 'hands-free:setup',
+  getBuiltinBackendInfo: vi.fn().mockResolvedValue(null),
   getHandsFreeStatus: vi.fn().mockResolvedValue({
     listener: 'off',
     modelInstalled: false,

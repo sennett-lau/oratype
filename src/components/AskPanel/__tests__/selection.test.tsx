@@ -151,6 +151,9 @@ describe('selectable answer', () => {
     expect(isCopyShortcut(key({ key: 'c', metaKey: true, altKey: true }))).toBe(false)
     expect(isSelectAllShortcut(key({ key: 'a', metaKey: true }))).toBe(true)
     expect(isSelectAllShortcut(key({ key: 'a' }))).toBe(false)
+    expect(isCopyShortcut(key({ key: 'c', ctrlKey: true }), { windows: true })).toBe(true)
+    expect(isCopyShortcut(key({ key: 'c', metaKey: true }), { windows: true })).toBe(false)
+    expect(isSelectAllShortcut(key({ key: 'a', ctrlKey: true }), { windows: true })).toBe(true)
   })
 
   it('the could-not-replace Copy button copies the highlight, else the whole answer', () => {

@@ -12,6 +12,7 @@ export const FASTER_AI_MODEL = 'qwen3-1.7b'
  * so speech and the AI model fit beside the user's apps. The same line as the AI models' 16 GB.
  */
 export const SMALL_SPEECH_BELOW_BYTES = 16 * 1024 ** 3
+const WINDOWS_SMALL_SPEECH_BELOW_VRAM_BYTES = 7_500 * 1024 * 1024
 
 /** Product names of the built-in models; not translated. */
 const MODEL_LABELS: Record<string, string> = {
@@ -86,7 +87,10 @@ function speechFor(setup: LanguageSetup, check: SpeechHardwareCheck | null): str
   if (!check) return setup.speech
   const small = setup.smallSpeech
   const lowMemory =
-    check.hardware.memoryBytes > 0 && check.hardware.memoryBytes < SMALL_SPEECH_BELOW_BYTES
+    check.hardware.chipKind === 'windows_gpu'
+      ? typeof check.hardware.vramBytes === 'number' &&
+        check.hardware.vramBytes < WINDOWS_SMALL_SPEECH_BELOW_VRAM_BYTES
+      : check.hardware.memoryBytes > 0 && check.hardware.memoryBytes < SMALL_SPEECH_BELOW_BYTES
   if (small && offered(check, small) && (lowMemory || !offered(check, setup.speech))) return small
   return offered(check, setup.speech) ? setup.speech : null
 }

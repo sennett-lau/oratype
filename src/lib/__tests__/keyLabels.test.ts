@@ -51,4 +51,24 @@ describe('keyParts (plan compact-key-labels)', () => {
     expect(compactKeyLabel('End')).toBe('End')
     expect(fullKeyLabel('RightControl')).toBe('Right Control')
   })
+
+  it('uses Windows PC labels (Ctrl, Alt, Win, Enter, Backspace, Del) when windows mode is enabled', () => {
+    const win = { windows: true }
+    expect(keyParts('Ctrl', win)).toEqual({ symbol: 'Ctrl', full: 'Control' })
+    expect(keyParts('RightControl', win)).toEqual({
+      symbol: 'Ctrl',
+      side: 'R',
+      full: 'Right Control',
+    })
+    expect(keyParts('Alt', win)).toEqual({ symbol: 'Alt', full: 'Alt' })
+    expect(keyParts('RightAlt', win)).toEqual({ symbol: 'Alt', side: 'R', full: 'Right Alt' })
+    expect(keyParts('Command', win)).toEqual({ symbol: 'Win', full: 'Win' })
+    expect(keyParts('LeftShift', win)).toEqual({ symbol: 'Shift', side: 'L', full: 'Left Shift' })
+    expect(keyParts('Enter', win)).toEqual({ symbol: 'Enter', full: 'Enter' })
+    expect(keyParts('Backspace', win)).toEqual({ symbol: 'Backspace', full: 'Backspace' })
+    expect(keyParts('Delete', win)).toEqual({ symbol: 'Del', full: 'Delete' })
+    expect(['Ctrl', '/'].map((name) => compactKeyLabel(name, win)).join(' + ')).toBe('Ctrl + /')
+    // Passing Array.map directly must ignore array index arguments.
+    expect(['Ctrl', '/'].map(compactKeyLabel).join(' + ')).toBe('⌃ + /')
+  })
 })

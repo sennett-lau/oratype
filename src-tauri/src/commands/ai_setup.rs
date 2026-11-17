@@ -58,6 +58,7 @@ pub async fn init(app: &tauri::AppHandle) {
     let Ok(mut config) = state.load().await else {
         return;
     };
+    builtin::server().set_backend_choice(&config.builtin_ai_backend);
     if config.reconcile_builtin_ai_models(&ai_models::installed_pairs(&dir)) {
         tracing::info!("Built-in AI preset updated to match the installed models");
         if let Err(error) = state.save(&config).await {
@@ -124,7 +125,11 @@ pub async fn get_ai_hardware(app: tauri::AppHandle) -> Result<AiHardwareCheck, S
         let offer = ai_models::offer_models(&hardware, &installed);
         let server_available = builtin::server().binary_available();
         tracing::info!(
-            "AI hardware check: offered {:?}, server program {}",
+            "AI hardware check: {:?} '{}' (gpu={:?}, vram={:?} MB), offered {:?}, server program {}",
+            hardware.chip_kind,
+            hardware.chip_name,
+            hardware.gpu_name,
+            hardware.vram_bytes.map(|bytes| bytes / (1024 * 1024)),
             offer
                 .models
                 .iter()
@@ -277,6 +282,7 @@ async fn run_setup(
     // Plan `warm-builtin-ai`: start with the slots the config wants, so the server is not
     // started again right after its test.
     let store = super::language_presets::library_store(app).ok();
+    builtin::server().set_backend_choice(&config.builtin_ai_backend);
     builtin::server().set_slots(builtin::wanted_slots(&config, store.as_ref()));
     let test = match builtin::server()
         .ensure(&preset.model_file, &preset.model)
@@ -346,6 +352,9 @@ mod tests {
                 chip_name: "Intel".into(),
                 memory_bytes: 1,
                 free_bytes: 2,
+                gpu_name: None,
+                vram_bytes: None,
+                shared_gpu_memory_bytes: None,
             },
             offer: crate::stt::hardware::ModelOffer {
                 models: Vec::new(),

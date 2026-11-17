@@ -115,8 +115,10 @@ pub fn init(data_dir: &std::path::Path) {
     let _ = FLAG_PATH.set(path.clone());
     #[cfg(target_os = "macos")]
     restore_after_crash(&coreaudio_backend::DefaultOutput, &FileFlag(path));
-    #[cfg(not(target_os = "macos"))]
-    let _ = path;
+    #[cfg(target_os = "windows")]
+    restore_after_crash(&windows_audio_backend::DefaultOutput, &FileFlag(path));
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    restore_after_crash(&NoOutput, &FileFlag(path));
 }
 
 /// Held by the audio capture thread for as long as the microphone records. Muting happens
@@ -154,22 +156,107 @@ fn with_platform(
     );
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "windows")]
+fn with_platform(
+    action: impl FnOnce(&mut MuteState, &windows_audio_backend::DefaultOutput, &FileFlag),
+) {
+    let Some(path) = FLAG_PATH.get() else {
+        return;
+    };
+    let mut state = STATE.lock().unwrap_or_else(|error| error.into_inner());
+    action(
+        &mut state,
+        &windows_audio_backend::DefaultOutput,
+        &FileFlag(path.clone()),
+    );
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 fn with_platform(_action: impl FnOnce(&mut MuteState, &NoOutput, &FileFlag)) {
-    // Muting other audio is macOS only for now.
     let _ = (&STATE, FLAG_PATH.get());
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 struct NoOutput;
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 impl OutputMuteBackend for NoOutput {
     fn is_muted(&self) -> Option<bool> {
         None
     }
     fn set_muted(&self, _muted: bool) -> bool {
         false
+    }
+}
+
+#[cfg(target_os = "windows")]
+mod windows_audio_backend {
+    use super::OutputMuteBackend;
+    use std::ptr;
+    use windows::Win32::Foundation::RPC_E_CHANGED_MODE;
+    use windows::Win32::Media::Audio::Endpoints::IAudioEndpointVolume;
+    use windows::Win32::Media::Audio::{
+        eMultimedia, eRender, IMMDeviceEnumerator, MMDeviceEnumerator,
+    };
+    use windows::Win32::System::Com::{
+        CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_MULTITHREADED,
+    };
+
+    pub(crate) struct DefaultOutput;
+
+    struct ComGuard {
+        uninit_on_drop: bool,
+    }
+
+    impl ComGuard {
+        fn init() -> Option<Self> {
+            let hr = unsafe { CoInitializeEx(None, COINIT_MULTITHREADED) };
+            if hr.is_ok() {
+                Some(Self {
+                    uninit_on_drop: true,
+                })
+            } else if hr == RPC_E_CHANGED_MODE {
+                Some(Self {
+                    uninit_on_drop: false,
+                })
+            } else {
+                tracing::warn!("Windows output mute: CoInitializeEx failed ({hr:?})");
+                None
+            }
+        }
+    }
+
+    impl Drop for ComGuard {
+        fn drop(&mut self) {
+            if self.uninit_on_drop {
+                unsafe { CoUninitialize() };
+            }
+        }
+    }
+
+    fn with_endpoint_volume<R>(
+        action: impl FnOnce(&IAudioEndpointVolume) -> Option<R>,
+    ) -> Option<R> {
+        let _com = ComGuard::init()?;
+        unsafe {
+            let enumerator: IMMDeviceEnumerator =
+                CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL).ok()?;
+            let device = enumerator
+                .GetDefaultAudioEndpoint(eRender, eMultimedia)
+                .ok()?;
+            let volume: IAudioEndpointVolume = device.Activate(CLSCTX_ALL, None).ok()?;
+            action(&volume)
+        }
+    }
+
+    impl OutputMuteBackend for DefaultOutput {
+        fn is_muted(&self) -> Option<bool> {
+            with_endpoint_volume(|vol| unsafe { vol.GetMute().ok() }.map(|b| b.as_bool()))
+        }
+
+        fn set_muted(&self, muted: bool) -> bool {
+            with_endpoint_volume(|vol| unsafe { vol.SetMute(muted, ptr::null()).ok() }).is_some()
+        }
     }
 }
 

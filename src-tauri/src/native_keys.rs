@@ -270,3 +270,214 @@ mod tests {
         assert!(!is_native_only(key_by_name("K").unwrap()));
     }
 }
+
+/// Virtual key metadata for the Windows `WH_KEYBOARD_LL` listener (`VK_*` codes).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct WindowsKey {
+    /// Win32 virtual-key code (`VK_*`).
+    pub code: u16,
+    /// Canonical name shared with `ShortcutBinding`.
+    pub name: &'static str,
+    /// Modifier key (Control, Shift, Left Alt, Win, Right Alt).
+    pub is_modifier: bool,
+    /// Usable as a single-key trigger without corrupting normal text input.
+    pub standalone: bool,
+}
+
+/// Win32 `VK_ESCAPE`. Pressing it during capture cancels shortcut recording.
+pub const WIN_VK_ESCAPE: u16 = 0x1B;
+
+const fn win_modifier(code: u16, name: &'static str) -> WindowsKey {
+    WindowsKey {
+        code,
+        name,
+        is_modifier: true,
+        standalone: false,
+    }
+}
+
+const fn win_standalone(code: u16, name: &'static str) -> WindowsKey {
+    WindowsKey {
+        code,
+        name,
+        is_modifier: false,
+        standalone: true,
+    }
+}
+
+const fn win_typing(code: u16, name: &'static str) -> WindowsKey {
+    WindowsKey {
+        code,
+        name,
+        is_modifier: false,
+        standalone: false,
+    }
+}
+
+// TODO(windows): OEM virtual-key codes (`/`..`]`) assume US ANSI layout; map non-US layouts via `MapVirtualKeyExW` on real Windows hardware.
+/// Windows virtual keys supported by the native `WH_KEYBOARD_LL` listener. `Fn` is absent
+/// because Windows firmware does not surface `Fn` as a hookable virtual key.
+pub const WINDOWS_KEYS: &[WindowsKey] = &[
+    win_modifier(0xA0, "LeftShift"),
+    win_modifier(0xA1, "RightShift"),
+    win_modifier(0xA2, "LeftControl"),
+    win_modifier(0xA3, "RightControl"),
+    win_modifier(0xA4, "LeftOption"),
+    WindowsKey {
+        code: 0xA5,
+        name: "RightAlt",
+        is_modifier: true,
+        standalone: true,
+    },
+    win_modifier(0x5B, "LeftCommand"),
+    win_modifier(0x5C, "RightCommand"),
+    win_standalone(0x23, "End"),
+    win_standalone(0x24, "Home"),
+    win_standalone(0x21, "PageUp"),
+    win_standalone(0x22, "PageDown"),
+    win_standalone(0x2D, "Insert"),
+    win_standalone(0x70, "F1"),
+    win_standalone(0x71, "F2"),
+    win_standalone(0x72, "F3"),
+    win_standalone(0x73, "F4"),
+    win_standalone(0x74, "F5"),
+    win_standalone(0x75, "F6"),
+    win_standalone(0x76, "F7"),
+    win_standalone(0x77, "F8"),
+    win_standalone(0x78, "F9"),
+    win_standalone(0x79, "F10"),
+    win_standalone(0x7A, "F11"),
+    win_standalone(0x7B, "F12"),
+    win_standalone(0x7C, "F13"),
+    win_standalone(0x7D, "F14"),
+    win_standalone(0x7E, "F15"),
+    win_standalone(0x7F, "F16"),
+    win_standalone(0x80, "F17"),
+    win_standalone(0x81, "F18"),
+    win_standalone(0x82, "F19"),
+    win_standalone(0x83, "F20"),
+    win_typing(0x20, "Space"),
+    win_typing(WIN_VK_ESCAPE, "Escape"),
+    win_typing(0x09, "Tab"),
+    win_typing(0x0D, "Enter"),
+    win_typing(0x08, "Backspace"),
+    win_typing(0x2E, "Delete"),
+    win_typing(0x26, "Up"),
+    win_typing(0x28, "Down"),
+    win_typing(0x25, "Left"),
+    win_typing(0x27, "Right"),
+    win_typing(0x41, "A"),
+    win_typing(0x42, "B"),
+    win_typing(0x43, "C"),
+    win_typing(0x44, "D"),
+    win_typing(0x45, "E"),
+    win_typing(0x46, "F"),
+    win_typing(0x47, "G"),
+    win_typing(0x48, "H"),
+    win_typing(0x49, "I"),
+    win_typing(0x4A, "J"),
+    win_typing(0x4B, "K"),
+    win_typing(0x4C, "L"),
+    win_typing(0x4D, "M"),
+    win_typing(0x4E, "N"),
+    win_typing(0x4F, "O"),
+    win_typing(0x50, "P"),
+    win_typing(0x51, "Q"),
+    win_typing(0x52, "R"),
+    win_typing(0x53, "S"),
+    win_typing(0x54, "T"),
+    win_typing(0x55, "U"),
+    win_typing(0x56, "V"),
+    win_typing(0x57, "W"),
+    win_typing(0x58, "X"),
+    win_typing(0x59, "Y"),
+    win_typing(0x5A, "Z"),
+    win_typing(0x30, "0"),
+    win_typing(0x31, "1"),
+    win_typing(0x32, "2"),
+    win_typing(0x33, "3"),
+    win_typing(0x34, "4"),
+    win_typing(0x35, "5"),
+    win_typing(0x36, "6"),
+    win_typing(0x37, "7"),
+    win_typing(0x38, "8"),
+    win_typing(0x39, "9"),
+    win_typing(0xBF, "/"),
+    win_typing(0xDC, "\\"),
+    win_typing(0xBE, "."),
+    win_typing(0xBC, ","),
+    win_typing(0xBA, ";"),
+    win_typing(0xDE, "'"),
+    win_typing(0xC0, "`"),
+    win_typing(0xBD, "-"),
+    win_typing(0xBB, "="),
+    win_typing(0xDB, "["),
+    win_typing(0xDD, "]"),
+];
+
+/// Look up a Windows virtual key by canonical name (case-insensitive). `RightOption` aliases
+/// `RightAlt` (`VK_RMENU`).
+pub fn windows_key_by_name(name: &str) -> Option<&'static WindowsKey> {
+    let trimmed = name.trim();
+    let canonical = if trimmed.eq_ignore_ascii_case("RightOption") {
+        "RightAlt"
+    } else {
+        trimmed
+    };
+    WINDOWS_KEYS
+        .iter()
+        .find(|key| key.name.eq_ignore_ascii_case(canonical))
+}
+
+/// Look up a Windows virtual key by `VK_*` code.
+pub fn windows_key_by_code(code: u16) -> Option<&'static WindowsKey> {
+    WINDOWS_KEYS.iter().find(|key| key.code == code)
+}
+
+/// True for Windows keys handled natively by `WH_KEYBOARD_LL` instead of `RegisterHotKey`.
+pub fn is_windows_native_only(key: &WindowsKey) -> bool {
+    key.is_modifier
+        || matches!(
+            key.name,
+            "End"
+                | "Home"
+                | "PageUp"
+                | "PageDown"
+                | "Insert"
+                | "F13"
+                | "F14"
+                | "F15"
+                | "F16"
+                | "F17"
+                | "F18"
+                | "F19"
+                | "F20"
+        )
+}
+
+#[cfg(test)]
+mod windows_tests {
+    use super::*;
+
+    #[test]
+    fn windows_keys_have_unique_codes_and_names() {
+        for (i, a) in WINDOWS_KEYS.iter().enumerate() {
+            for b in &WINDOWS_KEYS[i + 1..] {
+                assert_ne!(a.code, b.code, "{} and {} share a VK code", a.name, b.name);
+                assert_ne!(a.name, b.name);
+            }
+        }
+    }
+
+    #[test]
+    fn looks_up_windows_keys() {
+        assert_eq!(windows_key_by_name("End").unwrap().code, 0x23);
+        assert_eq!(windows_key_by_name("RightAlt").unwrap().code, 0xA5);
+        assert_eq!(windows_key_by_name("RightOption").unwrap().name, "RightAlt");
+        assert_eq!(windows_key_by_name("LeftShift").unwrap().code, 0xA0);
+        assert!(windows_key_by_name("Fn").is_none());
+        assert!(is_windows_native_only(windows_key_by_name("End").unwrap()));
+        assert!(is_windows_native_only(windows_key_by_name("F13").unwrap()));
+        assert!(!is_windows_native_only(windows_key_by_name("K").unwrap()));
+    }
+}

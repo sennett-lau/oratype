@@ -3464,6 +3464,7 @@ dependencies = [
  "csv",
  "enigo",
  "ferrous-opencc",
+ "flate2",
  "fs4",
  "futures-util",
  "http",
@@ -3478,6 +3479,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "tar",
  "tauri",
  "tauri-build",
  "tauri-plugin-autostart",
@@ -3496,7 +3498,9 @@ dependencies = [
  "url",
  "uuid",
  "whisper-rs",
+ "windows 0.61.3",
  "windows-sys 0.59.0",
+ "zip",
 ]
 
 [[package]]
@@ -6441,6 +6445,7 @@ version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2088172d00f936c348d6a72f488dc2660ab3f507263a195df308a3c2383229f6"
 dependencies = [
+ "libc",
  "tracing",
  "whisper-rs-sys",
 ]
@@ -7498,6 +7503,7 @@ checksum = "caa8cd6af31c3b31c6631b8f483848b91589021b28fffe50adada48d4f4d2ed1"
 dependencies = [
  "arbitrary",
  "crc32fast",
+ "flate2",
  "indexmap 2.14.0",
  "memchr",
 ]

@@ -8,7 +8,7 @@
 //! after OraType stopped waiting would overwrite the clipboard, so it is watched a little longer
 //! and put back.
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
 use enigo::{Direction, Enigo, Key, Keyboard, Settings as EnigoSettings};
 
 use crate::output::focus::{self, SelectedText};
@@ -22,6 +22,7 @@ const CLIPBOARD_POLL_MS: u64 = 25;
 const LATE_COPY_WATCH_MS: u64 = 1500;
 /// How long to wait for the shortcut's own modifier keys (Control, Shift, ...) to be released,
 /// so the app sees a plain ⌘C and not, say, ⌃⌘C.
+#[cfg(target_os = "macos")]
 const MODIFIER_RELEASE_TIMEOUT_MS: u64 = 400;
 
 /// Plan `translate-selection-panel`: whether a run reads the highlight. Ask (answer, translate,
@@ -60,6 +61,7 @@ fn wait_for_clipboard_change(
 
 /// Whether osascript's error output says macOS refused the Apple Event to System Events
 /// (Automation permission, error -1743) or the keystroke (Accessibility, error 1002).
+#[cfg(any(target_os = "macos", test))]
 fn is_permission_error(stderr: &str) -> bool {
     stderr.contains("-1743") || stderr.contains("1002") || stderr.contains("not allowed")
 }
@@ -96,7 +98,14 @@ fn wait_for_modifier_release() {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "windows")]
+fn wait_for_modifier_release() {
+    if let Err(error) = crate::output::windows_modifier_guard::wait_for_modifier_release() {
+        tracing::debug!("Windows modifier release wait ended before selection copy: {error}");
+    }
+}
+
+#[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
 fn wait_for_modifier_release() {}
 
 #[cfg(target_os = "macos")]
@@ -136,7 +145,21 @@ fn copy_selected_text_to_clipboard() -> bool {
     }
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(target_os = "windows")]
+fn copy_selected_text_to_clipboard() -> bool {
+    use windows_sys::Win32::UI::Input::KeyboardAndMouse::VK_LCONTROL;
+
+    // TODO(windows): read selection directly via UI Automation `IUIAutomationTextPattern::GetSelection` before falling back to Ctrl+C `SendInput`.
+    match crate::output::windows_sendinput::send_vk_chord(&[VK_LCONTROL], b'C' as u16) {
+        Ok(_) => true,
+        Err(error) => {
+            tracing::warn!("Windows selected-text copy via SendInput failed: {error}");
+            false
+        }
+    }
+}
+
+#[cfg(all(not(target_os = "macos"), not(target_os = "windows")))]
 fn copy_selected_text_to_clipboard() -> bool {
     let Ok(mut enigo) = Enigo::new(&EnigoSettings::default()) else {
         return false;

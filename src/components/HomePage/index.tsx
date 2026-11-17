@@ -17,6 +17,7 @@ import { FinishSetup } from './FinishSetup'
 import { LanguageSetupCard } from './LanguageSetupCard'
 import { UpdateBar } from './UpdateBar'
 import { SpeedBoard } from './SpeedBoard'
+import { tp } from '../../lib/platformText'
 
 type SettingsPane = 'general' | 'stt' | 'llm'
 
@@ -256,7 +257,7 @@ function WhatsNew() {
         <h4 className="m-0 text-[12.5px] font-semibold text-text-primary">{entry.version}</h4>
         <ul className="mt-1.5 mb-0 list-disc space-y-1 pl-4 text-[12.5px] leading-snug text-text-secondary">
           {entry.changeKeys.map((key) => (
-            <li key={key}>{t(`whatsNew.${key}`)}</li>
+            <li key={key}>{tp(t, `whatsNew.${key}`)}</li>
           ))}
         </ul>
       </article>

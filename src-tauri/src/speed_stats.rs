@@ -46,6 +46,7 @@ const WORKER_POLL: Duration = Duration::from_secs(1);
 // ─── Word counting ───
 
 /// A token counts as a word when it holds a letter or a digit (in any script).
+#[cfg(target_os = "macos")]
 fn is_word_token(token: &str) -> bool {
     token.chars().any(char::is_alphanumeric)
 }
@@ -63,6 +64,7 @@ fn is_cjk(c: char) -> bool {
 
 /// Words without the macOS tokenizer: whitespace-separated runs that hold a letter or digit,
 /// where every CJK character counts as a word of its own.
+// TODO(windows): evaluate `Windows.Data.Text.WordsSegmenter` for multi-character CJK word tokenization matching macOS `CFStringTokenizer`.
 pub fn count_words_fallback(text: &str) -> u32 {
     let mut count = 0u32;
     for chunk in text.split_whitespace() {
@@ -857,6 +859,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(target_os = "macos")]
     fn segments_chinese_into_words() {
         // Nine characters; the system splits them into words, not one per character.
         let words = count_words("我今天去市場買東西");
