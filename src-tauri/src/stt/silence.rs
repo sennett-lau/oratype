@@ -175,7 +175,13 @@ pub fn accept_transcript_given(
             log_decision(provider, activity, Some(NoSpeechGuard::PromptEcho));
             None
         }
-        Some(text) if super::hallucination::is_likely_hallucination(&text, activity.voiced_ms) => {
+        Some(text)
+            if super::hallucination::is_likely_hallucination_with_duration(
+                &text,
+                activity.voiced_ms,
+                activity.duration_ms,
+            ) =>
+        {
             log_decision(provider, activity, Some(NoSpeechGuard::Hallucination));
             None
         }
@@ -346,6 +352,40 @@ mod tests {
         assert_eq!(
             accept_transcript("p", &long, Some("Thank you.".into())).as_deref(),
             Some("Thank you.")
+        );
+    }
+
+    #[test]
+    fn cantonese_noise_prior_with_long_rms_activity_is_dropped_while_normal_speech_passes() {
+        let noisy_background = VoiceActivity {
+            duration_ms: 8000,
+            peak_db: -25.0,
+            noise_floor_db: -42.0,
+            voiced_ms: 3000,
+        };
+        assert_eq!(
+            accept_transcript(
+                "p",
+                &noisy_background,
+                Some("我哋嘅生活，就係咁樣嘅。".into()),
+            ),
+            None
+        );
+
+        let spoken_cantonese = VoiceActivity {
+            duration_ms: 2800,
+            peak_db: -14.0,
+            noise_floor_db: -58.0,
+            voiced_ms: 2200,
+        };
+        assert_eq!(
+            accept_transcript(
+                "p",
+                &spoken_cantonese,
+                Some("我哋嘅生活一直都好簡單。".into()),
+            )
+            .as_deref(),
+            Some("我哋嘅生活一直都好簡單。")
         );
     }
 
